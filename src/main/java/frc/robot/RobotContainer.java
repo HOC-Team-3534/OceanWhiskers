@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
@@ -31,9 +31,9 @@ public class RobotContainer {
 
     private final Telemetry logger = new Telemetry(MaxSpeed);
 
-    private final CommandXboxController joystick = new CommandXboxController(0);
+    private final CommandXboxController controller1 = new CommandXboxController(0);
 
-    public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
+    public final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
 
     public RobotContainer() {
         configureBindings();
@@ -42,31 +42,31 @@ public class RobotContainer {
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
-        drivetrain.setDefaultCommand(
+        swerveDrive.setDefaultCommand(
             // Drivetrain will execute this command periodically
-            drivetrain.applyRequest(() ->
-                drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+            swerveDrive.applyRequest(() ->
+                drive.withVelocityX(-controller1.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
+                    .withVelocityY(-controller1.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                    .withRotationalRate(-controller1.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
             )
         );
 
-        joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
-        joystick.b().whileTrue(drivetrain.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        controller1.a().whileTrue(swerveDrive.applyRequest(() -> brake));
+        controller1.b().whileTrue(swerveDrive.applyRequest(() ->
+            point.withModuleDirection(new Rotation2d(-controller1.getLeftY(), -controller1.getLeftX()))
         ));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
-        joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
-        joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
-        joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
-        joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
+        controller1.back().and(controller1.y()).whileTrue(swerveDrive.sysIdDynamic(Direction.kForward));
+        controller1.back().and(controller1.x()).whileTrue(swerveDrive.sysIdDynamic(Direction.kReverse));
+        controller1.start().and(controller1.y()).whileTrue(swerveDrive.sysIdQuasistatic(Direction.kForward));
+        controller1.start().and(controller1.x()).whileTrue(swerveDrive.sysIdQuasistatic(Direction.kReverse));
 
         // reset the field-centric heading on left bumper press
-        joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+        controller1.leftBumper().onTrue(swerveDrive.runOnce(() -> swerveDrive.seedFieldCentric()));
 
-        drivetrain.registerTelemetry(logger::telemeterize);
+        swerveDrive.registerTelemetry(logger::telemeterize);
     }
 
     public Command getAutonomousCommand() {
