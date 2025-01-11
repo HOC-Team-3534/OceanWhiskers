@@ -6,12 +6,12 @@ import static edu.wpi.first.units.Units.Seconds;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.CustomSwerveRequest.CharacterizeDriveMotors;
+import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class CharacterizeDrive extends Command {
     final CharacterizeDriveMotors request = new CharacterizeDriveMotors();
-    final CommandSwerveDrivetrain swerveDrivetrain;
+    final SwerveDriveSubsystem swerveDrive;
     final double quas_voltage, quas_duration;
 
     /**
@@ -21,40 +21,40 @@ public class CharacterizeDrive extends Command {
      * @param quas_duration
      *                      the quasiastic test duration
      */
-    CharacterizeDrive(CommandSwerveDrivetrain swerveDrivetrain, double quas_voltage,
+    CharacterizeDrive(SwerveDriveSubsystem swerveDrive, double quas_voltage,
             double quas_duration) {
-        this.swerveDrivetrain = swerveDrivetrain;
+        this.swerveDrive = swerveDrive;
         this.quas_voltage = quas_voltage;
         this.quas_duration = quas_duration;
-        this.addRequirements(swerveDrivetrain);
+        this.addRequirements(swerveDrive);
     }
 
     @Override
     public void initialize() {
         super.initialize();
-        swerveDrivetrain.setControl(request.withVoltageX(0));
-        swerveDrivetrain.resetCharacterizationData();
+        swerveDrive.setControl(request.withVoltageX(0));
+        swerveDrive.resetCharacterizationData();
     }
 
     @Override
     public void execute() {
-        swerveDrivetrain.setControl(request
-                .withVoltageX(swerveDrivetrain.getTimeSinceStartCharacterizing().in(Seconds) * quas_voltage));
-        var fl_motor = swerveDrivetrain.getModule(0);
+        swerveDrive.setControl(request
+                .withVoltageX(swerveDrive.getTimeSinceStartCharacterizing().in(Seconds) * quas_voltage));
+        var fl_motor = swerveDrive.getModule(0);
         var current_voltage_output = fl_motor.getDriveMotor().getMotorVoltage().getValue();
         var current_velocity = MetersPerSecond.of(fl_motor.getCurrentState().speedMetersPerSecond);
-        swerveDrivetrain.addCharacterizationData(current_voltage_output, current_velocity);
+        swerveDrive.addCharacterizationData(current_voltage_output, current_velocity);
     }
 
     @Override
     public void end(boolean interrupted) {
         super.end(interrupted);
-        swerveDrivetrain.setControl(new SwerveRequest.Idle());
-        swerveDrivetrain.printCharacterizationData();
+        swerveDrive.setControl(new SwerveRequest.Idle());
+        swerveDrive.printCharacterizationData();
     }
 
     @Override
     public boolean isFinished() {
-        return swerveDrivetrain.getTimeSinceStartCharacterizing().in(Seconds) > quas_duration;
+        return swerveDrive.getTimeSinceStartCharacterizing().in(Seconds) > quas_duration;
     }
 }
