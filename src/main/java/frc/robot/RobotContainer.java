@@ -4,7 +4,9 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.*;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -13,14 +15,13 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
-
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
+                                                                                      // max angular velocity
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -43,18 +44,18 @@ public class RobotContainer {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
         swerveDrive.setDefaultCommand(
-            // Drivetrain will execute this command periodically
-            swerveDrive.applyRequest(() ->
-                drive.withVelocityX(-controller1.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
-                    .withVelocityY(-controller1.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-controller1.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
-            )
-        );
+                // Drivetrain will execute this command periodically
+                swerveDrive.applyRequest(() -> drive.withVelocityX(-controller1.getLeftY() * MaxSpeed) // Drive forward
+                                                                                                       // with negative
+                                                                                                       // Y (forward)
+                        .withVelocityY(-controller1.getLeftX() * MaxSpeed) // Drive left with negative X (left)
+                        .withRotationalRate(-controller1.getRightX() * MaxAngularRate) // Drive counterclockwise with
+                                                                                       // negative X (left)
+                ));
 
         controller1.a().whileTrue(swerveDrive.applyRequest(() -> brake));
-        controller1.b().whileTrue(swerveDrive.applyRequest(() ->
-            point.withModuleDirection(new Rotation2d(-controller1.getLeftY(), -controller1.getLeftX()))
-        ));
+        controller1.b().whileTrue(swerveDrive.applyRequest(
+                () -> point.withModuleDirection(new Rotation2d(-controller1.getLeftY(), -controller1.getLeftX()))));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
