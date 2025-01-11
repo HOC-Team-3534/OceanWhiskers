@@ -21,7 +21,7 @@ public class CharacterizeDrive extends Command {
      * @param quas_duration
      *                      the quasiastic test duration
      */
-    CharacterizeDrive(SwerveDriveSubsystem swerveDrive, double quas_voltage,
+    public CharacterizeDrive(SwerveDriveSubsystem swerveDrive, double quas_voltage,
             double quas_duration) {
         this.swerveDrive = swerveDrive;
         this.quas_voltage = quas_voltage;

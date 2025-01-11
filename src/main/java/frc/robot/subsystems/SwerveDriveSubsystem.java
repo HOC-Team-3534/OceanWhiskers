@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.Supplier;
 
@@ -186,7 +188,7 @@ public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsy
     }
 
     public void addCharacterizationData(Voltage voltage, LinearVelocity velocity) {
-
+        characterizationData.add(velocity.in(MetersPerSecond), voltage.in(Volts));
     }
 
     public Time getTimeSinceStartCharacterizing() {
