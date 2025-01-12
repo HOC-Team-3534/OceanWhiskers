@@ -7,12 +7,14 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.CustomSwerveRequest.CharacterizeDriveMotors;
+import frc.robot.utils.characterization.FeedForwardCharacterizer;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class CharacterizeDrive extends Command {
     final CharacterizeDriveMotors request = new CharacterizeDriveMotors();
     final SwerveDriveSubsystem swerveDrive;
     final double quas_voltage, quas_duration;
+    final FeedForwardCharacterizer characterizer = new FeedForwardCharacterizer();
 
     /**
      * 
@@ -33,28 +35,28 @@ public class CharacterizeDrive extends Command {
     public void initialize() {
         super.initialize();
         swerveDrive.setControl(request.withVoltageX(0));
-        swerveDrive.resetCharacterizationData();
+        characterizer.start();
     }
 
     @Override
     public void execute() {
-        swerveDrive.setControl(request
-                .withVoltageX(swerveDrive.getTimeSinceStartCharacterizing().in(Seconds) * quas_voltage));
+        var requested_voltage = characterizer.getTimeSinceStart().in(Seconds) * quas_voltage;
+        swerveDrive.setControl(request.withVoltageX(requested_voltage));
         var fl_motor = swerveDrive.getModule(0);
-        var current_voltage_output = fl_motor.getDriveMotor().getMotorVoltage().getValue();
-        var current_velocity = MetersPerSecond.of(fl_motor.getCurrentState().speedMetersPerSecond);
-        swerveDrive.addCharacterizationData(current_voltage_output, current_velocity);
+        var voltage = fl_motor.getDriveMotor().getMotorVoltage().getValue();
+        var velocity = MetersPerSecond.of(fl_motor.getCurrentState().speedMetersPerSecond);
+        characterizer.add(velocity, voltage);
     }
 
     @Override
     public void end(boolean interrupted) {
         super.end(interrupted);
         swerveDrive.setControl(new SwerveRequest.Idle());
-        swerveDrive.printCharacterizationData();
+        characterizer.print();
     }
 
     @Override
     public boolean isFinished() {
-        return swerveDrive.getTimeSinceStartCharacterizing().in(Seconds) > quas_duration;
+        return characterizer.getTimeSinceStart().in(Seconds) > quas_duration;
     }
 }

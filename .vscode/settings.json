@@ -16,12 +16,18 @@
     "settings.gradle": false,
     "tuner-project.json": false,
     "WPILib-License.md": false,
+    "gradle\\wrapper": false,
+    "src\\main\\deploy": false,
+    ".gradle\\8.11": false,
+    ".gradle\\buildOutputCleanup": false,
+    ".gradle\\vcs-1": false,
+    ".gradle\\file-system.probe": false,
+    "bin": false,
+    "build": false,
+    ".gradle": false,
     ".vscode": false,
     ".wpilib": false,
-    "gradle\\wrapper": false,
-    "gradle": false,
-    ".gradle": false,
-    "src\\main\\deploy": false
+    "gradle": false
   },
   "java.test.config": [
     {
@@ -67,5 +73,6 @@
     "edu.wpi.first.math.proto.*",
     "edu.wpi.first.math.**.proto.*",
     "edu.wpi.first.math.**.struct.*",
-  ]
+  ],
+  "java.format.comments.enabled": false,
 }

@@ -1,18 +1,40 @@
 package frc.robot.utils.characterization;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Milliseconds;
+import static edu.wpi.first.units.Units.Volts;
+
 import java.util.LinkedList;
 import java.util.List;
 
+import edu.wpi.first.units.measure.LinearVelocity;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import frc.robot.utils.math.PolynomialRegression;
 
-public class FeedForwardCharacterizationData {
+public class FeedForwardCharacterizer {
     private final List<Double> velocityData = new LinkedList<>();
     private final List<Double> voltageData = new LinkedList<>();
+    private Time startTime = Milliseconds.of(System.currentTimeMillis());
 
-    public void add(double velocity, double voltage) {
-        if (Math.abs(velocity) > 1E-4) {
-            velocityData.add(Math.abs(velocity));
-            voltageData.add(Math.abs(voltage));
+    public void reset() {
+        velocityData.clear();
+        voltageData.clear();
+    }
+
+    public void start() {
+        reset();
+        startTime = Milliseconds.of(System.currentTimeMillis());
+    }
+
+    public Time getTimeSinceStart() {
+        return Milliseconds.of(System.currentTimeMillis()).minus(startTime);
+    }
+
+    public void add(LinearVelocity velocity, Voltage voltage) {
+        if (Math.abs(velocity.in(MetersPerSecond)) > 1E-4) {
+            velocityData.add(Math.abs(velocity.in(MetersPerSecond)));
+            voltageData.add(Math.abs(voltage.in(Volts)));
         }
     }
 
