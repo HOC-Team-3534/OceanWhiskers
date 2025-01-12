@@ -19,7 +19,7 @@ public class RobotContainer {
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
 
-    private final CommandXboxController controller1 = new CommandXboxController(0);
+    private static final CommandXboxController controller1 = new CommandXboxController(0);
 
     public static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
     public static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
@@ -46,5 +46,9 @@ public class RobotContainer {
 
     public static SwerveDriveSubsystem getSwerveDriveSubsystem() {
         return swerveDrive;
+    }
+
+    public static CommandXboxController getController1() {
+        return controller1;
     }
 }

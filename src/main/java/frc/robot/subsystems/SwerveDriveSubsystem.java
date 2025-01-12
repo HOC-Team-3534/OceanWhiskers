@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.commands.Drive;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
@@ -41,6 +42,7 @@ public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsy
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, modules);
+        setDefaultCommand();
     }
 
     /**
@@ -78,6 +80,11 @@ public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsy
             SwerveModuleConstants<?, ?, ?>... modules) {
         super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation,
                 modules);
+        setDefaultCommand();
+    }
+
+    public void setDefaultCommand() {
+        setDefaultCommand(new Drive());
     }
 
     /**
