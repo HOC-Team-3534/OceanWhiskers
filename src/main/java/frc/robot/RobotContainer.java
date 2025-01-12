@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.CharacterizeDrive;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class RobotContainer {
@@ -20,7 +21,8 @@ public class RobotContainer {
 
     private final CommandXboxController controller1 = new CommandXboxController(0);
 
-    public final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
+    public static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
+    public static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
     public RobotContainer() {
         configureBindings();
@@ -40,5 +42,9 @@ public class RobotContainer {
 
     public Command getAutonomousCommand() {
         return Commands.print("No autonomous command configured");
+    }
+
+    public static SwerveDriveSubsystem getSwerveDriveSubsystem() {
+        return swerveDrive;
     }
 }
