@@ -1,4 +1,4 @@
-package frc.robot.utils;
+package frc.robot.utils.camera;
 
 import edu.wpi.first.math.geometry.Transform3d;
 

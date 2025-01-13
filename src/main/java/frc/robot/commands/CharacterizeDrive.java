@@ -6,8 +6,8 @@ import static edu.wpi.first.units.Units.Seconds;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.CustomSwerveRequest.CharacterizeDriveMotors;
 import frc.robot.utils.characterization.FeedForwardCharacterizer;
+import frc.robot.utils.swerve.CustomSwerveRequest.CharacterizeDriveMotors;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class CharacterizeDrive extends Command {
@@ -33,7 +33,6 @@ public class CharacterizeDrive extends Command {
 
     @Override
     public void initialize() {
-        super.initialize();
         swerveDrive.setControl(request.withVoltageX(0));
         characterizer.start();
     }
@@ -50,7 +49,6 @@ public class CharacterizeDrive extends Command {
 
     @Override
     public void end(boolean interrupted) {
-        super.end(interrupted);
         swerveDrive.setControl(new SwerveRequest.Idle());
         characterizer.print();
     }

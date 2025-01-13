@@ -4,36 +4,40 @@
 
 package frc.robot;
 
-import com.ctre.phoenix6.swerve.SwerveRequest;
+import static edu.wpi.first.units.Units.Feet;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.commands.Autos;
 import frc.robot.commands.CharacterizeDrive;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class RobotContainer {
-    private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
-    private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-
     private static final CommandXboxController controller1 = new CommandXboxController(0);
 
-    public static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
-    public static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
+    private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
+    @SuppressWarnings("unused")
+    private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
+
+    private final SendableChooser<Command> autonChooser = new SendableChooser<>();
+    private final ShuffleboardTab configsTab = Shuffleboard.getTab("Configs");
 
     public RobotContainer() {
         configureBindings();
+
+        autonChooser.setDefaultOption("No Auton", Commands.none());
+        autonChooser.addOption("Drive Forward", Autos.driveForward(Feet.of(3)));
+
+        configsTab.add(autonChooser);
     }
 
     private void configureBindings() {
-
-        controller1.a().whileTrue(swerveDrive.applyRequest(() -> brake));
-        controller1.b().whileTrue(swerveDrive.applyRequest(
-                () -> point.withModuleDirection(new Rotation2d(-controller1.getLeftY(), -controller1.getLeftX()))));
-
         controller1.povDown().whileTrue(new CharacterizeDrive(swerveDrive, 1.0, 4.0));
 
         // reset the field-centric heading on left bumper press
@@ -41,7 +45,7 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return Commands.print("No autonomous command configured");
+        return autonChooser.getSelected();
     }
 
     public static SwerveDriveSubsystem getSwerveDriveSubsystem() {

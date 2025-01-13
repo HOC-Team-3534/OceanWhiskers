@@ -1,27 +1,33 @@
 package frc.robot.subsystems;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
-import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.numbers.N1;
-import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.Drive;
-import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
  * Subsystem so it can easily be used in command-based projects.
  */
-public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsystem {
+public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> implements Subsystem {
 
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
@@ -41,50 +47,47 @@ public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsy
     public SwerveDriveSubsystem(
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
-        super(drivetrainConstants, modules);
-        setDefaultCommand();
-    }
-
-    /**
-     * Constructs a CTRE SwerveDrivetrain using the specified constants.
-     * <p>
-     * This constructs the underlying hardware devices, so users should not
-     * construct
-     * the devices themselves. If they need the devices, they can access them
-     * through
-     * getters in the classes.
-     *
-     * @param drivetrainConstants       Drivetrain-wide constants for the swerve
-     *                                  drive
-     * @param odometryUpdateFrequency   The frequency to run the odometry loop. If
-     *                                  unspecified or set to 0 Hz, this is 250 Hz
-     *                                  on
-     *                                  CAN FD, and 100 Hz on CAN 2.0.
-     * @param odometryStandardDeviation The standard deviation for odometry
-     *                                  calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in
-     *                                  meters
-     *                                  and radians
-     * @param visionStandardDeviation   The standard deviation for vision
-     *                                  calculation
-     *                                  in the form [x, y, theta]ᵀ, with units in
-     *                                  meters
-     *                                  and radians
-     * @param modules                   Constants for each specific module
-     */
-    public SwerveDriveSubsystem(
-            SwerveDrivetrainConstants drivetrainConstants,
-            double odometryUpdateFrequency,
-            Matrix<N3, N1> odometryStandardDeviation,
-            Matrix<N3, N1> visionStandardDeviation,
-            SwerveModuleConstants<?, ?, ?>... modules) {
-        super(drivetrainConstants, odometryUpdateFrequency, odometryStandardDeviation, visionStandardDeviation,
-                modules);
-        setDefaultCommand();
-    }
-
-    public void setDefaultCommand() {
+        // TODO: Does there need to be custom odometry standard devs and custom vision standard devs matrices?
+        super(TalonFX::new, TalonFX::new, CANcoder::new, drivetrainConstants, modules);
         setDefaultCommand(new Drive());
+
+        var config = loadRobotConfig();
+
+        config.ifPresent(cfg -> AutoBuilder.configure(
+                this::getPose,
+                this::resetPose,
+                this::getRobotRelativeSpeeds,
+                this::driveWithSpeeds,
+                new PPHolonomicDriveController(
+                        new PIDConstants(5.0, 0.0, 0.0),
+                        new PIDConstants(5.0, 0.0, 0.0)),
+                cfg,
+                // TODO: Would it be easier / possible to just worry about the blue side and then flip everything for red alliance side?
+                () -> false,
+                this));
+
+        register();
+    }
+
+    Optional<RobotConfig> loadRobotConfig() {
+        try {
+            return Optional.of(RobotConfig.fromGUISettings());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
+
+    Pose2d getPose() {
+        return getState().Pose;
+    }
+
+    ChassisSpeeds getRobotRelativeSpeeds() {
+        return getState().Speeds;
+    }
+
+    void driveWithSpeeds(ChassisSpeeds speeds) {
+        this.setControl(new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds));
     }
 
     /**
@@ -125,4 +128,5 @@ public class SwerveDriveSubsystem extends TunerSwerveDrivetrain implements Subsy
             });
         }
     }
+
 }
