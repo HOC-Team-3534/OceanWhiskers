@@ -79,6 +79,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         var targetPosition = fromHeight(height);
         if (targetPosition.gt(MAX_HEIGHT_ANGLE))
             targetPosition = MAX_HEIGHT_ANGLE;
+        if (targetPosition.lt(Rotations.of(0)))
+            targetPosition = Rotations.of(0);
         elevator.setControl(new MotionMagicVoltage(targetPosition));
     }
 
