@@ -79,7 +79,6 @@ public class ElevatorSubsystem extends SubsystemBase {
         var targetPosition = fromHeight(height);
         if (targetPosition.gt(MAX_HEIGHT_ANGLE))
             targetPosition = MAX_HEIGHT_ANGLE;
-        state.setTargetHeight(height);
         elevator.setControl(new MotionMagicVoltage(targetPosition));
     }
 
@@ -93,18 +92,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     public class State {
         private boolean climbing;
-        private Distance targetHeight = Inches.of(0);
 
         public boolean isClimbing() {
             return climbing;
-        }
-
-        public void setTargetHeight(Distance targetHeight) {
-            this.targetHeight = targetHeight;
-        }
-
-        public Distance getTargetHeight() {
-            return targetHeight;
         }
     }
 }
