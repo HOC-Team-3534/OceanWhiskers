@@ -20,6 +20,7 @@ import frc.robot.commands.Autos;
 import frc.robot.commands.CharacterizeDrive;
 import frc.robot.commands.ElevatorToHeight;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ArcSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
@@ -30,6 +31,7 @@ public class RobotContainer {
 
     private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
     private static final ElevatorSubsystem elevator = new ElevatorSubsystem();
+    private static final ArcSubsystem arc = new ArcSubsystem();
     @SuppressWarnings("unused")
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
@@ -50,6 +52,9 @@ public class RobotContainer {
         controller2.b().whileTrue(new ElevatorToHeight(Inches.of(20)));
         controller2.x().whileTrue(new ElevatorToHeight(Inches.of(30)));
         controller2.y().whileTrue(new ElevatorToHeight(Inches.of(40)));
+
+        controller1.rightTrigger(0.25).whileTrue(arc.intake());
+        controller1.leftTrigger(0.25).whileTrue(arc.extake());
 
         controller1.povDown()
                 .whileTrue(new CharacterizeDrive(swerveDrive, Volts.per(Second).ofNative(1), Seconds.of(4.0)));

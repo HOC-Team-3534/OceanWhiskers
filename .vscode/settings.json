@@ -17,7 +17,6 @@
     "tuner-project.json": true,
     "WPILib-License.md": true,
     "gradle\\wrapper": true,
-    "src\\main\\deploy": true,
     ".gradle\\8.11": true,
     ".gradle\\buildOutputCleanup": true,
     ".gradle\\vcs-1": true,
@@ -27,7 +26,9 @@
     ".gradle": true,
     ".vscode": true,
     ".wpilib": true,
-    "gradle": true
+    "gradle": true,
+    ".OutlineViewer": true,
+    "src\\main\\deploy": true
   },
   "java.test.config": [
     {
