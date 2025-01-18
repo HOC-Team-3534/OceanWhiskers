@@ -10,6 +10,8 @@ import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Optional;
+
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -18,7 +20,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.Autos;
 import frc.robot.commands.CharacterizeDrive;
-import frc.robot.commands.ElevatorToHeight;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ArcSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -30,8 +31,13 @@ public class RobotContainer {
     private static final CommandXboxController controller2 = new CommandXboxController(1);
 
     private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
-    private static final ElevatorSubsystem elevator = new ElevatorSubsystem();
-    private static final ArcSubsystem arc = new ArcSubsystem();
+
+    private static final boolean ELEVATOR_ENABLED = true;
+    private static final boolean ARC_ENABLED = true;
+
+    private static final Optional<ElevatorSubsystem> elevator = ELEVATOR_ENABLED ? Optional.of(new ElevatorSubsystem())
+            : Optional.empty();
+    private static final Optional<ArcSubsystem> arc = ARC_ENABLED ? Optional.of(new ArcSubsystem()) : Optional.empty();
     @SuppressWarnings("unused")
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
@@ -45,16 +51,21 @@ public class RobotContainer {
         autonChooser.addOption("Drive Forward", Autos.driveForward(Feet.of(3)));
 
         configsTab.add(autonChooser);
+
     }
 
     private void configureBindings() {
-        controller2.a().whileTrue(new ElevatorToHeight(Inches.of(10)));
-        controller2.b().whileTrue(new ElevatorToHeight(Inches.of(20)));
-        controller2.x().whileTrue(new ElevatorToHeight(Inches.of(30)));
-        controller2.y().whileTrue(new ElevatorToHeight(Inches.of(40)));
+        elevator.ifPresent(e -> {
+            controller2.a().whileTrue(e.raiseToHeight(Inches.of(10)));
+            controller2.b().whileTrue(e.raiseToHeight(Inches.of(20)));
+            controller2.x().whileTrue(e.raiseToHeight(Inches.of(30)));
+            controller2.y().whileTrue(e.raiseToHeight(Inches.of(40)));
+        });
 
-        controller1.rightTrigger(0.25).whileTrue(arc.intake());
-        controller1.leftTrigger(0.25).whileTrue(arc.extake());
+        arc.ifPresent(a -> {
+            controller1.rightTrigger(0.25).whileTrue(a.intake());
+            controller1.leftTrigger(0.25).whileTrue(a.extake());
+        });
 
         controller1.povDown()
                 .whileTrue(new CharacterizeDrive(swerveDrive, Volts.per(Second).ofNative(1), Seconds.of(4.0)));
@@ -71,7 +82,7 @@ public class RobotContainer {
         return swerveDrive;
     }
 
-    public static ElevatorSubsystem getElevatorSubsystem() {
+    public static Optional<ElevatorSubsystem> getElevatorSubsystem() {
         return elevator;
     }
 
