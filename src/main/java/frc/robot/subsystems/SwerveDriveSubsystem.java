@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -19,9 +21,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.Drive;
+import frc.robot.generated.TunerConstants;
+import frc.robot.utils.swerve.Telemetry;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -31,6 +36,10 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
 
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+
+    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+
+    private final Telemetry logger;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -67,6 +76,10 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
                 this));
 
         register();
+
+        logger = new Telemetry(MaxSpeed);
+
+        registerTelemetry(logger::telemeterize);
     }
 
     Optional<RobotConfig> loadRobotConfig() {
@@ -129,4 +142,7 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
         }
     }
 
+    public Field2d getField() {
+        return logger.getField();
+    }
 }

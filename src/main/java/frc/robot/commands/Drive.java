@@ -1,12 +1,16 @@
 package frc.robot.commands;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.RobotContainer;
@@ -15,7 +19,12 @@ import frc.robot.subsystems.SwerveDriveSubsystem;
 
 public class Drive extends Command {
         private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-        private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
+        private Distance DriveCircumference = Meters
+                        .of(new Translation2d(TunerConstants.kFrontLeftXPos, TunerConstants.kFrontLeftYPos).getNorm())
+                        .times(2 * Math.PI);
+        private double MaxAngularRate = RotationsPerSecond
+                        .of(TunerConstants.kSpeedAt12Volts.times(Seconds.of(1)).div(DriveCircumference).magnitude())
+                        .in(RadiansPerSecond); // 3/4 of a rotation per second
 
         private SwerveRequest idle = new SwerveRequest.Idle();
 
