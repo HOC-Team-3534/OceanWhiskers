@@ -75,8 +75,6 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
                 () -> false,
                 this));
 
-        register();
-
         logger = new Telemetry(MaxSpeed);
 
         registerTelemetry(logger::telemeterize);
