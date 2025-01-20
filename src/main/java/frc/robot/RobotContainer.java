@@ -89,4 +89,8 @@ public class RobotContainer {
     public static CommandXboxController getController1() {
         return controller1;
     }
+
+    public static void photonVisionPeriodic() {
+        photonVision.periodic();
+    }
 }
