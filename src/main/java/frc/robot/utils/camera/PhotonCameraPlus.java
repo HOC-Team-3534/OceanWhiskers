@@ -9,6 +9,8 @@ import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
+import com.ctre.phoenix6.Utils;
+
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
@@ -73,8 +75,7 @@ public class PhotonCameraPlus {
                 var visionMeasurementStdDevs = VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
                 RobotContainer.getSwerveDriveSubsystem().addVisionMeasurement(estmt.estimatedPose.toPose2d(),
-                        estmt.timestampSeconds, visionMeasurementStdDevs);
-
+                        Utils.fpgaToCurrentTime(estmt.timestampSeconds), visionMeasurementStdDevs);
             });
         }
     }

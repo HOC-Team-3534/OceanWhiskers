@@ -32,8 +32,8 @@ public class RobotContainer {
 
     private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
 
-    private static final boolean ELEVATOR_ENABLED = true;
-    private static final boolean ARC_ENABLED = true;
+    private static final boolean ELEVATOR_ENABLED = false;
+    private static final boolean ARC_ENABLED = false;
 
     private static final Optional<ElevatorSubsystem> elevator = ELEVATOR_ENABLED ? Optional.of(new ElevatorSubsystem())
             : Optional.empty();
