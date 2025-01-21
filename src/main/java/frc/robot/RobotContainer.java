@@ -15,6 +15,7 @@ import java.util.Optional;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -48,9 +49,9 @@ public class RobotContainer {
         configureBindings();
 
         autonChooser.setDefaultOption("No Auton", Commands.none());
-        autonChooser.addOption("Drive Forward", Autos.driveForward(Feet.of(3)));
+        autonChooser.addOption("Drive Forward", Autos.driveForward(Feet.of(2)));
 
-        configsTab.add(autonChooser);
+        SmartDashboard.putData(autonChooser);
 
     }
 
