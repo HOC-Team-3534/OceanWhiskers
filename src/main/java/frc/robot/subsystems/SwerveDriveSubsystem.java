@@ -68,8 +68,8 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
                 this::getRobotRelativeSpeeds,
                 this::driveWithSpeeds,
                 new PPHolonomicDriveController(
-                        new PIDConstants(5.0, 0.0, 0.0),
-                        new PIDConstants(5.0, 0.0, 0.0)),
+                        new PIDConstants(0.001, 0.0, 0.0),
+                        new PIDConstants(0.001, 0.0, 0.0)),
                 cfg,
                 // TODO: Would it be easier / possible to just worry about the blue side and then flip everything for red alliance side?
                 () -> false,
