@@ -20,24 +20,29 @@ public final class Autos {
                         .loadField(AprilTagFields.kDefaultField);
         private static final Distance FIELD_LENGTH = Meters.of(aprilTagFieldLayout.getFieldLength());
         private static final Distance FIELD_WIDTH = Meters.of(aprilTagFieldLayout.getFieldWidth());
-        private static final Distance ROBOT_BUMPERS_TO_CENTER = Inches.of(16.0); // TODO: measure and change
+        private static final Distance ROBOT_BUMPERS_TO_CENTER = Inches.of(17.0); // TODO: measure and change
 
         // April Tag Management
         private static final List<AprilTag> sortedTags = aprilTagFieldLayout.getTags().stream()
                         .sorted((t1, t2) -> t1.ID - t2.ID)
                         .toList();
-        private static final List<AprilTag> blueTags = sortedTags.subList(11, 22);
-        private static final List<AprilTag> redTags = sortedTags.subList(0, 12);
+        private static final List<AprilTag> blueReefTags = sortedTags.subList(16, 22);
+        private static final List<AprilTag> redReefTags = sortedTags.subList(5, 11);
+
+        static final PathConstraints CONSTRAINTS = new PathConstraints(MetersPerSecond.of(2.0),
+                        MetersPerSecondPerSecond.of(8.0), RotationsPerSecond.of(1.5),
+                        RotationsPerSecondPerSecond.of(4.5));
 
         // Public Commands
         public static Command driveForward(Distance distance) {
-                var startPose = getPose();
-                var goalPose = new Pose2d(
-                                startPose.getTranslation()
-                                                .plus(new Translation2d(distance.in(Meters), startPose.getRotation())),
-                                startPose.getRotation());
+                return AutoBuilder.followPath(createPath(getPose(), getDriveForwardGoalPose(distance)));
+        }
 
-                return AutoBuilder.followPath(createPath(startPose, goalPose));
+        public static Pose2d getDriveForwardGoalPose(Distance distance) {
+                return new Pose2d(
+                                getPose().getTranslation()
+                                                .plus(new Translation2d(distance.in(Meters), getPose().getRotation())),
+                                getPose().getRotation());
         }
 
         public static Command dtmToHumanPlayerStation() {
@@ -54,18 +59,21 @@ public final class Autos {
                                 .flatMap(Autos::findGoalPoseInFrontOfTag)
                                 .map(goalPose -> {
                                         var endPath = makeStraightPathToGoal(endPathDistance, goalPose);
-                                        var constraints = PathConstraints.unlimitedConstraints(12.0);
-                                        return AutoBuilder.pathfindThenFollowPath(endPath, constraints);
+                                        return AutoBuilder.pathfindThenFollowPath(endPath, CONSTRAINTS);
                                 })
                                 .orElse(Commands.none());
         }
 
+        public static Optional<Pose2d> getDTMtoReefGoalPose() {
+                return findClosestReefID().flatMap(Autos::findGoalPoseInFrontOfTag);
+        }
+
         private static PathPlannerPath createPath(Pose2d... poses) {
                 List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(poses);
-                PathConstraints constraints = PathConstraints.unlimitedConstraints(12.0);
+
                 return new PathPlannerPath(
                                 waypoints,
-                                constraints,
+                                CONSTRAINTS,
                                 null,
                                 new GoalEndState(0.0, poses[poses.length - 1].getRotation()));
         }
@@ -96,9 +104,9 @@ public final class Autos {
                 return getPose().getMeasureY().gt(FIELD_WIDTH.div(2));
         }
 
-        private static List<AprilTag> getAllianceTags() {
+        private static List<AprilTag> getAllianceReefTags() {
                 return DriverStation.getAlliance()
-                                .map(alliance -> alliance.equals(Alliance.Red) ? redTags : blueTags)
+                                .map(alliance -> alliance.equals(Alliance.Red) ? redReefTags : blueReefTags)
                                 .orElse(List.of());
         }
 
@@ -134,7 +142,7 @@ public final class Autos {
                 if (!isRobotOnOurSide()) {
                         return Optional.empty();
                 }
-                return Optional.of(getAllianceTags().stream()
+                return Optional.of(getAllianceReefTags().stream()
                                 .min((t1, t2) -> (int) Math.round(
                                                 findDistanceFromRobot(t1.pose)
                                                                 .minus(findDistanceFromRobot(t2.pose))
