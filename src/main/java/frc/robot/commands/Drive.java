@@ -37,8 +37,8 @@ public class Drive extends Command {
         private final SwerveDriveSubsystem swerveDrive;
         private final CommandXboxController controller1;
 
-        public Drive() {
-                swerveDrive = RobotContainer.getSwerveDriveSubsystem();
+        public Drive(SwerveDriveSubsystem swerveDrive) {
+                this.swerveDrive = swerveDrive;
                 controller1 = RobotContainer.getController1();
                 addRequirements(swerveDrive);
         }

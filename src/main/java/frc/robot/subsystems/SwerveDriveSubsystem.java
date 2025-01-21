@@ -58,7 +58,7 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
             SwerveModuleConstants<?, ?, ?>... modules) {
         // TODO: Does there need to be custom odometry standard devs and custom vision standard devs matrices?
         super(TalonFX::new, TalonFX::new, CANcoder::new, drivetrainConstants, modules);
-        setDefaultCommand(new Drive());
+        setDefaultCommand(new Drive(this));
 
         var config = loadRobotConfig();
 
