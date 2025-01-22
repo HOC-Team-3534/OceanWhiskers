@@ -39,16 +39,16 @@ public class PhotonVisionSubsystem extends SubsystemBase {
 
     PhotonCameraPlus fl_camera = new PhotonCameraPlus("fl_camera", fl_robotToCamera);
     PhotonCameraPlus fr_camera = new PhotonCameraPlus("fr_camera", fr_robotToCamera);
-    //PhotonCameraPlus rl_camera = new PhotonCameraPlus("rl_camera", rl_robotToCamera);
-    //PhotonCameraPlus rr_camera = new PhotonCameraPlus("rr_camera", rr_robotToCamera);
+    PhotonCameraPlus rl_camera = new PhotonCameraPlus("rl_camera", rl_robotToCamera);
+    PhotonCameraPlus rr_camera = new PhotonCameraPlus("rr_camera", rr_robotToCamera);
 
     @Override
     public void periodic() {
         // See https://github.com/Team254/FRC-2024-Public/blob/040f653744c9b18182be5f6bc51a7e505e346e59/src/main/java/com/team254/frc2024/subsystems/vision/VisionSubsystem.java#L382C7-L401C14 for conditional stddev example from 2024 from frc team 254 cheezy poofs
         fl_camera.update();
         fr_camera.update();
-        //rl_camera.update();
-        //rr_camera.update();
+        rl_camera.update();
+        rr_camera.update();
     }
 
     private static Transform3d calcRobotToCam(Translation2d xy, Distance height, Rotation3d rot) {
