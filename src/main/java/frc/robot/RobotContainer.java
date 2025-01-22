@@ -68,6 +68,9 @@ public class RobotContainer {
             controller1.leftTrigger(0.25).whileTrue(a.extake());
         });
 
+        controller1.a().whileTrue(Commands.deferredProxy(() -> Autos.dtmToReef()));
+        controller1.b().whileTrue(Commands.deferredProxy(() -> Autos.dtmToHumanPlayerStation()));
+
         controller1.povDown()
                 .whileTrue(new CharacterizeDrive(swerveDrive, Volts.per(Second).ofNative(1), Seconds.of(4.0)));
 

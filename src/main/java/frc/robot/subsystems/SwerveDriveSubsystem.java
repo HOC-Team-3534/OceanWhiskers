@@ -12,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -41,6 +42,8 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
 
     private final Telemetry logger;
 
+    private boolean warmedUp;
+
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      * <p>
@@ -68,8 +71,8 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
                 this::getRobotRelativeSpeeds,
                 this::driveWithSpeeds,
                 new PPHolonomicDriveController(
-                        new PIDConstants(0.001, 0.0, 0.0),
-                        new PIDConstants(0.001, 0.0, 0.0)),
+                        new PIDConstants(3.0, 0.0, 0.0),
+                        new PIDConstants(3.0, 0.0, 0.0)),
                 cfg,
                 // TODO: Would it be easier / possible to just worry about the blue side and then flip everything for red alliance side?
                 () -> false,
@@ -115,6 +118,11 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
     @Override
     public void periodic() {
         keepOperatorPerspectiveUpdated();
+        if (!warmedUp) {
+            var warmup = FollowPathCommand.warmupCommand();
+            warmup.schedule();
+            warmedUp = true;
+        }
     }
 
     /**
