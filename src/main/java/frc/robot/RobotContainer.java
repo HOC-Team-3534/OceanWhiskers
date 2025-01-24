@@ -26,6 +26,7 @@ import frc.robot.subsystems.ArcSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.TusksSubsystem;
 
 public class RobotContainer {
     private static final CommandXboxController controller1 = new CommandXboxController(0);
@@ -36,10 +37,14 @@ public class RobotContainer {
     private static final boolean ELEVATOR_ENABLED = false;
     private static final boolean ARC_ENABLED = false;
 
+    private static final boolean TUSKS_ENABLED = false;
+
     private static final Optional<ElevatorSubsystem> elevator = ELEVATOR_ENABLED ? Optional.of(new ElevatorSubsystem())
             : Optional.empty();
     private static final Optional<ArcSubsystem> arc = ARC_ENABLED ? Optional.of(new ArcSubsystem()) : Optional.empty();
     @SuppressWarnings("unused")
+    private static final Optional<TusksSubsystem> tusks = TUSKS_ENABLED ? Optional.of(new TusksSubsystem())
+            : Optional.empty();
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
     private final SendableChooser<Command> autonChooser = new SendableChooser<>();
@@ -66,6 +71,10 @@ public class RobotContainer {
         arc.ifPresent(a -> {
             controller1.rightTrigger(0.25).whileTrue(a.intake());
             controller1.leftTrigger(0.25).whileTrue(a.extake());
+        });
+
+        tusks.ifPresent(t -> {
+            controller2.leftStick().onTrue(t.deploy());
         });
 
         controller1.a().whileTrue(Commands.deferredProxy(() -> Autos.dtmToReef()));

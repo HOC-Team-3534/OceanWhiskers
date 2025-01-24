@@ -112,19 +112,19 @@ public class TusksSubsystem extends SubsystemBase {
 
     }
 
-    Command off() {
+    public Command off() {
         return run(() -> tusks.set(ControlMode.PercentOutput, 0));
     }
 
-    Command up() {
+    public Command up() {
         return run(() -> setAngle(Degrees.of(90)));
     }
 
-    Command pickup() {
+    public Command pickup() {
         return run(() -> setAngle(Degrees.of(20)));
     }
 
-    Command deploy() {
+    public Command deploy() {
         return run(() -> setAngle(Degrees.of(-30))).until(() -> !state.isOnLeft() && !state.isOnRight());
     }
 
