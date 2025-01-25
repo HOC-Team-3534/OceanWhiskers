@@ -62,10 +62,10 @@ public class RobotContainer {
 
     private void configureBindings() {
         elevator.ifPresent(e -> {
-            controller2.a().whileTrue(e.raiseToHeight(Inches.of(10)));
-            controller2.b().whileTrue(e.raiseToHeight(Inches.of(20)));
-            controller2.x().whileTrue(e.raiseToHeight(Inches.of(30)));
-            controller2.y().whileTrue(e.raiseToHeight(Inches.of(40)));
+            controller2.a().whileTrue(e.l1());
+            controller2.b().whileTrue(e.l2());
+            controller2.x().whileTrue(e.l3());
+            controller2.y().whileTrue(e.l4());
         });
 
         arc.ifPresent(a -> {
