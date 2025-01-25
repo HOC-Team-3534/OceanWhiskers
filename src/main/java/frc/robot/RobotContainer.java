@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.Autos;
 import frc.robot.commands.CharacterizeDrive;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.ArcSubsystem;
+import frc.robot.subsystems.JawsSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
@@ -35,13 +35,14 @@ public class RobotContainer {
     private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
 
     private static final boolean ELEVATOR_ENABLED = false;
-    private static final boolean ARC_ENABLED = false;
+    private static final boolean JAWS_ENABLED = false;
 
     private static final boolean TUSKS_ENABLED = false;
 
     private static final Optional<ElevatorSubsystem> elevator = ELEVATOR_ENABLED ? Optional.of(new ElevatorSubsystem())
             : Optional.empty();
-    private static final Optional<ArcSubsystem> arc = ARC_ENABLED ? Optional.of(new ArcSubsystem()) : Optional.empty();
+    private static final Optional<JawsSubsystem> jaws = JAWS_ENABLED ? Optional.of(new JawsSubsystem())
+            : Optional.empty();
     @SuppressWarnings("unused")
     private static final Optional<TusksSubsystem> tusks = TUSKS_ENABLED ? Optional.of(new TusksSubsystem())
             : Optional.empty();
@@ -68,7 +69,7 @@ public class RobotContainer {
             controller2.y().whileTrue(e.l4());
         });
 
-        arc.ifPresent(a -> {
+        jaws.ifPresent(a -> {
             controller1.rightTrigger(0.25).whileTrue(a.intake());
             controller1.leftTrigger(0.25).whileTrue(a.extake());
         });
