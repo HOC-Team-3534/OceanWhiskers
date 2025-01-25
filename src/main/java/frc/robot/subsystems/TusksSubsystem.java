@@ -5,6 +5,9 @@ import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.Volts;
+
+import java.util.function.Supplier;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
@@ -13,10 +16,16 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -32,6 +41,10 @@ public class TusksSubsystem extends SubsystemBase {
     final double TICKS_PER_REV = 4096.0;
 
     final State state = new State();
+    @SuppressWarnings("unused")
+    private final Telemetry telemetry = new Telemetry(this);
+
+    private final boolean DISABLE_MOTION_MAGIC = true;
 
     public TusksSubsystem() {
         super();
@@ -107,13 +120,19 @@ public class TusksSubsystem extends SubsystemBase {
 
     void setAngle(Angle angle) {
         var ticks = fromAngle(angle);
-        tusks.set(ControlMode.MotionMagic, ticks, DemandType.ArbitraryFeedForward,
-                getCurrantFF().calculate(getAngle().in(Radians), getVelocity().in(RadiansPerSecond)));
-
+        if (!DISABLE_MOTION_MAGIC)
+            tusks.set(ControlMode.MotionMagic, ticks, DemandType.ArbitraryFeedForward,
+                    getCurrantFF().calculate(getAngle().in(Radians), getVelocity().in(RadiansPerSecond)));
+        else
+            setVoltageZero();
     }
 
     public Command off() {
-        return run(() -> tusks.set(ControlMode.PercentOutput, 0));
+        return run(() -> setVoltageZero());
+    }
+
+    void setVoltageZero() {
+        tusks.set(ControlMode.PercentOutput, 0);
     }
 
     public Command up() {
@@ -126,6 +145,10 @@ public class TusksSubsystem extends SubsystemBase {
 
     public Command deploy() {
         return run(() -> setAngle(Degrees.of(-30))).until(() -> !state.isOnLeft() && !state.isOnRight());
+    }
+
+    Command voltageOut(Supplier<Voltage> voltsSupplier) {
+        return run(() -> tusks.set(ControlMode.PercentOutput, voltsSupplier.get().in(Volts) / tusks.getBusVoltage()));
     }
 
     public class State {
@@ -157,5 +180,28 @@ public class TusksSubsystem extends SubsystemBase {
         Timer getiTimer() {
             return angleDownTimer;
         }
+    }
+
+    public class Telemetry {
+        final ShuffleboardLayout tusksCommands = Shuffleboard.getTab("Commands").getLayout("Tusks",
+                BuiltInLayouts.kList);
+
+        final ShuffleboardLayout tusksStats = Shuffleboard.getTab("Commands").getLayout("Tusks Stats",
+                BuiltInLayouts.kList);
+
+        final GenericEntry voltageOutEntry = tusksCommands.add("Raw Voltage Out", 0.0)
+                .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
+
+        Telemetry(TusksSubsystem tusks) {
+            tusksCommands.add("Pickup", pickup());
+            tusksCommands.add("Deploy", deploy());
+
+            tusksCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
+
+            tusksStats.addDouble("Angle (Deg)", () -> getAngle().in(Degrees));
+            tusksStats.addDouble("Raw Ticks", tusks.tusks::getSelectedSensorPosition);
+            tusksStats.addDouble("Output Voltage", tusks.tusks::getMotorOutputVoltage);
+        }
+
     }
 }
