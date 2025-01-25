@@ -23,6 +23,9 @@ public class JawsSubsystem extends SubsystemBase {
 
     private final State state = new State();
 
+    @SuppressWarnings("unused")
+    private final Telemetry telemetry = new Telemetry(this);
+
     public JawsSubsystem() {
         super();
 
