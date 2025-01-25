@@ -1,0 +1,29 @@
+{
+  "NetworkTables Settings": {
+    "dsClient": false,
+    "mode": "Client (NT4)",
+    "serverTeam": "3534"
+  },
+  "transitory": {
+    "SmartDashboard": {
+      "Field": {
+        "double[]##v_/SmartDashboard/Field/Robot": {
+          "open": true
+        },
+        "open": true
+      },
+      "open": true
+    },
+    "photonvision": {
+      "fl_camera": {
+        "Transform3d##v_/photonvision/fl_camera/targetPose": {
+          "Translation3d##v_translation": {
+            "open": true
+          },
+          "open": true
+        },
+        "open": true
+      }
+    }
+  }
+}

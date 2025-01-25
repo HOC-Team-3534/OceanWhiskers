@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.MetersPerSecond;
+
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -10,6 +12,7 @@ import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -19,9 +22,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.Drive;
+import frc.robot.generated.TunerConstants;
+import frc.robot.utils.swerve.Telemetry;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -31,6 +37,12 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
 
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
+
+    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+
+    private final Telemetry logger;
+
+    private boolean warmedUp;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -49,7 +61,7 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
             SwerveModuleConstants<?, ?, ?>... modules) {
         // TODO: Does there need to be custom odometry standard devs and custom vision standard devs matrices?
         super(TalonFX::new, TalonFX::new, CANcoder::new, drivetrainConstants, modules);
-        setDefaultCommand(new Drive());
+        setDefaultCommand(new Drive(this));
 
         var config = loadRobotConfig();
 
@@ -59,14 +71,16 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
                 this::getRobotRelativeSpeeds,
                 this::driveWithSpeeds,
                 new PPHolonomicDriveController(
-                        new PIDConstants(5.0, 0.0, 0.0),
-                        new PIDConstants(5.0, 0.0, 0.0)),
+                        new PIDConstants(3.0, 0.0, 0.0),
+                        new PIDConstants(3.0, 0.0, 0.0)),
                 cfg,
                 // TODO: Would it be easier / possible to just worry about the blue side and then flip everything for red alliance side?
                 () -> false,
                 this));
 
-        register();
+        logger = new Telemetry(MaxSpeed);
+
+        registerTelemetry(logger::telemeterize);
     }
 
     Optional<RobotConfig> loadRobotConfig() {
@@ -104,6 +118,11 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
     @Override
     public void periodic() {
         keepOperatorPerspectiveUpdated();
+        if (!warmedUp) {
+            var warmup = FollowPathCommand.warmupCommand();
+            warmup.schedule();
+            warmedUp = true;
+        }
     }
 
     /**
@@ -129,4 +148,7 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
         }
     }
 
+    public Field2d getField() {
+        return logger.getField();
+    }
 }
