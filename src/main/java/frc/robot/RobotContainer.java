@@ -113,7 +113,7 @@ public class RobotContainer {
                 var targetHeight = e.getState().getSelectedTargetHeight();
 
                 commander.command = Commands.parallel(t.deploy(getTusksStartDeploying),
-                        e.raiseToHeight(targetHeight, getElevatorMoveToDeploy));
+                        e.raiseToHeight(targetHeight, getElevatorMoveToDeploy)).until(() -> !t.getState().hasCoral());
             });
         });
 

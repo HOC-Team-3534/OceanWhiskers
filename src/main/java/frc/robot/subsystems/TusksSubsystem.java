@@ -157,11 +157,15 @@ public class TusksSubsystem extends SubsystemBase {
             else
                 setAngle(Degrees.of(90));
         }, () -> state.notDeploying())
-                .until(() -> state.isDeploying() && !state.isOnLeft() && !state.isOnRight());
+                .until(() -> !state.hasCoral());
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {
         return run(() -> tusks.set(ControlMode.PercentOutput, voltsSupplier.get().in(Volts) / tusks.getBusVoltage()));
+    }
+
+    public State getState() {
+        return state;
     }
 
     public class State {
@@ -193,6 +197,10 @@ public class TusksSubsystem extends SubsystemBase {
 
         boolean isOnRight() {
             return hasCoralOnRight;
+        }
+
+        public boolean hasCoral() {
+            return hasCoralOnLeft || hasCoralOnRight;
         }
 
         void setLeft() {
