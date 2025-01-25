@@ -9,6 +9,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -33,17 +37,16 @@ public class JawsSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        var powerDraw = Amps.of(jaws.getStatorCurrent()).times(Volts.of(jaws.getMotorOutputVoltage()));
-        if (powerDraw.gt(INTAKE_POWER_LIMIT)) {
+        if (getMotorOutputPower().gt(INTAKE_POWER_LIMIT)) {
             state.grabbedBall();
         }
     }
 
-    public Command intake() {
+    public Command grab() {
         return runEnd(() -> setVoltageOut(Volts.of(7)), this::zero);
     }
 
-    public Command extake() {
+    public Command realese() {
         return runEnd(() -> setVoltageOut(Volts.of(-7)), () -> {
             zero();
             state.releasedBall();
@@ -56,6 +59,10 @@ public class JawsSubsystem extends SubsystemBase {
 
     private void zero() {
         setVoltageOut(Volts.zero());
+    }
+
+    Power getMotorOutputPower() {
+        return Amps.of(jaws.getStatorCurrent()).times(Volts.of(jaws.getMotorOutputVoltage()));
     }
 
     public class State {
@@ -71,6 +78,23 @@ public class JawsSubsystem extends SubsystemBase {
 
         public void releasedBall() {
             holdingBall = false;
+        }
+    }
+
+    public class Telemetry {
+        final ShuffleboardLayout jawsCommands = Shuffleboard.getTab("Commands").getLayout("Jaws Stats",
+                BuiltInLayouts.kList);
+        final ShuffleboardLayout jawsStats = Shuffleboard.getTab("Commands").getLayout("Jaws Stats",
+                BuiltInLayouts.kList);
+
+        Telemetry(JawsSubsystem jaws) {
+            jawsCommands.add("Grab", grab());
+            jawsCommands.add("Realese", realese());
+
+            jawsStats.addDouble("Motor Output Power", () -> jaws.getMotorOutputPower().in(Watts))
+                    .withWidget(BuiltInWidgets.kGraph);
+            jawsStats.addBoolean("Holding Ball", () -> jaws.state.isHoldingBall());
+            jawsStats.addDouble("Motor Output Voltage", () -> jaws.jaws.getMotorOutputVoltage());
         }
     }
 }
