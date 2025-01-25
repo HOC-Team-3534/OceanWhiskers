@@ -42,6 +42,8 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     private final State state = new State();
 
+    private final Distance DEPLOY_RAISE_HEIGHT = Inches.of(5.0);
+
     @SuppressWarnings("unused")
     private final Telemetry telemetry = new Telemetry(this);
 
@@ -85,8 +87,12 @@ public class ElevatorSubsystem extends SubsystemBase {
         setDefaultCommand(powerDownwardsToZero());
     }
 
-    Command raiseToHeight(Distance targetHeight) {
-        return runEnd(() -> setHeight(targetHeight), this::setVoltageOutToZero);
+    public Command raiseToHeight(TargetHeight targetHeight) {
+        return raiseToHeight(targetHeight, () -> false);
+    }
+
+    public Command raiseToHeight(TargetHeight targetHeight, Supplier<Boolean> deploy) {
+        return runEnd(() -> setHeight(targetHeight, deploy), this::setVoltageOutToZero);
     }
 
     Command cutPower() {
@@ -95,31 +101,50 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     Command powerDownwardsToZero() {
         return runEnd(() -> {
-            if (isAtBottomOfTravel() || state.isClimbing())
+            state.notDeploying();
+            state.setTargetHeight(TargetHeight.Bottom);
+            if (state.isNearTargetHeight() || state.isClimbing())
                 setVoltageOutToZero();
             else
-                setHeight(Inches.of(0));
+                setHeight(TargetHeight.Bottom);
         }, this::setVoltageOutToZero);
+
     }
 
     public Command l1() {
-        return raiseToHeight(Inches.of(10.0));
+        return l1(() -> false);
+    }
+
+    public Command l1(Supplier<Boolean> deploy) {
+        return raiseToHeight(TargetHeight.L1, deploy);
     }
 
     public Command l2() {
-        return raiseToHeight(Inches.of(20.0));
+        return l2(() -> false);
+    }
+
+    public Command l2(Supplier<Boolean> deploy) {
+        return raiseToHeight(TargetHeight.L2, deploy);
     }
 
     public Command l3() {
-        return raiseToHeight(Inches.of(30.0));
+        return l3(() -> false);
+    }
+
+    public Command l3(Supplier<Boolean> deploy) {
+        return raiseToHeight(TargetHeight.L3, deploy);
     }
 
     public Command l4() {
-        return raiseToHeight(Inches.of(40.0));
+        return l4(() -> false);
+    }
+
+    public Command l4(Supplier<Boolean> deploy) {
+        return raiseToHeight(TargetHeight.L4, deploy);
     }
 
     public Command pickUp() {
-        return raiseToHeight(Inches.of(15.0));
+        return raiseToHeight(TargetHeight.PickUp);
     }
 
     Command voltageOut(Supplier<Voltage> volts) {
@@ -146,12 +171,14 @@ public class ElevatorSubsystem extends SubsystemBase {
         return InchesPerSecond.of(rotationsPerSecond * inchesPerRotation);
     }
 
-    public boolean isAtBottomOfTravel() {
-        return getHeight().isNear(Inches.of(0), Inches.of(1));
+    public void setHeight(TargetHeight targetHeight) {
+        setHeight(targetHeight, () -> false);
     }
 
-    public void setHeight(Distance height) {
-        var targetPosition = fromHeight(height);
+    public void setHeight(TargetHeight targetHeight, Supplier<Boolean> deploy) {
+        state.setTargetHeight(targetHeight, deploy);
+        var targetPosition = fromHeight(state.getTargetHeight());
+
         if (targetPosition.gt(MAX_HEIGHT_ANGLE))
             targetPosition = MAX_HEIGHT_ANGLE;
         if (targetPosition.lt(Rotations.of(0)))
@@ -170,11 +197,74 @@ public class ElevatorSubsystem extends SubsystemBase {
         return state;
     }
 
+    enum TargetHeight {
+        Bottom(Inches.of(0.0)),
+        L1(Inches.of(10.0)),
+        L2(Inches.of(20.0)),
+        L3(Inches.of(30.0)),
+        L4(Inches.of(40.0)),
+        PickUp(Inches.of(15.0));
+
+        final Distance height;
+
+        TargetHeight(Distance height) {
+            this.height = height;
+        }
+
+        Distance getHeight() {
+            return height;
+        }
+    }
+
     public class State {
         private boolean climbing;
+        private TargetHeight targetHeight = TargetHeight.Bottom;
+        private boolean deploying;
 
         public boolean isClimbing() {
             return climbing;
+        }
+
+        void setTargetHeight(TargetHeight targetHeight) {
+            setTargetHeight(targetHeight, () -> false);
+        }
+
+        void setTargetHeight(TargetHeight targetHeight, Supplier<Boolean> deploy) {
+            this.targetHeight = targetHeight;
+
+            if (deploy.get()) {
+                this.deploying = true;
+            }
+        }
+
+        boolean isDeploying() {
+            return deploying;
+        }
+
+        void notDeploying() {
+            deploying = false;
+        }
+
+        public TargetHeight getSelectedTargetHeight() {
+            return targetHeight;
+        }
+
+        public boolean isReefTargetHeight() {
+            switch (targetHeight) {
+                case L1, L2, L3, L4:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        Distance getTargetHeight() {
+            return targetHeight.getHeight().plus(deploying ? DEPLOY_RAISE_HEIGHT : Inches.zero());
+        }
+
+        public boolean isNearTargetHeight() {
+            return getHeight().isNear(getTargetHeight(),
+                    Inches.of(1.0));
         }
     }
 
@@ -198,6 +288,10 @@ public class ElevatorSubsystem extends SubsystemBase {
 
             elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
             elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
+            elevatorStats.addDouble("Target Height (In.)",
+                    () -> elevator.state.getTargetHeight().in(Inches));
+            elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
+            elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
             elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
         }
     }

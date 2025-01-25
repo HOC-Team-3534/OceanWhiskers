@@ -106,7 +106,7 @@ public class TusksSubsystem extends SubsystemBase {
         return Rotations.of(ticks / TICKS_PER_REV).div(GEAR_RATIO);
     }
 
-    Angle getAngle() {
+    public Angle getAngle() {
         return toAngle(tusks.getSelectedSensorPosition());
     }
 
@@ -144,7 +144,20 @@ public class TusksSubsystem extends SubsystemBase {
     }
 
     public Command deploy() {
-        return run(() -> setAngle(Degrees.of(-30))).until(() -> !state.isOnLeft() && !state.isOnRight());
+        return deploy(() -> true);
+    }
+
+    public Command deploy(Supplier<Boolean> deploy) {
+        return runEnd(() -> {
+            if (deploy.get())
+                state.setDeploying(true);
+
+            if (state.isDeploying())
+                setAngle(Degrees.of(-30));
+            else
+                setAngle(Degrees.of(90));
+        }, () -> state.notDeploying())
+                .until(() -> state.isDeploying() && !state.isOnLeft() && !state.isOnRight());
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {
@@ -155,10 +168,23 @@ public class TusksSubsystem extends SubsystemBase {
         boolean hasCoralOnLeft;
         boolean hasCoralOnRight;
         Timer angleDownTimer = new Timer();
+        boolean deploying;
 
         void reset() {
             hasCoralOnLeft = false;
             hasCoralOnRight = false;
+        }
+
+        boolean isDeploying() {
+            return deploying;
+        }
+
+        void setDeploying(boolean deploying) {
+            this.deploying = deploying;
+        }
+
+        void notDeploying() {
+            deploying = false;
         }
 
         boolean isOnLeft() {
@@ -201,6 +227,7 @@ public class TusksSubsystem extends SubsystemBase {
             tusksStats.addDouble("Angle (Deg)", () -> getAngle().in(Degrees));
             tusksStats.addDouble("Raw Ticks", tusks.tusks::getSelectedSensorPosition);
             tusksStats.addDouble("Output Voltage", tusks.tusks::getMotorOutputVoltage);
+            tusksStats.addBoolean("Deploying", tusks.state::isDeploying);
         }
 
     }
