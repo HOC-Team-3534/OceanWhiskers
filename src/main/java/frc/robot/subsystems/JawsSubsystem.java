@@ -1,24 +1,25 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
 
-import com.ctre.phoenix6.controls.VoltageOut;
-import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class ArcSubsystem extends SubsystemBase {
-    private final TalonFX arc = new TalonFX(16);
+public class JawsSubsystem extends SubsystemBase {
+    private final TalonSRX jaws = new TalonSRX(16);
 
     private final Power INTAKE_POWER_LIMIT = Watts.of(5.0);//TODO: tune power limit
 
     private final State state = new State();
 
-    public ArcSubsystem() {
+    public JawsSubsystem() {
         super();
 
         setDefaultCommand(runEnd(() -> {
@@ -32,7 +33,7 @@ public class ArcSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        var powerDraw = arc.getStatorCurrent().getValue().times(arc.getMotorVoltage().getValue());
+        var powerDraw = Amps.of(jaws.getStatorCurrent()).times(Volts.of(jaws.getMotorOutputVoltage()));
         if (powerDraw.gt(INTAKE_POWER_LIMIT)) {
             state.grabbedBall();
         }
@@ -50,7 +51,7 @@ public class ArcSubsystem extends SubsystemBase {
     }
 
     private void setVoltageOut(Voltage volts) {
-        arc.setControl(new VoltageOut(volts));
+        jaws.set(ControlMode.PercentOutput, volts.in(Volts) / jaws.getBusVoltage());
     }
 
     private void zero() {
