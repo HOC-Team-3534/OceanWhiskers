@@ -13,8 +13,10 @@ import static edu.wpi.first.units.Units.Volts;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -50,7 +52,8 @@ public class RobotContainer {
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
     private final SendableChooser<Command> autonChooser = new SendableChooser<>();
-    private final ShuffleboardTab configsTab = Shuffleboard.getTab("Configs");
+
+    private final Field2d goalPoseField = new Field2d();
 
     public RobotContainer() {
         configureBindings();
@@ -60,6 +63,7 @@ public class RobotContainer {
 
         SmartDashboard.putData(autonChooser);
 
+        Shuffleboard.getTab("Testing").add(goalPoseField).withWidget(BuiltInWidgets.kField);
     }
 
     private void configureBindings() {
@@ -95,6 +99,10 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         controller1.leftBumper().onTrue(swerveDrive.runOnce(() -> swerveDrive.seedFieldCentric()));
+    }
+
+    public void updateGoalPoseField() {
+        goalPoseField.setRobotPose(Autos.getDTMtoReefStartPose().orElse(new Pose2d()));
     }
 
     class CommandWrapper {

@@ -29,10 +29,6 @@ public final class Autos {
         private static final List<AprilTag> blueReefTags = sortedTags.subList(16, 22);
         private static final List<AprilTag> redReefTags = sortedTags.subList(5, 11);
 
-        static final PathConstraints SLOW_CONSTRAINTS = new PathConstraints(MetersPerSecond.of(1.0),
-                        MetersPerSecondPerSecond.of(1.0), RotationsPerSecond.of(1.5),
-                        RotationsPerSecondPerSecond.of(4.5));
-
         static final PathConstraints CONSTRAINTS = new PathConstraints(MetersPerSecond.of(3.0),
                         MetersPerSecondPerSecond.of(4.0), RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
@@ -59,7 +55,8 @@ public final class Autos {
 
         private static Optional<Rotation2d> getRobotDriveDirection() {
                 var speeds = RobotContainer.getSwerveDriveSubsystem().getState().Speeds;
-                var vector = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+                var vector = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
+                                .rotateBy(getPose().getRotation());
 
                 if (vector.getNorm() < 0.05)
                         return Optional.empty();
@@ -73,12 +70,22 @@ public final class Autos {
                                 .flatMap(Autos::findGoalPoseInFrontOfTag)
                                 .map(goalPose -> {
                                         var startHeading = getRobotDriveDirection()
-                                                        .orElse(goalPose.minus(getPose()).getTranslation().getAngle());
+                                                        .orElse(goalPose.getTranslation()
+                                                                        .minus(getPose().getTranslation()).getAngle());
+
                                         var startPose = new Pose2d(getPose().getTranslation(), startHeading);
                                         var path = createPath(startPose, goalPose);
                                         return AutoBuilder.followPath(path);
                                 })
                                 .orElse(Commands.none());
+        }
+
+        public static Optional<Pose2d> getDTMtoReefStartPose() {
+                return getDTMtoReefGoalPose().map(goalPose -> {
+                        var startHeading = getRobotDriveDirection()
+                                        .orElse(goalPose.getTranslation().minus(getPose().getTranslation()).getAngle());
+                        return new Pose2d(getPose().getTranslation(), startHeading);
+                });
         }
 
         public static Optional<Pose2d> getDTMtoReefGoalPose() {
@@ -88,24 +95,20 @@ public final class Autos {
         private static PathPlannerPath createPath(Pose2d... poses) {
                 List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(poses);
 
+                var endSlowContraints = new PathConstraints(MetersPerSecond.of(1.0),
+                                MetersPerSecondPerSecond.of(1.0), RotationsPerSecond.of(1.5),
+                                RotationsPerSecondPerSecond.of(4.5));
+
                 return new PathPlannerPath(
                                 waypoints,
                                 Collections.emptyList(),
                                 Collections.emptyList(),
                                 List.of(new ConstraintsZone(((double) (poses.length - 1)) - 0.2, poses.length - 1,
-                                                SLOW_CONSTRAINTS)),
+                                                endSlowContraints)),
                                 Collections.emptyList(),
                                 CONSTRAINTS,
                                 null,
                                 new GoalEndState(0.0, poses[poses.length - 1].getRotation()), false);
-        }
-
-        private static PathPlannerPath makeStraightPathToGoal(Distance distance, Pose2d goalPose) {
-                var startPose = new Pose2d(
-                                goalPose.getTranslation()
-                                                .minus(new Translation2d(distance.in(Meters), goalPose.getRotation())),
-                                goalPose.getRotation());
-                return createPath(startPose, goalPose);
         }
 
         // Position and Alliance Helpers
