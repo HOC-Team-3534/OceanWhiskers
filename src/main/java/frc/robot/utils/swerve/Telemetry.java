@@ -2,6 +2,7 @@ package frc.robot.utils.swerve;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -22,6 +23,18 @@ public class Telemetry {
         public Telemetry(double maxSpeed) {
                 MaxSpeed = maxSpeed;
                 SmartDashboard.putData("Field", m_field);
+
+                PathPlannerLogging.setLogCurrentPoseCallback((pose) -> {
+                        m_field.getObject("current").setPose(pose);
+                });
+
+                PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
+                        m_field.getObject("target").setPose(pose);
+                });
+
+                PathPlannerLogging.setLogActivePathCallback((activePath) -> {
+                        m_field.getObject("traj").setPoses(activePath);
+                });
         }
 
         /* What to publish over networktables for telemetry */
