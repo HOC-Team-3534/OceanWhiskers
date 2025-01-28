@@ -284,6 +284,8 @@ public class ElevatorSubsystem extends SubsystemBase {
             elevatorCommands.add("L3", l3());
             elevatorCommands.add("L4", l4());
 
+            elevatorCommands.add("Pick Up", pickUp());
+
             elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
 
             elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
