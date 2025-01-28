@@ -1,5 +1,8 @@
 package frc.robot.utils.swerve;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
 import com.pathplanner.lib.util.PathPlannerLogging;
@@ -14,6 +17,9 @@ import edu.wpi.first.wpilibj.util.Color8Bit;
 public class Telemetry {
         private final double MaxSpeed;
 
+        private List<Pose2d> activePath = new ArrayList<>();
+        private List<Pose2d> robotPoses = new ArrayList<>();
+
         /**
          * Construct a telemetry object, with the specified max speed of the robot
          * 
@@ -26,6 +32,10 @@ public class Telemetry {
 
                 PathPlannerLogging.setLogCurrentPoseCallback((pose) -> {
                         m_field.getObject("current").setPose(pose);
+                        if (activePath.size() > 0) {
+                                this.robotPoses.add(pose);
+                                m_field.getObject("pastPoses").setPoses(robotPoses);
+                        }
                 });
 
                 PathPlannerLogging.setLogTargetPoseCallback((pose) -> {
@@ -33,7 +43,11 @@ public class Telemetry {
                 });
 
                 PathPlannerLogging.setLogActivePathCallback((activePath) -> {
-                        m_field.getObject("traj").setPoses(activePath);
+                        this.activePath = activePath;
+                        if (activePath.size() > 0) {
+                                this.robotPoses = new ArrayList<>();
+                                m_field.getObject("traj").setPoses(activePath);
+                        }
                 });
         }
 
