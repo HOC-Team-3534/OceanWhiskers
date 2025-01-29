@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -31,13 +32,11 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class TusksSubsystem extends SubsystemBase {
     final TalonSRX tusks = new TalonSRX(17);
-    final DigitalInput leftSwitch = new DigitalInput(1);
-    final DigitalInput rightSwitch = new DigitalInput(2);
 
     final ArmFeedforward ff_noCoral = new ArmFeedforward(0, 0, 0);
     final ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0.0);
 
-    final double GEAR_RATIO = 45.0 / 1.0; // 45 rotations of motor is 1 rotation of tusk
+    final double GEAR_RATIO = 100.0 / 1.0; // 100 rotations of motor is 1 rotation of tusk
     final double TICKS_PER_REV = 4096.0;
 
     final State state = new State();
@@ -75,26 +74,15 @@ public class TusksSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (leftSwitch.get()) {
-            state.setLeft();
+        if (!state.hasCoral() //has no coral
+                && getVelocity().lt(DegreesPerSecond.zero()) //tusks are moving down despite the motor moving up
+                && getError().gt(Degrees.of(5))) { // tusks are far below target angle
+            state.setHasCoral(true);// 
         }
 
-        if (rightSwitch.get()) {
-            state.setRight();
+        if (getAngle().lt(Degrees.of(-15))) {
+            state.setHasCoral(false);
         }
-
-        if (getAngle().lt(Degrees.zero()) && !leftSwitch.get() && !rightSwitch.get()) {
-            if (!state.getiTimer().isRunning())
-                state.getiTimer().restart();
-        } else {
-            state.getiTimer().stop();
-
-        }
-
-        if (state.getiTimer().hasElapsed(0.25)) {
-            state.reset();
-        }
-
     }
 
     double fromAngle(Angle angle) {
@@ -114,8 +102,12 @@ public class TusksSubsystem extends SubsystemBase {
         return toAngle(tusks.getSelectedSensorVelocity()).div(Milliseconds.of(100));
     }
 
+    Angle getError() {
+        return toAngle(tusks.getClosedLoopTarget() - tusks.getSelectedSensorPosition());
+    }
+
     ArmFeedforward getCurrantFF() {
-        return (state.isOnLeft() || state.isOnRight()) ? ff_withCoral : ff_noCoral;
+        return (state.hasCoral()) ? ff_withCoral : ff_noCoral;
     }
 
     void setAngle(Angle angle) {
@@ -169,14 +161,16 @@ public class TusksSubsystem extends SubsystemBase {
     }
 
     public class State {
-        boolean hasCoralOnLeft;
-        boolean hasCoralOnRight;
+        boolean hasCoral;
         Timer angleDownTimer = new Timer();
         boolean deploying;
 
-        void reset() {
-            hasCoralOnLeft = false;
-            hasCoralOnRight = false;
+        void setHasCoral(boolean hasCoral) {
+            this.hasCoral = hasCoral;
+        }
+
+        public boolean hasCoral() {
+            return hasCoral;
         }
 
         boolean isDeploying() {
@@ -191,29 +185,6 @@ public class TusksSubsystem extends SubsystemBase {
             deploying = false;
         }
 
-        boolean isOnLeft() {
-            return hasCoralOnLeft;
-        }
-
-        boolean isOnRight() {
-            return hasCoralOnRight;
-        }
-
-        public boolean hasCoral() {
-            return hasCoralOnLeft || hasCoralOnRight;
-        }
-
-        void setLeft() {
-            hasCoralOnLeft = true;
-        }
-
-        void setRight() {
-            hasCoralOnRight = true;
-        }
-
-        Timer getiTimer() {
-            return angleDownTimer;
-        }
     }
 
     public class Telemetry {
