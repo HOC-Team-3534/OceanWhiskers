@@ -41,7 +41,7 @@ public class TunerConstants {
         // output type specified by SwerveModuleConstants.SteerMotorClosedLoopOutput
         private static final Slot0Configs steerGains = new Slot0Configs()
                         .withKP(100).withKI(0).withKD(0.5)
-                        .withKS(0.1).withKV(0).withKA(0)
+            .withKS(0.1).withKV(1.59).withKA(0)
                         .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign);
         // When using closed-loop control, the drive motor uses the control
         // output type specified by SwerveModuleConstants.DriveMotorClosedLoopOutput
@@ -60,27 +60,21 @@ public class TunerConstants {
         private static final SteerMotorArrangement kSteerMotorType = SteerMotorArrangement.TalonFX_Integrated;
 
         // The remote sensor feedback type to use for the steer motors;
-        // When not Pro-licensed, FusedCANcoder/SyncCANcoder automatically fall back to
-        // RemoteCANcoder
+    // When not Pro-licensed, Fused*/Sync* automatically fall back to Remote*
         private static final SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.FusedCANcoder;
 
         // The stator current at which the wheels start to slip;
         // This needs to be tuned to your individual robot
         private static final Current kSlipCurrent = Amps.of(120.0);
 
-        // Initial configs for the drive and steer motors and the azimuth encoder; these
-        // cannot be null.
-        // Some configs will be overwritten; check the `with*InitialConfigs()` API
-        // documentation.
+    // Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
+    // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
         private static final TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration();
         private static final TalonFXConfiguration steerInitialConfigs = new TalonFXConfiguration()
                         .withCurrentLimits(
                                         new CurrentLimitsConfigs()
-                                                        // Swerve azimuth does not require much torque output, so we can
-                                                        // set a
-                                                        // relatively low
-                                                        // stator current limit to help avoid brownouts without
-                                                        // impacting performance.
+                            // Swerve azimuth does not require much torque output, so we can set a relatively low
+                            // stator current limit to help avoid brownouts without impacting performance.
                                                         .withStatorCurrentLimit(Amps.of(60))
                                                         .withStatorCurrentLimitEnable(true));
         private static final CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
