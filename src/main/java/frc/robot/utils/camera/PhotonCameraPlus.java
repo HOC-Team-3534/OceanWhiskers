@@ -36,6 +36,11 @@ public class PhotonCameraPlus {
         HIGH_TAGS.add(5);
         HIGH_TAGS.add(14);
         HIGH_TAGS.add(15);
+
+        HIGH_TAGS.add(1);
+        HIGH_TAGS.add(2);
+        HIGH_TAGS.add(12);
+        HIGH_TAGS.add(13);
     }
 
     public void update() {
@@ -54,8 +59,10 @@ public class PhotonCameraPlus {
                 boolean hasHighUpTags = false;
                 for (var tg : estmt.targetsUsed) {
                     sumTargetArea += tg.getArea();
-                    if (HIGH_TAGS.contains(tg.fiducialId))
+                    if (HIGH_TAGS.contains(tg.fiducialId)) {
                         hasHighUpTags = true;
+                        break;
+                    }
                 }
 
                 var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
