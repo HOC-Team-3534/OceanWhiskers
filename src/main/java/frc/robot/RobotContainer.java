@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.Autos;
 import frc.robot.commands.CharacterizeDrive;
 import frc.robot.generated.TunerConstants;
+import frc.robot.robot_specific.RobotConstants.EnabledSubsystems;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.JawsSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
@@ -37,17 +38,15 @@ public class RobotContainer {
 
     private static final SwerveDriveSubsystem swerveDrive = TunerConstants.createDrivetrain();
 
-    private static final boolean ELEVATOR_ENABLED = false;
-    private static final boolean JAWS_ENABLED = false;
-
-    private static final boolean TUSKS_ENABLED = false;
-
-    private static final Optional<ElevatorSubsystem> elevator = ELEVATOR_ENABLED ? Optional.of(new ElevatorSubsystem())
+    private static final Optional<ElevatorSubsystem> elevator = EnabledSubsystems.ELEVATOR_ENABLED
+            ? Optional.of(new ElevatorSubsystem())
             : Optional.empty();
-    private static final Optional<JawsSubsystem> jaws = JAWS_ENABLED ? Optional.of(new JawsSubsystem())
+    private static final Optional<JawsSubsystem> jaws = EnabledSubsystems.JAWS_ENABLED
+            ? Optional.of(new JawsSubsystem())
             : Optional.empty();
     @SuppressWarnings("unused")
-    private static final Optional<TusksSubsystem> tusks = TUSKS_ENABLED ? Optional.of(new TusksSubsystem())
+    private static final Optional<TusksSubsystem> tusks = EnabledSubsystems.TUSKS_ENABLED
+            ? Optional.of(new TusksSubsystem())
             : Optional.empty();
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
 
