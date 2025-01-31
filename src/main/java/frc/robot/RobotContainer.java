@@ -73,6 +73,9 @@ public class RobotContainer {
             controller2.b().whileTrue(e.l2());
             controller2.x().whileTrue(e.l3());
             controller2.y().whileTrue(e.l4());
+
+            controller2.povUp().whileTrue(e.voltageOut(() -> Volts.of(1.5)));
+            controller2.povDown().whileTrue(e.voltageOut(() -> Volts.of(0.2)));
         });
 
         jaws.ifPresent(a -> {

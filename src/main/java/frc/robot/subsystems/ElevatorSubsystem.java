@@ -11,11 +11,13 @@ import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.FeedbackConfigs;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.SlotConfigs;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.units.measure.Angle;
@@ -26,6 +28,7 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
@@ -37,8 +40,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final TalonFX elevator = new TalonFX(LEADER_ID);
     private final TalonFX follower = new TalonFX(FOLLOWER_ID);
 
-    private final Angle MAX_HEIGHT_ANGLE = Rotations.of(5); // TODO: fix max
-    private final Distance MAX_HEIGHT_LINEAR = Inches.of(53.6); // Checked with Manny. Total travel of elevator
+    private final Angle MAX_HEIGHT_ANGLE = Rotations.of(23.713); // TODO: fix max
+    private final Distance MAX_HEIGHT_LINEAR = Inches.of(54.625); // Checked with Manny. Total travel of elevator
 
     private final State state = new State();
 
@@ -48,6 +51,8 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final Telemetry telemetry = new Telemetry(this);
 
     private final boolean DISABLE_MOTION_MAGIC = true;
+
+    private final VoltageOut voltageOut = new VoltageOut(0);
 
     public ElevatorSubsystem() {
         super();
@@ -84,7 +89,19 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         elevator.getConfigurator().apply(feedbackConfigs);
 
+        var motorOutputConfig = new MotorOutputConfigs();
+
+        motorOutputConfig.Inverted = InvertedValue.Clockwise_Positive;
+
+        elevator.getConfigurator().apply(motorOutputConfig);
+
         setDefaultCommand(powerDownwardsToZero());
+    }
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("Elevator Height", getHeight().in(Inches));
+        SmartDashboard.putNumber("Elevator Voltage", elevator.getMotorVoltage().getValueAsDouble());
     }
 
     public Command raiseToHeight(TargetHeight targetHeight) {
@@ -103,10 +120,18 @@ public class ElevatorSubsystem extends SubsystemBase {
         return runEnd(() -> {
             state.notDeploying();
             state.setTargetHeight(TargetHeight.Bottom);
-            if (state.isNearTargetHeight() || state.isClimbing())
-                setVoltageOutToZero();
-            else
-                setHeight(TargetHeight.Bottom);
+            if (!DISABLE_MOTION_MAGIC) {
+                if (state.isNearTargetHeight() || state.isClimbing())
+                    setVoltageOutToZero();
+                else
+                    setHeight(TargetHeight.Bottom);
+            } else {
+                if (getHeight().lt(Inches.of(2.0))) {
+                    setVoltageOutToZero();
+                } else {
+                    elevator.setControl(voltageOut.withOutput(Volts.of(0.35)));
+                }
+            }
         }, this::setVoltageOutToZero);
 
     }
@@ -147,8 +172,15 @@ public class ElevatorSubsystem extends SubsystemBase {
         return raiseToHeight(TargetHeight.PickUp);
     }
 
-    Command voltageOut(Supplier<Voltage> volts) {
-        return run(() -> elevator.setControl(new VoltageOut(volts.get())));
+    public Command voltageOut(Supplier<Voltage> volts) {
+
+        return run(() -> {
+            if (getHeight().isNear(MAX_HEIGHT_LINEAR, Inches.of(3.0))) {
+                elevator.setControl(voltageOut.withOutput(0.35));
+                return;
+            }
+            elevator.setControl(new VoltageOut(volts.get()));
+        });
     }
 
     Distance toHeight(Angle angle) {
@@ -190,7 +222,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public void setVoltageOutToZero() {
-        elevator.setControl(new VoltageOut(0));
+        elevator.setControl(voltageOut.withOutput(Volts.zero()));
     }
 
     public State getState() {
@@ -269,32 +301,32 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public class Telemetry {
-        final ShuffleboardLayout elevatorCommands = Shuffleboard.getTab("Commands").getLayout("Elevator",
-                BuiltInLayouts.kList);
+        // final ShuffleboardLayout elevatorCommands = Shuffleboard.getTab("Commands").getLayout("Elevator",
+        //         BuiltInLayouts.kList);
 
-        final ShuffleboardLayout elevatorStats = Shuffleboard.getTab("Commands").getLayout("Elevator Stats",
-                BuiltInLayouts.kList);
+        // final ShuffleboardLayout elevatorStats = Shuffleboard.getTab("Commands").getLayout("Elevator Stats",
+        //         BuiltInLayouts.kList);
 
-        final GenericEntry voltageOutEntry = elevatorCommands.add("Raw Voltage Out", 0.0)
-                .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
+        // final GenericEntry voltageOutEntry = elevatorCommands.add("Raw Voltage Out", 0.0)
+        //         .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
 
         Telemetry(ElevatorSubsystem elevator) {
-            elevatorCommands.add("L1", l1());
-            elevatorCommands.add("L2", l2());
-            elevatorCommands.add("L3", l3());
-            elevatorCommands.add("L4", l4());
+            // elevatorCommands.add("L1", l1());
+            // elevatorCommands.add("L2", l2());
+            // elevatorCommands.add("L3", l3());
+            // elevatorCommands.add("L4", l4());
 
-            elevatorCommands.add("Pick Up", pickUp());
+            // elevatorCommands.add("Pick Up", pickUp());
 
-            elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
+            // elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
 
-            elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
-            elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
-            elevatorStats.addDouble("Target Height (In.)",
-                    () -> elevator.state.getTargetHeight().in(Inches));
-            elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
-            elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
-            elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
+            // elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
+            // elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
+            // elevatorStats.addDouble("Target Height (In.)",
+            //         () -> elevator.state.getTargetHeight().in(Inches));
+            // elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
+            // elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
+            // elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
         }
     }
 }
