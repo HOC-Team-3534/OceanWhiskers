@@ -98,12 +98,6 @@ public class ElevatorSubsystem extends SubsystemBase {
         setDefaultCommand(powerDownwardsToZero());
     }
 
-    @Override
-    public void periodic() {
-        SmartDashboard.putNumber("Elevator Height", getHeight().in(Inches));
-        SmartDashboard.putNumber("Elevator Voltage", elevator.getMotorVoltage().getValueAsDouble());
-    }
-
     public Command raiseToHeight(TargetHeight targetHeight) {
         return raiseToHeight(targetHeight, () -> false);
     }
@@ -301,32 +295,32 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public class Telemetry {
-        // final ShuffleboardLayout elevatorCommands = Shuffleboard.getTab("Commands").getLayout("Elevator",
-        //         BuiltInLayouts.kList);
+        final ShuffleboardLayout elevatorCommands = Shuffleboard.getTab("Commands").getLayout("Elevator",
+                BuiltInLayouts.kList);
 
-        // final ShuffleboardLayout elevatorStats = Shuffleboard.getTab("Commands").getLayout("Elevator Stats",
-        //         BuiltInLayouts.kList);
+        final ShuffleboardLayout elevatorStats = Shuffleboard.getTab("Commands").getLayout("Elevator Stats",
+                BuiltInLayouts.kList);
 
-        // final GenericEntry voltageOutEntry = elevatorCommands.add("Raw Voltage Out", 0.0)
-        //         .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
+        final GenericEntry voltageOutEntry = elevatorCommands.add("Raw Voltage Out", 0.0)
+                .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
 
         Telemetry(ElevatorSubsystem elevator) {
-            // elevatorCommands.add("L1", l1());
-            // elevatorCommands.add("L2", l2());
-            // elevatorCommands.add("L3", l3());
-            // elevatorCommands.add("L4", l4());
+            elevatorCommands.add("L1", l1());
+            elevatorCommands.add("L2", l2());
+            elevatorCommands.add("L3", l3());
+            elevatorCommands.add("L4", l4());
 
-            // elevatorCommands.add("Pick Up", pickUp());
+            elevatorCommands.add("Pick Up", pickUp());
 
-            // elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
+            elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
 
-            // elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
-            // elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
-            // elevatorStats.addDouble("Target Height (In.)",
-            //         () -> elevator.state.getTargetHeight().in(Inches));
-            // elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
-            // elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
-            // elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
+            elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
+            elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
+            elevatorStats.addDouble("Target Height (In.)",
+                    () -> elevator.state.getTargetHeight().in(Inches));
+            elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
+            elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
+            elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
         }
     }
 }
