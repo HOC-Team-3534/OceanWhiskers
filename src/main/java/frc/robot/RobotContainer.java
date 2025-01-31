@@ -28,6 +28,7 @@ import frc.robot.generated.TunerConstants;
 import frc.robot.robot_specific.RobotConstants.EnabledSubsystems;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.JawsSubsystem;
+import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.TusksSubsystem;
@@ -49,6 +50,7 @@ public class RobotContainer {
             ? Optional.of(new TusksSubsystem())
             : Optional.empty();
     private static final PhotonVisionSubsystem photonVision = new PhotonVisionSubsystem();
+    private static final LightsSubsystem lights = new LightsSubsystem();
 
     private final SendableChooser<Command> autonChooser = new SendableChooser<>();
 
@@ -78,9 +80,8 @@ public class RobotContainer {
             controller1.leftTrigger(0.25).whileTrue(a.realese());
         });
 
-        tusks.ifPresent(t -> {
-            controller2.leftStick().onTrue(t.deploy());
-        });
+        controller2.leftTrigger(0.25).whileTrue(pickUpLeft());
+        controller2.rightTrigger(0.25).whileTrue(pickUpRight());
 
         tusks.ifPresent(t -> {
             elevator.ifPresent(e -> {
@@ -90,14 +91,26 @@ public class RobotContainer {
             });
         });
 
-        controller1.a().whileTrue(Commands.deferredProxy(() -> Autos.dtmToReef()));
-        controller1.b().whileTrue(Commands.deferredProxy(() -> Autos.dtmToHumanPlayerStation()));
+        controller1.a().whileTrue(Commands.parallel(Autos.dtmToReef(), lights.dtm()));
+        controller1.b().whileTrue(Commands.parallel(Autos.dtmToHumanPlayerStation(), lights.dtm()));
 
         controller1.povDown()
                 .whileTrue(new CharacterizeDrive(swerveDrive, Volts.per(Second).ofNative(1), Seconds.of(4.0)));
 
         // reset the field-centric heading on left bumper press
         controller1.leftBumper().onTrue(swerveDrive.runOnce(() -> swerveDrive.seedFieldCentric()));
+    }
+
+    public Command pickUpLeft() {
+        if (tusks.isEmpty())
+            return Commands.none();
+        return Commands.parallel(tusks.get().pickup(), lights.pickUpLeft());
+    }
+
+    public Command pickUpRight() {
+        if (tusks.isEmpty())
+            return Commands.none();
+        return Commands.parallel(tusks.get().pickup(), lights.pickUpRight());
     }
 
     public void updateGoalPoseField() {

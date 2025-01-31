@@ -46,11 +46,11 @@ public final class Autos {
         }
 
         public static Command dtmToHumanPlayerStation() {
-                return dtm(Autos::findClosestHumanPlayerStationID);
+                return Commands.deferredProxy(() -> dtm(Autos::findClosestHumanPlayerStationID));
         }
 
         public static Command dtmToReef() {
-                return dtm(Autos::findClosestReefID);
+                return Commands.deferredProxy(() -> dtm(Autos::findClosestReefID));
         }
 
         private static Optional<Rotation2d> getRobotDriveDirection() {
