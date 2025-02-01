@@ -225,11 +225,149 @@
       }
     },
     {
+      "name": "Tusks",
+      "grid_layout": {
+        "layouts": [],
+        "containers": [
+          {
+            "title": "Tusks",
+            "x": 128.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Subsystem",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Tusks",
+              "period": 0.06
+            }
+          },
+          {
+            "title": "Apply Voltage Out",
+            "x": 384.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Command",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Commands/Apply Voltage Out",
+              "period": 0.06,
+              "show_type": true
+            }
+          },
+          {
+            "title": "Deploy",
+            "x": 128.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Command",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Commands/Deploy",
+              "period": 0.06,
+              "show_type": true
+            }
+          },
+          {
+            "title": "Pickup",
+            "x": 384.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Command",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Commands/Pickup",
+              "period": 0.06,
+              "show_type": true
+            }
+          },
+          {
+            "title": "Raw Voltage Out",
+            "x": 128.0,
+            "y": 128.0,
+            "width": 256.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Commands/Raw Voltage Out",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": true
+            }
+          },
+          {
+            "title": "Angle (Deg.)",
+            "x": 640.0,
+            "y": 256.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Radial Gauge",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Stats/Angle (Deg.)",
+              "period": 0.06,
+              "data_type": "double",
+              "start_angle": -180.0,
+              "end_angle": 0.0,
+              "min_value": -90.0,
+              "max_value": 90.0,
+              "number_of_labels": 8,
+              "wrap_value": false,
+              "show_pointer": true,
+              "show_ticks": true
+            }
+          },
+          {
+            "title": "Output Voltage",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Stats/Output Voltage",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Velocity (RPS) of Motor",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 256.0,
+            "height": 256.0,
+            "type": "Graph",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Stats/Velocity (RPS) of Motor",
+              "period": 0.033,
+              "data_type": "double",
+              "time_displayed": 5.0,
+              "color": 4278238420,
+              "line_width": 2.0
+            }
+          },
+          {
+            "title": "Velocity (RPS) of Motor",
+            "x": 1024.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks/Stats/Velocity (RPS) of Motor",
+              "period": 0.033,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "Commands",
       "grid_layout": {
         "layouts": [
           {
-            "title": "Elevator Stats",
+            "title": "Tusks Stats",
             "x": 0.0,
             "y": 0.0,
             "width": 128.0,
@@ -247,55 +385,38 @@
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Angle (Deg)",
+                  "topic": "/Shuffleboard/Commands/Tusks Stats/Angle (Deg)",
                   "period": 0.06,
                   "data_type": "double",
                   "show_submit_button": false
                 }
               },
               {
-                "title": "Height (In.)",
+                "title": "Raw Ticks",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Height (In.)",
+                  "topic": "/Shuffleboard/Commands/Tusks Stats/Raw Ticks",
                   "period": 0.06,
                   "data_type": "double",
                   "show_submit_button": false
                 }
               },
               {
-                "title": "Target Height (In.)",
+                "title": "Output Voltage",
                 "x": 0.0,
                 "y": 0.0,
                 "width": 128.0,
                 "height": 128.0,
                 "type": "Text Display",
                 "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Target Height (In.)",
+                  "topic": "/Shuffleboard/Commands/Tusks Stats/Output Voltage",
                   "period": 0.06,
                   "data_type": "double",
                   "show_submit_button": false
-                }
-              },
-              {
-                "title": "Near Target Height",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Boolean Box",
-                "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Near Target Height",
-                  "period": 0.06,
-                  "data_type": "boolean",
-                  "true_color": 4283215696,
-                  "false_color": 4294198070,
-                  "true_icon": "None",
-                  "false_icon": "None"
                 }
               },
               {
@@ -306,27 +427,13 @@
                 "height": 128.0,
                 "type": "Boolean Box",
                 "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Deploying",
+                  "topic": "/Shuffleboard/Commands/Tusks Stats/Deploying",
                   "period": 0.06,
                   "data_type": "boolean",
                   "true_color": 4283215696,
                   "false_color": 4294198070,
                   "true_icon": "None",
                   "false_icon": "None"
-                }
-              },
-              {
-                "title": "Voltage Output",
-                "x": 0.0,
-                "y": 0.0,
-                "width": 128.0,
-                "height": 128.0,
-                "type": "Text Display",
-                "properties": {
-                  "topic": "/Shuffleboard/Commands/Elevator Stats/Voltage Output",
-                  "period": 0.06,
-                  "data_type": "double",
-                  "show_submit_button": false
                 }
               }
             ]

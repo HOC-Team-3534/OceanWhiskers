@@ -33,7 +33,8 @@
     "networktables.json": true,
     "simgui-ds.json": true,
     "simgui-window.json": true,
-    "simgui.json": true
+    "simgui.json": true,
+    "ctre_sim": true
   },
   "java.test.config": [
     {
