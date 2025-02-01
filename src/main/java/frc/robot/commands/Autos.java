@@ -1,18 +1,38 @@
 package frc.robot.commands;
 
-import static edu.wpi.first.units.Units.*;
-import edu.wpi.first.apriltag.*;
-import edu.wpi.first.math.geometry.*;
+import static edu.wpi.first.units.Units.Feet;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
+
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.path.ConstraintsZone;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
+
+import edu.wpi.first.apriltag.AprilTag;
+import edu.wpi.first.apriltag.AprilTagFieldLayout;
+import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import com.pathplanner.lib.auto.*;
-import com.pathplanner.lib.path.*;
 import frc.robot.RobotContainer;
-import java.util.*;
-import java.util.function.Supplier;
 
 public final class Autos {
         // Constants
@@ -165,6 +185,9 @@ public final class Autos {
 
         private static Optional<Integer> findClosestReefID() {
                 if (!isRobotOnOurSide()) {
+                        return Optional.empty();
+                }
+                if (getAllianceReefTags().isEmpty()) {
                         return Optional.empty();
                 }
                 return Optional.of(getAllianceReefTags().stream()
