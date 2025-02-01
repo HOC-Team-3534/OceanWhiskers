@@ -2,7 +2,6 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
@@ -19,17 +18,10 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
-import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -48,9 +40,6 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final State state = new State();
 
     private final Distance DEPLOY_RAISE_HEIGHT = Inches.of(5.0);
-
-    @SuppressWarnings("unused")
-    private final Telemetry telemetry = new Telemetry(this);
 
     private final boolean DISABLE_MOTION_MAGIC = true;
 
@@ -325,36 +314,6 @@ public class ElevatorSubsystem extends SubsystemBase {
         public boolean isNearTargetHeight() {
             return getHeight().isNear(getTargetHeight(),
                     Inches.of(1.0));
-        }
-    }
-
-    public class Telemetry {
-        final ShuffleboardLayout elevatorCommands = Shuffleboard.getTab("Commands").getLayout("Elevator",
-                BuiltInLayouts.kList);
-
-        final ShuffleboardLayout elevatorStats = Shuffleboard.getTab("Commands").getLayout("Elevator Stats",
-                BuiltInLayouts.kList);
-
-        final GenericEntry voltageOutEntry = elevatorCommands.add("Raw Voltage Out", 0.0)
-                .withWidget(BuiltInWidgets.kNumberSlider).getEntry();
-
-        Telemetry(ElevatorSubsystem elevator) {
-            elevatorCommands.add("L1", l1());
-            elevatorCommands.add("L2", l2());
-            elevatorCommands.add("L3", l3());
-            elevatorCommands.add("L4", l4());
-
-            elevatorCommands.add("Pick Up", pickUp());
-
-            elevatorCommands.add("Apply Voltage Out", voltageOut(() -> Volts.of(voltageOutEntry.getDouble(0.0))));
-
-            elevatorStats.addDouble("Angle (Deg)", () -> elevator.elevator.getPosition().getValue().in(Degrees));
-            elevatorStats.addDouble("Height (In.)", () -> elevator.getHeight().in(Inches));
-            elevatorStats.addDouble("Target Height (In.)",
-                    () -> elevator.state.getTargetHeight().in(Inches));
-            elevatorStats.addBoolean("Near Target Height", elevator.state::isNearTargetHeight);
-            elevatorStats.addBoolean("Deploying", elevator.state::isDeploying);
-            elevatorStats.addDouble("Voltage Output", () -> elevator.elevator.getMotorVoltage().getValue().in(Volts));
         }
     }
 }
