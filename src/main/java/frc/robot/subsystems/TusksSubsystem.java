@@ -6,6 +6,7 @@ import static edu.wpi.first.units.Units.Milliseconds;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.Supplier;
@@ -15,6 +16,7 @@ import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.can.SlotConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
+import com.revrobotics.spark.config.SmartMotionConfigAccessor;
 
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.networktables.GenericEntry;
@@ -26,14 +28,16 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.utils.motionmagic.MotionMagicV5;
 
 public class TusksSubsystem extends SubsystemBase {
     final TalonSRX tusks = new TalonSRX(17);
 
     final ArmFeedforward ff_noCoral = new ArmFeedforward(0, 0, 0);
-    final ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0.0);
+    final ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
     final double GEAR_RATIO = 100.0 / 1.0; // 100 rotations of motor is 1 rotation of tusk
     final double TICKS_PER_REV = 4096.0;
@@ -51,8 +55,8 @@ public class TusksSubsystem extends SubsystemBase {
 
         var config = new TalonSRXConfiguration();
 
-        config.motionCruiseVelocity = 0.0;
-        config.motionAcceleration = 0.0;
+        config.motionCruiseVelocity = 2.0 * TICKS_PER_REV / 10;
+        config.motionAcceleration = config.motionCruiseVelocity * 2; // takes half a second to get to max velocity
         config.motionCurveStrength = 1;
 
         var slotConfig = new SlotConfiguration();
@@ -61,7 +65,19 @@ public class TusksSubsystem extends SubsystemBase {
         slotConfig.kI = 0.0;
         slotConfig.kD = 0.0;
 
+        slotConfig.kF = MotionMagicV5.convV6toV5(0.0, tusks, TICKS_PER_REV);
+
         config.slot0 = slotConfig;
+
+        var slot1Config = new SlotConfiguration();
+
+        slot1Config.kP = 0.0;
+        slot1Config.kI = 0.0;
+        slot1Config.kD = 0.0;
+
+        slot1Config.kF = MotionMagicV5.convV6toV5(0.0, tusks, TICKS_PER_REV);
+
+        config.slot1 = slot1Config;
 
         tusks.configAllSettings(config);
 
@@ -69,6 +85,23 @@ public class TusksSubsystem extends SubsystemBase {
         tusks.setSensorPhase(false);
 
         tusks.setSelectedSensorPosition(fromAngle(Degrees.of(90)));
+
+        SmartDashboard.putData("Tusks/Tusks", this);
+
+        SmartDashboard.putData("Tusks/Commands/Pickup", pickup());
+        SmartDashboard.putData("Tusks/Commands/Deploy", deploy());
+
+        SmartDashboard.putNumber("Tusks/Commands/Raw Voltage Out", 0.0);
+
+        SmartDashboard.putData("Tusks/Commands/Apply Voltage Out", voltageOut(() -> {
+            var voltage = SmartDashboard.getNumber("Tusks/Commands/Raw Voltage Out", 0.0);
+            return Volts.of(voltage);
+        }));
+    }
+
+    @Override
+    public String getName() {
+        return "Tusks";
     }
 
     @Override
@@ -82,6 +115,12 @@ public class TusksSubsystem extends SubsystemBase {
         if (getAngle().lt(Degrees.of(-15))) {
             state.setHasCoral(false);
         }
+
+        SmartDashboard.putNumber("Tusks/Stats/Angle (Deg.)", getAngle().in(Degrees));
+        SmartDashboard.putNumber("Tusks/Stats/Raw Ticks", tusks.getSelectedSensorPosition());
+        SmartDashboard.putNumber("Tusks/Stats/Output Voltage", tusks.getMotorOutputVoltage());
+        SmartDashboard.putBoolean("Tusks/Stats/Deploying", state.isDeploying());
+        SmartDashboard.putNumber("Tusks/Stats/Velocity (RPS) of Motor", getVelocityOfMotor().in(RotationsPerSecond));
     }
 
     double fromAngle(Angle angle) {
@@ -101,19 +140,26 @@ public class TusksSubsystem extends SubsystemBase {
         return toAngle(tusks.getSelectedSensorVelocity()).div(Milliseconds.of(100));
     }
 
+    AngularVelocity getVelocityOfMotor() {
+        return getVelocity().times(GEAR_RATIO);
+    }
+
     Angle getError() {
         return toAngle(tusks.getClosedLoopTarget() - tusks.getSelectedSensorPosition());
     }
 
-    ArmFeedforward getCurrantFF() {
+    ArmFeedforward getCurrentFF() {
         return (state.hasCoral()) ? ff_withCoral : ff_noCoral;
+    }
+
+    double getArbitraryFF() {
+        return getCurrentFF().calculate(getAngle().in(Radians), tusks.getClosedLoopError()) / tusks.getBusVoltage();
     }
 
     void setAngle(Angle angle) {
         var ticks = fromAngle(angle);
         if (!DISABLE_MOTION_MAGIC)
-            tusks.set(ControlMode.MotionMagic, ticks, DemandType.ArbitraryFeedForward,
-                    getCurrantFF().calculate(getAngle().in(Radians), getVelocity().in(RadiansPerSecond)));
+            tusks.set(ControlMode.MotionMagic, ticks, DemandType.ArbitraryFeedForward, getArbitraryFF());
         else
             setVoltageZero();
     }
