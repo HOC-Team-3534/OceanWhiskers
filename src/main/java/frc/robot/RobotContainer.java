@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.Autos;
@@ -58,6 +59,8 @@ public class RobotContainer {
 
     public RobotContainer() {
         configureBindings();
+
+        SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
 
         autonChooser.setDefaultOption("No Auton", Commands.none());
         autonChooser.addOption("Drive Forward", Autos.driveForward(Feet.of(2)));

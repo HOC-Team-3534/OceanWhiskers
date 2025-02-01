@@ -18,27 +18,27 @@ public class LightsSubsystem extends SubsystemBase {
         return run(() -> {
             leftLights.set(0.01); //color 1 light chase
             rightLights.set(0.01); //color 1 light chase
-        });
+        }).withName("Lights Normal");
     }
 
     public Command pickUpRight() {
         return run(() -> {
             leftLights.set(0.99); //black/off
             rightLights.set(0.91); //violet
-        });
+        }).withName("Lights Pick Up Right");
     }
 
     public Command pickUpLeft() {
         return run(() -> {
             leftLights.set(0.65); //orange 
             rightLights.set(0.99); //black/off
-        });
+        }).withName("Lights Pick Up Left");
     }
 
     public Command dtm() {
         return run(() -> {
             leftLights.set(0.43); //color 1 and 2 beats per minute, impacted by adj. 1 and 2
             rightLights.set(0.43); //color 1 and 2 beats per minute, impacted by adj. 1 and 2
-        });
+        }).withName("Lights DTM");
     }
 }

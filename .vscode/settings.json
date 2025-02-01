@@ -28,7 +28,12 @@
     ".wpilib": true,
     "gradle": true,
     ".OutlineViewer": true,
-    "src\\main\\deploy": true
+    "src\\main\\deploy": true,
+    ".gitmodules": true,
+    "networktables.json": true,
+    "simgui-ds.json": true,
+    "simgui-window.json": true,
+    "simgui.json": true
   },
   "java.test.config": [
     {

@@ -119,7 +119,7 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
     public void periodic() {
         keepOperatorPerspectiveUpdated();
         if (!warmedUp) {
-            var warmup = FollowPathCommand.warmupCommand();
+            var warmup = FollowPathCommand.warmupCommand().withName("Follow Path Warmup");
             warmup.schedule();
             warmedUp = true;
         }

@@ -20,7 +20,9 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Voltage;
@@ -96,6 +98,41 @@ public class ElevatorSubsystem extends SubsystemBase {
         elevator.getConfigurator().apply(motorOutputConfig);
 
         setDefaultCommand(powerDownwardsToZero());
+
+        SmartDashboard.putData("Elevator/Elevator", this);
+
+        SmartDashboard.putBoolean("Elevator/Commands/Deploy", false);
+
+        Supplier<Boolean> getDeploy = () -> SmartDashboard.getBoolean("Elevator/Commands/Deploy", false);
+
+        SmartDashboard.putData("Elevator/Commands/l1", l1(getDeploy));
+        SmartDashboard.putData("Elevator/Commands/l2", l2(getDeploy));
+        SmartDashboard.putData("Elevator/Commands/l3", l3(getDeploy));
+        SmartDashboard.putData("Elevator/Commands/l4", l4(getDeploy));
+
+        SmartDashboard.putData("Elevator/Commands/PickUp", pickUp());
+        SmartDashboard.putNumber("Elevator/Commands/Raw Voltage Out", 0.0);
+        SmartDashboard.putData("Elevator/Commands/Apply Voltage Out", voltageOut(() -> {
+            var voltage = SmartDashboard.getNumber("Elevator/Commands/Raw Voltage Out", 0.0);
+            return Volts.of(voltage);
+        }));
+
+    }
+
+    @Override
+    public void periodic() {
+        SmartDashboard.putNumber("Elevator/Stats/Angle (Deg)", elevator.getPosition().getValue().in(Degrees));
+        SmartDashboard.putNumber("Elevator/Stats/Height (In.)", getHeight().in(Inches));
+        SmartDashboard.putNumber("Elevator/Stats/Target Height (In.)", state.getTargetHeight().in(Inches));
+        SmartDashboard.putBoolean("Elevator/Stats/Near Target Height", state.isNearTargetHeight());
+        SmartDashboard.putBoolean("Elevator/Stats/Deploying", state.isDeploying());
+        SmartDashboard.putNumber("Elevator/Stats/Voltage Output", elevator.getMotorVoltage().getValue().in(Volts));
+        SmartDashboard.putNumber("Elevator/Stats/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
+    }
+
+    @Override
+    public String getName() {
+        return "Elevator";
     }
 
     public Command raiseToHeight(TargetHeight targetHeight) {
@@ -126,7 +163,7 @@ public class ElevatorSubsystem extends SubsystemBase {
                     elevator.setControl(voltageOut.withOutput(Volts.of(0.35)));
                 }
             }
-        }, this::setVoltageOutToZero);
+        }, this::setVoltageOutToZero).withName("Elevator Go Down");
 
     }
 
@@ -163,7 +200,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public Command pickUp() {
-        return raiseToHeight(TargetHeight.PickUp);
+        return raiseToHeight(TargetHeight.PickUp).withName("Pickup");
     }
 
     public Command voltageOut(Supplier<Voltage> volts) {
@@ -171,9 +208,10 @@ public class ElevatorSubsystem extends SubsystemBase {
         return run(() -> {
             if (getHeight().isNear(MAX_HEIGHT_LINEAR, Inches.of(3.0))) {
                 elevator.setControl(voltageOut.withOutput(0.35));
-                return;
+            } else {
+                elevator.setControl(voltageOut.withOutput(volts.get()));
             }
-            elevator.setControl(new VoltageOut(volts.get()));
+            getCurrentCommand().setName("Apply Voltage Out - " + voltageOut.getOutputMeasure().in(Volts));
         });
     }
 
@@ -189,12 +227,8 @@ public class ElevatorSubsystem extends SubsystemBase {
         return toHeight(elevator.getPosition().getValue());
     }
 
-    public LinearVelocity getVelocity() {
-        var rotationsPerSecond = elevator.getVelocity().getValue().in(RotationsPerSecond);
-
-        var inchesPerRotation = MAX_HEIGHT_LINEAR.in(Inches) / MAX_HEIGHT_ANGLE.in(Rotations);
-
-        return InchesPerSecond.of(rotationsPerSecond * inchesPerRotation);
+    public AngularVelocity getVelocity() {
+        return elevator.getVelocity().getValue();
     }
 
     public void setHeight(TargetHeight targetHeight) {
