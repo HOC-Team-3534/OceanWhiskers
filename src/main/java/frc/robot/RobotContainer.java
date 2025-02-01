@@ -135,7 +135,7 @@ public class RobotContainer {
         tusks.ifPresent(t -> {
             elevator.ifPresent(e -> {
                 Supplier<Boolean> getTusksStartDeploying = () -> e.getState().isNearTargetHeight();
-                Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getAngle().lt(Degrees.of(50));
+                Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getState().getAngle().lt(Degrees.of(50));
 
                 var targetLevel = e.getState().getTargetLevel();
 
