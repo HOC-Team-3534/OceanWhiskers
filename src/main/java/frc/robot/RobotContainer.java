@@ -82,8 +82,8 @@ public class RobotContainer {
         });
 
         jaws.ifPresent(a -> {
-            controller1.rightTrigger(0.25).whileTrue(a.grab());
-            controller1.leftTrigger(0.25).whileTrue(a.realese());
+            //controller1.rightTrigger(0.25).whileTrue(a.grab());
+            //controller1.leftTrigger(0.25).whileTrue(a.release());
         });
 
         controller2.leftTrigger(0.25).whileTrue(pickUpLeft());
