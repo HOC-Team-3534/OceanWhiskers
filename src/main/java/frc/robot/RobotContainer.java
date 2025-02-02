@@ -33,6 +33,7 @@ import frc.robot.subsystems.LightsSubsystem;
 import frc.robot.subsystems.PhotonVisionSubsystem;
 import frc.robot.subsystems.SwerveDriveSubsystem;
 import frc.robot.subsystems.TusksSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Level;
 
 public class RobotContainer {
     private static final CommandXboxController controller1 = new CommandXboxController(0);
@@ -72,10 +73,10 @@ public class RobotContainer {
 
     private void configureBindings() {
         elevator.ifPresent(e -> {
-            controller2.a().whileTrue(e.l1());
-            controller2.b().whileTrue(e.l2());
-            controller2.x().whileTrue(e.l3());
-            controller2.y().whileTrue(e.l4());
+            controller2.a().whileTrue(e.goToLevel(Level.L1));
+            controller2.b().whileTrue(e.goToLevel(Level.L2));
+            controller2.x().whileTrue(e.goToLevel(Level.L3));
+            controller2.y().whileTrue(e.goToLevel(Level.L4));
 
             controller2.povUp().whileTrue(e.voltageOut(() -> Volts.of(1.5)));
             controller2.povDown().whileTrue(e.voltageOut(() -> Volts.of(0.2)));
@@ -134,12 +135,12 @@ public class RobotContainer {
         tusks.ifPresent(t -> {
             elevator.ifPresent(e -> {
                 Supplier<Boolean> getTusksStartDeploying = () -> e.getState().isNearTargetHeight();
-                Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getAngle().lt(Degrees.of(50));
+                Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getState().getAngle().lt(Degrees.of(50));
 
-                var targetHeight = e.getState().getSelectedTargetHeight();
+                var targetLevel = e.getState().getTargetLevel();
 
                 commander.command = Commands.parallel(t.deploy(getTusksStartDeploying),
-                        e.raiseToHeight(targetHeight, getElevatorMoveToDeploy)).until(() -> !t.getState().hasCoral());
+                        e.goToLevel(targetLevel, getElevatorMoveToDeploy)).until(() -> !t.getState().hasCoral());
             });
         });
 
