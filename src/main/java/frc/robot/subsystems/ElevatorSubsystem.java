@@ -95,7 +95,7 @@ public class ElevatorSubsystem extends SubsystemBase {
                     break;
             }
             elevator.updateHeight();
-        }, this::zero).withName("Go To " + level.name());
+        }, elevator::slowlyLower).withName("Go To " + level.name());
     }
 
     void zero() {
@@ -133,7 +133,7 @@ public class ElevatorSubsystem extends SubsystemBase {
     }
 
     public class State {
-        private boolean climbing;
+        private boolean climbing = false;
         private Level targetLevel = Level.Bottom;
         private boolean deploying;
 
@@ -217,12 +217,10 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         void setVoltageOutput(Voltage volts) {
             if (getHeight().gt(MAX_HEIGHT_LINEAR.minus(Inches.of(3.0)))) {
-                slowlyLower();
-                return;
+                volts = Volts.of(0.35);
             }
             if (volts.lt(Volts.zero())) {
-                leader.setControl(voltageOut.withOutput(Volts.zero()));
-                return;
+                volts = Volts.of(0.35);
             }
             leader.setControl(voltageOut.withOutput(volts));
         }
@@ -248,7 +246,7 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         public boolean isNearTargetHeight() {
             return elevator.getHeight().isNear(getTargetHeight(),
-                    Inches.of(1.0));
+                    Inches.of(0.5));
         }
 
         public void updateHeight() {
@@ -258,7 +256,7 @@ public class ElevatorSubsystem extends SubsystemBase {
                 else
                     leader.setControl(new MotionMagicVoltage(getTargetRawPosition()));
             } else {
-                if (getHeight().lt(Inches.of(2.0))) {
+                if (getHeight().lt(Inches.of(1.0))) {
                     zero();
                 } else {
                     slowlyLower();
