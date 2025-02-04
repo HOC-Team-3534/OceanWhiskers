@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
 
@@ -9,13 +10,13 @@ import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class JawsSubsystem extends SubsystemBase {
-
-    private final State state = new State();
 
     private final Wheel wheel = new Wheel();
     private final WindowMotor windowMotor = new WindowMotor();
@@ -23,88 +24,69 @@ public class JawsSubsystem extends SubsystemBase {
     public JawsSubsystem() {
         super();
 
-        setDefaultCommand(run(() -> {
-            if (state.isAtTargetPosition()) {
-                windowMotor.zero();
-            } else {
-                switch (state.getTargePosition()) {
-                    case Opened:
-                        windowMotor.open();
-                        break;
+        SmartDashboard.putData("Jaws/Jaws", this);
 
-                    case Closed:
-                        windowMotor.close();
-                        break;
-
-                }
-            }
-
-            if (state.isHoldingBall()) {
-                wheel.hold();
-            }
-        }));
+        SmartDashboard.putData("Jaws/Commands/Grab", grab());
+        SmartDashboard.putData("Jaws/Commands/Release", release());
     }
 
     @Override
     public void periodic() {
-        if (!state.isAtTargetPosition() && windowMotor.isPowerSpiking()) {
-            state.setCurrentPosition(state.getTargePosition());
-        }
+        SmartDashboard.putNumber("Jaws/Stats/Wheel Power Out (Watts)", wheel.getMotorOutputPower().in(Watts));
+        SmartDashboard.putNumber("Jaws/Stats/Window Motor Power Out (Watts)",
+                windowMotor.getMotorOutputPower().in(Watts));
     }
 
     Command setPosition(Position position) {
-        return Commands.runOnce(() -> state.setTargetPosition(position))
-                .andThen(Commands.waitUntil(state::isAtTargetPosition));
+        return Commands.runEnd(() -> {
+            switch (position) {
+                case Closed:
+                    windowMotor.close();
+                    break;
+                case Opened:
+                    windowMotor.open();
+                    break;
+            }
+        }, windowMotor::zero).until(windowMotor::isPowerSpiking);
     }
 
-    Command openJaws() {
-        return setPosition(Position.Opened);
+    Command wheelGrab() {
+        return new FunctionalCommand(() -> {
+        }, wheel::in, (interrupted) -> {
+            if (interrupted)
+                wheel.zero();
+            else
+                wheel.hold();
+        }, wheel::isPowerSpiking);
     }
 
-    Command closeJaws() {
-        return setPosition(Position.Closed);
+    public Command grab() {
+        var command = Commands.deadline(
+                wheelGrab(),
+                setPosition(Position.Closed));
+
+        command.addRequirements(this);
+
+        return command;
+    }
+
+    Command wheelRelease() {
+        return Commands.runEnd(wheel::out, wheel::zero).withTimeout(Seconds.of(0.25));
+    }
+
+    public Command release() {
+        var command = Commands.deadline(
+                wheelRelease(),
+                setPosition(Position.Closed))
+                .andThen(setPosition(Position.Opened));
+
+        command.addRequirements(this);
+
+        return command;
     }
 
     enum Position {
         Opened, Closed
-    }
-
-    public class State {
-        private boolean holdingBall;
-        private Position currentPosition = Position.Opened;
-        private Position targetPosition = Position.Opened;
-
-        public boolean isHoldingBall() {
-            return holdingBall;
-        }
-
-        public void grabbedBall() {
-            holdingBall = true;
-        }
-
-        public void releasedBall() {
-            holdingBall = false;
-        }
-
-        Position getCurrentPosition() {
-            return currentPosition;
-        }
-
-        void setCurrentPosition(Position position) {
-            currentPosition = position;
-        }
-
-        Position getTargePosition() {
-            return targetPosition;
-        }
-
-        void setTargetPosition(Position position) {
-            targetPosition = position;
-        }
-
-        boolean isAtTargetPosition() {
-            return currentPosition.equals(targetPosition);
-        }
     }
 
     class PowerSpikeMotor extends TalonSRX {
@@ -152,6 +134,10 @@ public class JawsSubsystem extends SubsystemBase {
         boolean isPowerSpiking() {
             return motor.isPowerSpiking();
         }
+
+        Power getMotorOutputPower() {
+            return motor.getMotorOutputPower();
+        }
     }
 
     class WindowMotor {
@@ -173,5 +159,8 @@ public class JawsSubsystem extends SubsystemBase {
             return motor.isPowerSpiking();
         }
 
+        Power getMotorOutputPower() {
+            return motor.getMotorOutputPower();
+        }
     }
 }
