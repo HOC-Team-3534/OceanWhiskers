@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.tusks;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
@@ -8,14 +8,11 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
-import java.util.function.Supplier;
-
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.can.SlotConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRXConfiguration;
-
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
@@ -26,17 +23,23 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.utils.motionmagic.MotionMagicV5;
+import java.util.function.Supplier;
 
-public class TusksSubsystem extends SubsystemBase {
+public class Tusks extends SubsystemBase {
+
+    public static class TusksConfig {}
 
     final State state = new State();
 
-    final Tusks tusks = new Tusks();
+    final TusksMotor tusks = new TusksMotor();
 
     private final boolean DISABLE_MOTION_MAGIC = true;
 
-    public TusksSubsystem() {
+    private TusksConfig config;
+
+    public Tusks(TusksConfig config) {
         super();
+        this.config = config;
 
         setDefaultCommand(Commands.either(run(tusks::zero), up(), () -> DISABLE_MOTION_MAGIC));
 
@@ -46,10 +49,14 @@ public class TusksSubsystem extends SubsystemBase {
         SmartDashboard.putData("Tusks/Commands/Deploy", deploy());
 
         SmartDashboard.putNumber("Tusks/Commands/Raw Voltage Out", 0.0);
-        SmartDashboard.putData("Tusks/Commands/Apply Voltage Out", voltageOut(() -> {
-            var voltage = SmartDashboard.getNumber("Tusks/Commands/Raw Voltage Out", 0.0);
-            return Volts.of(voltage);
-        }));
+        SmartDashboard.putData(
+                "Tusks/Commands/Apply Voltage Out",
+                voltageOut(
+                        () -> {
+                            var voltage =
+                                    SmartDashboard.getNumber("Tusks/Commands/Raw Voltage Out", 0.0);
+                            return Volts.of(voltage);
+                        }));
     }
 
     @Override
@@ -59,10 +66,14 @@ public class TusksSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (!state.hasCoral() //has no coral
-                && tusks.getVelocity().lt(DegreesPerSecond.zero()) //tusks are moving down despite the motor moving up
+        if (!state.hasCoral() // has no coral
+                && tusks.getVelocity()
+                        .lt(
+                                DegreesPerSecond
+                                        .zero()) // tusks are moving down despite the motor moving
+                // up
                 && tusks.getError().gt(Degrees.of(5))) { // tusks are far below target angle
-            state.setHasCoral(true);// 
+            state.setHasCoral(true); //
         }
 
         if (tusks.getAngle().lt(Degrees.of(-15))) {
@@ -72,7 +83,8 @@ public class TusksSubsystem extends SubsystemBase {
         SmartDashboard.putNumber("Tusks/Stats/Angle (Deg.)", tusks.getAngle().in(Degrees));
         SmartDashboard.putNumber("Tusks/Stats/Output Voltage", tusks.getVoltageOutput().in(Volts));
         SmartDashboard.putBoolean("Tusks/Stats/Deploying", state.isDeploying());
-        SmartDashboard.putNumber("Tusks/Stats/Velocity (RPS) of Motor",
+        SmartDashboard.putNumber(
+                "Tusks/Stats/Velocity (RPS) of Motor",
                 tusks.getVelocityOfMotor().in(RotationsPerSecond));
     }
 
@@ -89,15 +101,14 @@ public class TusksSubsystem extends SubsystemBase {
     }
 
     public Command deploy(Supplier<Boolean> deploy) {
-        return runEnd(() -> {
-            if (deploy.get())
-                state.setDeploying(true);
+        return runEnd(
+                        () -> {
+                            if (deploy.get()) state.setDeploying(true);
 
-            if (state.isDeploying())
-                tusks.setAngle(Degrees.of(-30));
-            else
-                tusks.setAngle(Degrees.of(90));
-        }, () -> state.notDeploying())
+                            if (state.isDeploying()) tusks.setAngle(Degrees.of(-30));
+                            else tusks.setAngle(Degrees.of(90));
+                        },
+                        () -> state.notDeploying())
                 .until(() -> !state.hasCoral());
     }
 
@@ -137,10 +148,9 @@ public class TusksSubsystem extends SubsystemBase {
         public Angle getAngle() {
             return tusks.getAngle();
         }
-
     }
 
-    class Tusks {
+    class TusksMotor {
         final TalonSRX motor = new TalonSRX(17);
 
         final ArmFeedforward ff_noCoral = new ArmFeedforward(0, 0, 0);
@@ -149,11 +159,12 @@ public class TusksSubsystem extends SubsystemBase {
         final double GEAR_RATIO = 100.0 / 1.0; // 100 rotations of motor is 1 rotation of tusk
         final double TICKS_PER_REV = 4096.0;
 
-        Tusks() {
+        TusksMotor() {
             var config = new TalonSRXConfiguration();
 
             config.motionCruiseVelocity = 2.0 * TICKS_PER_REV / 10;
-            config.motionAcceleration = config.motionCruiseVelocity * 2; // takes half a second to get to max velocity
+            config.motionAcceleration =
+                    config.motionCruiseVelocity * 2; // takes half a second to get to max velocity
             config.motionCurveStrength = 1;
 
             var slotConfig = new SlotConfiguration();
@@ -186,7 +197,6 @@ public class TusksSubsystem extends SubsystemBase {
 
         double fromAngle(Angle angle) {
             return angle.times(GEAR_RATIO).in(Rotations) * TICKS_PER_REV;
-
         }
 
         Angle toAngle(double ticks) {
@@ -214,15 +224,19 @@ public class TusksSubsystem extends SubsystemBase {
         }
 
         double getArbitraryFF() {
-            return getCurrentFF().calculate(getAngle().in(Radians), motor.getClosedLoopError()) / motor.getBusVoltage();
+            return getCurrentFF().calculate(getAngle().in(Radians), motor.getClosedLoopError())
+                    / motor.getBusVoltage();
         }
 
         void setAngle(Angle angle) {
             var ticks = fromAngle(angle);
             if (!DISABLE_MOTION_MAGIC)
-                motor.set(ControlMode.MotionMagic, ticks, DemandType.ArbitraryFeedForward, getArbitraryFF());
-            else
-                zero();
+                motor.set(
+                        ControlMode.MotionMagic,
+                        ticks,
+                        DemandType.ArbitraryFeedForward,
+                        getArbitraryFF());
+            else zero();
         }
 
         void zero() {
@@ -230,11 +244,9 @@ public class TusksSubsystem extends SubsystemBase {
         }
 
         void setVoltageOutput(Voltage volts) {
-            if (getAngle().gt(Degrees.of(90)))
-                volts = Volts.of(Math.min(volts.in(Volts), 0.0));
+            if (getAngle().gt(Degrees.of(90))) volts = Volts.of(Math.min(volts.in(Volts), 0.0));
 
-            if (getAngle().lt(Degrees.of(-50)))
-                volts = Volts.of(Math.max(volts.in(Volts), 0.0));
+            if (getAngle().lt(Degrees.of(-50))) volts = Volts.of(Math.max(volts.in(Volts), 0.0));
 
             motor.set(ControlMode.PercentOutput, volts.in(Volts) / motor.getBusVoltage());
         }
@@ -243,5 +255,4 @@ public class TusksSubsystem extends SubsystemBase {
             return Volts.of(motor.getMotorOutputVoltage());
         }
     }
-
 }

@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.robot.jaws;
 
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Seconds;
@@ -7,7 +7,6 @@ import static edu.wpi.first.units.Units.Watts;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
-
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,13 +15,18 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class JawsSubsystem extends SubsystemBase {
+public class Jaws extends SubsystemBase {
+
+    public static class JawsConfig {}
 
     private final Wheel wheel = new Wheel();
     private final WindowMotor windowMotor = new WindowMotor();
 
-    public JawsSubsystem() {
+    private JawsConfig config;
+
+    public Jaws(JawsConfig config) {
         super();
+        this.config = config;
 
         SmartDashboard.putData("Jaws/Jaws", this);
 
@@ -32,38 +36,42 @@ public class JawsSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Jaws/Stats/Wheel Power Out (Watts)", wheel.getMotorOutputPower().in(Watts));
-        SmartDashboard.putNumber("Jaws/Stats/Window Motor Power Out (Watts)",
+        SmartDashboard.putNumber(
+                "Jaws/Stats/Wheel Power Out (Watts)", wheel.getMotorOutputPower().in(Watts));
+        SmartDashboard.putNumber(
+                "Jaws/Stats/Window Motor Power Out (Watts)",
                 windowMotor.getMotorOutputPower().in(Watts));
     }
 
     Command setPosition(Position position) {
-        return Commands.runEnd(() -> {
-            switch (position) {
-                case Closed:
-                    windowMotor.close();
-                    break;
-                case Opened:
-                    windowMotor.open();
-                    break;
-            }
-        }, windowMotor::zero).until(windowMotor::isPowerSpiking);
+        return Commands.runEnd(
+                        () -> {
+                            switch (position) {
+                                case Closed:
+                                    windowMotor.close();
+                                    break;
+                                case Opened:
+                                    windowMotor.open();
+                                    break;
+                            }
+                        },
+                        windowMotor::zero)
+                .until(windowMotor::isPowerSpiking);
     }
 
     Command wheelGrab() {
-        return new FunctionalCommand(() -> {
-        }, wheel::in, (interrupted) -> {
-            if (interrupted)
-                wheel.zero();
-            else
-                wheel.hold();
-        }, wheel::isPowerSpiking);
+        return new FunctionalCommand(
+                () -> {},
+                wheel::in,
+                (interrupted) -> {
+                    if (interrupted) wheel.zero();
+                    else wheel.hold();
+                },
+                wheel::isPowerSpiking);
     }
 
     public Command grab() {
-        var command = Commands.deadline(
-                wheelGrab(),
-                setPosition(Position.Closed));
+        var command = Commands.deadline(wheelGrab(), setPosition(Position.Closed));
 
         command.addRequirements(this);
 
@@ -75,10 +83,9 @@ public class JawsSubsystem extends SubsystemBase {
     }
 
     public Command release() {
-        var command = Commands.deadline(
-                wheelRelease(),
-                setPosition(Position.Closed))
-                .andThen(setPosition(Position.Opened));
+        var command =
+                Commands.deadline(wheelRelease(), setPosition(Position.Closed))
+                        .andThen(setPosition(Position.Opened));
 
         command.addRequirements(this);
 
@@ -86,7 +93,8 @@ public class JawsSubsystem extends SubsystemBase {
     }
 
     enum Position {
-        Opened, Closed
+        Opened,
+        Closed
     }
 
     class PowerSpikeMotor extends TalonSRX {

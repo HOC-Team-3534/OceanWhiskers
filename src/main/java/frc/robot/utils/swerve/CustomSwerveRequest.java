@@ -13,18 +13,19 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 public interface CustomSwerveRequest {
     public static class CharacterizeDriveMotors implements SwerveRequest {
 
-        /**
-         * The voltage to apply to the drive motors.
-         */
+        /** The voltage to apply to the drive motors. */
         double VoltageX = 0;
 
         VoltageOut voltageOut = new VoltageOut(0);
 
         @Override
-        public StatusCode apply(SwerveControlParameters parameters, SwerveModule<?, ?, ?>... modulesToApply) {
+        public StatusCode apply(
+                SwerveControlParameters parameters, SwerveModule<?, ?, ?>... modulesToApply) {
 
             for (int i = 0; i < modulesToApply.length; ++i) {
-                modulesToApply[i].apply(voltageOut.withOutput(Volts.of(VoltageX)), new PositionVoltage(Degrees.of(0)));
+                modulesToApply[i].apply(
+                        voltageOut.withOutput(Volts.of(VoltageX)),
+                        new PositionVoltage(Degrees.of(0)));
             }
 
             return StatusCode.OK;
@@ -33,14 +34,12 @@ public interface CustomSwerveRequest {
         /**
          * Sets the voltage of the drive motors.
          *
-         * @param voltageX
-         *                 Voltage of the drive motors
+         * @param voltageX Voltage of the drive motors
          * @return this request
          */
         public CharacterizeDriveMotors withVoltageX(double voltageX) {
             this.VoltageX = voltageX;
             return this;
         }
-
     }
 }
