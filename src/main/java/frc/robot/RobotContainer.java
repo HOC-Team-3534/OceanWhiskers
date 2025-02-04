@@ -11,6 +11,7 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
@@ -124,27 +125,28 @@ public class RobotContainer {
         goalPoseField.setRobotPose(Autos.getDTMtoReefStartPose().orElse(new Pose2d()));
     }
 
-    class CommandWrapper {
-        public Command command = Commands.none();
+    public static Command deployCoral() {
+        return deployCoral(elevator -> elevator.getState().getTargetLevel());
     }
 
-    public Command deployCoral() {
+    public static Command deployCoral(Function<ElevatorSubsystem, Level> levelFunction) {
+        if (tusks.isEmpty() || elevator.isEmpty())
+            return Commands.none();
 
-        CommandWrapper commander = new CommandWrapper();
+        var e = elevator.get();
+        var t = tusks.get();
 
-        tusks.ifPresent(t -> {
-            elevator.ifPresent(e -> {
-                Supplier<Boolean> getTusksStartDeploying = () -> e.getState().isNearTargetHeight();
-                Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getState().getAngle().lt(Degrees.of(50));
+        Supplier<Boolean> getTusksStartDeploying = () -> e.getState().isNearTargetHeight();
+        Supplier<Boolean> getElevatorMoveToDeploy = () -> t.getState().getAngle().lt(Degrees.of(50));
 
-                var targetLevel = e.getState().getTargetLevel();
+        var targetLevel = levelFunction.apply(e);
 
-                commander.command = Commands.parallel(t.deploy(getTusksStartDeploying),
-                        e.goToLevel(targetLevel, getElevatorMoveToDeploy)).until(() -> !t.getState().hasCoral());
-            });
-        });
+        return Commands.parallel(t.deploy(getTusksStartDeploying).asProxy(),
+                e.goToLevel(targetLevel, getElevatorMoveToDeploy).asProxy()).until(() -> !t.getState().hasCoral());
+    }
 
-        return commander.command;
+    public static Command goToLevel(Level level) {
+        return elevator.map(e -> e.goToLevel(level)).orElse(Commands.none());
     }
 
     public Command getAutonomousCommand() {

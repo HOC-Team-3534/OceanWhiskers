@@ -23,6 +23,7 @@ import com.pathplanner.lib.path.Waypoint;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -33,6 +34,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
+import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Level;
 
 public final class Autos {
         // Constants
@@ -53,7 +57,7 @@ public final class Autos {
                         MetersPerSecondPerSecond.of(4.0), RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
 
-        // Public Commands
+        // Drive forward
         public static Command driveForward(Distance distance) {
                 return AutoBuilder.followPath(createPath(getPose(), getDriveForwardGoalPose(distance)));
         }
@@ -65,28 +69,97 @@ public final class Autos {
                                 getPose().getRotation());
         }
 
+        public enum Side {
+                Left, Right
+        }
+
+        public enum ReefSide {
+                Front(7, 18),
+                FrontRight(8, 17),
+                BackRight(9, 22),
+                Back(10, 21),
+                BackLeft(11, 20),
+                FrontLeft(6, 19);
+
+                int redID, blueID;
+
+                ReefSide(int redID, int blueID) {
+                        this.redID = redID;
+                        this.blueID = blueID;
+                }
+
+                Optional<Integer> getID() {
+                        return DriverStation.getAlliance()
+                                        .map(alliance -> alliance.equals(Alliance.Red) ? redID : blueID);
+                }
+        }
+
+        public enum PickupSide {
+                Left(1, 13),
+                Right(2, 12);
+
+                int redId, blueId;
+
+                PickupSide(int redId, int blueId) {
+                        this.redId = redId;
+                        this.blueId = blueId;
+                }
+
+                Optional<Integer> getID() {
+                        return DriverStation.getAlliance()
+                                        .map(alliance -> alliance.equals(Alliance.Red) ? redId : blueId);
+                }
+        }
+
+        //Full Autonomous
+        public static Command autonPlace(
+                        List<Pair<ReefSide, Level>> placeList,
+                        List<Pair<Side, Side>> pickupList) {
+                if (placeList.size() <= 0)
+                        return Commands.none();
+                var options = placeList.remove(0);
+                var reefSide = options.getFirst();
+                var elevatorLevel = options.getSecond();
+
+                if (reefSide.getID().isEmpty())
+                        return Commands.none();
+
+                return followPathToAprilTagID(reefSide::getID).andThen(deployCoral(elevatorLevel));
+        }
+
+        public static Command autonPickup(
+                        List<Pair<ReefSide, Level>> placeList,
+                        List<Pair<Side, Side>> pickupList) {
+                if (pickupList.size() <= 0)
+                        return Commands.none();
+                var options = placeList.remove(0);
+                var playerStationSide = options.getFirst();
+                var tusksSide = options.getSecond();
+
+                //return followPathToAprilTagID(reefSide::getID).andThen(deployCoral(elevatorLevel));
+                return Commands.none();
+        }
+
+        static Command goToLevel(Level level) {
+                return RobotContainer.goToLevel(level);
+        }
+
+        static Command deployCoral(Level level) {
+                return RobotContainer.deployCoral((e) -> level);
+        }
+
+        //DTM
         public static Command dtmToHumanPlayerStation() {
-                return Commands.deferredProxy(() -> dtm(Autos::findClosestHumanPlayerStationID));
+                return followPathToAprilTagID(Autos::findClosestHumanPlayerStationID);
         }
 
         public static Command dtmToReef() {
-                return Commands.deferredProxy(() -> dtm(Autos::findClosestReefID));
-        }
-
-        private static Optional<Rotation2d> getRobotDriveDirection() {
-                var speeds = RobotContainer.getSwerveDriveSubsystem().getState().Speeds;
-                var vector = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
-                                .rotateBy(getPose().getRotation());
-
-                if (vector.getNorm() < 0.05)
-                        return Optional.empty();
-
-                return Optional.of(vector.getAngle());
+                return followPathToAprilTagID(Autos::findClosestReefID);
         }
 
         // Path Planning Helpers
-        private static Command dtm(Supplier<Optional<Integer>> tagIdSupplier) {
-                return tagIdSupplier.get()
+        private static Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
+                return Commands.deferredProxy(() -> tagIdSupplier.get()
                                 .flatMap(Autos::findGoalPoseInFrontOfTag)
                                 .map(goalPose -> {
                                         var startHeading = getRobotDriveDirection()
@@ -97,7 +170,7 @@ public final class Autos {
                                         var path = createPath(startPose, goalPose);
                                         return AutoBuilder.followPath(path);
                                 })
-                                .orElse(Commands.none());
+                                .orElse(Commands.none()));
         }
 
         public static Optional<Pose2d> getDTMtoReefStartPose() {
@@ -157,6 +230,10 @@ public final class Autos {
 
         private static Pose2d getPose() {
                 return RobotContainer.getSwerveDriveSubsystem().getState().Pose;
+        }
+
+        private static Optional<Rotation2d> getRobotDriveDirection() {
+                return RobotContainer.getSwerveDriveSubsystem().getRobotDriveDirection();
         }
 
         // April Tag Utilities

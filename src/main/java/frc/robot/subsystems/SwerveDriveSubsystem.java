@@ -19,12 +19,14 @@ import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import frc.robot.RobotContainer;
 import frc.robot.commands.Drive;
 import frc.robot.generated.TunerConstants;
 import frc.robot.utils.swerve.Telemetry;
@@ -123,6 +125,17 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
             warmup.schedule();
             warmedUp = true;
         }
+    }
+
+    public Optional<Rotation2d> getRobotDriveDirection() {
+        var speeds = getState().Speeds;
+        var vector = new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
+                .rotateBy(getPose().getRotation());
+
+        if (vector.getNorm() < 0.05)
+            return Optional.empty();
+
+        return Optional.of(vector.getAngle());
     }
 
     /**
