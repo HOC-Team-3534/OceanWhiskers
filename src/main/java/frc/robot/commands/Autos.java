@@ -34,8 +34,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
-import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.SwerveDriveSubsystem;
+import frc.robot.RobotContainer.TusksSide;
 import frc.robot.subsystems.ElevatorSubsystem.Level;
 
 public final class Autos {
@@ -67,10 +66,6 @@ public final class Autos {
                                 getPose().getTranslation()
                                                 .plus(new Translation2d(distance.in(Meters), getPose().getRotation())),
                                 getPose().getRotation());
-        }
-
-        public enum Side {
-                Left, Right
         }
 
         public enum ReefSide {
@@ -114,7 +109,7 @@ public final class Autos {
         //Full Autonomous
         public static Command autonPlace(
                         List<Pair<ReefSide, Level>> placeList,
-                        List<Pair<Side, Side>> pickupList) {
+                        List<Pair<PickupSide, TusksSide>> pickupList) {
                 if (placeList.size() <= 0)
                         return Commands.none();
                 var options = placeList.remove(0);
@@ -124,20 +119,24 @@ public final class Autos {
                 if (reefSide.getID().isEmpty())
                         return Commands.none();
 
-                return followPathToAprilTagID(reefSide::getID).andThen(deployCoral(elevatorLevel));
+                return followPathToAprilTagID(reefSide::getID).andThen(deployCoral(elevatorLevel))
+                                .andThen(autonPickup(placeList, pickupList));
         }
 
         public static Command autonPickup(
                         List<Pair<ReefSide, Level>> placeList,
-                        List<Pair<Side, Side>> pickupList) {
+                        List<Pair<PickupSide, TusksSide>> pickupList) {
                 if (pickupList.size() <= 0)
                         return Commands.none();
-                var options = placeList.remove(0);
-                var playerStationSide = options.getFirst();
+                var options = pickupList.remove(0);
+                var pickupSide = options.getFirst();
                 var tusksSide = options.getSecond();
 
-                //return followPathToAprilTagID(reefSide::getID).andThen(deployCoral(elevatorLevel));
-                return Commands.none();
+                if (pickupSide.getID().isEmpty())
+                        return Commands.none();
+
+                return followPathToAprilTagID(pickupSide::getID).andThen(pickUpCoral(tusksSide))
+                                .andThen(autonPlace(placeList, pickupList));
         }
 
         static Command goToLevel(Level level) {
@@ -146,6 +145,10 @@ public final class Autos {
 
         static Command deployCoral(Level level) {
                 return RobotContainer.deployCoral((e) -> level);
+        }
+
+        static Command pickUpCoral(TusksSide side) {
+                return RobotContainer.pickUpCoral(side);
         }
 
         //DTM
@@ -168,6 +171,7 @@ public final class Autos {
 
                                         var startPose = new Pose2d(getPose().getTranslation(), startHeading);
                                         var path = createPath(startPose, goalPose);
+
                                         return AutoBuilder.followPath(path);
                                 })
                                 .orElse(Commands.none()));

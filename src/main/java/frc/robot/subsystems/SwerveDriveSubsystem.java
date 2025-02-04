@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 
 import java.util.Optional;
-import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -24,9 +23,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
-import frc.robot.RobotContainer;
 import frc.robot.commands.Drive;
 import frc.robot.generated.TunerConstants;
 import frc.robot.utils.swerve.Telemetry;
@@ -104,17 +101,6 @@ public class SwerveDriveSubsystem extends SwerveDrivetrain<TalonFX, TalonFX, CAN
 
     void driveWithSpeeds(ChassisSpeeds speeds) {
         this.setControl(new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds));
-    }
-
-    /**
-     * Returns a command that applies the specified control request to this swerve
-     * drivetrain.
-     *
-     * @param request Function returning the request to apply
-     * @return Command to run
-     */
-    public Command applyRequest(Supplier<SwerveRequest> requestSupplier) {
-        return run(() -> this.setControl(requestSupplier.get()));
     }
 
     @Override

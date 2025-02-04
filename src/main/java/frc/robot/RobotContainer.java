@@ -88,8 +88,8 @@ public class RobotContainer {
             //controller1.leftTrigger(0.25).whileTrue(a.release());
         });
 
-        controller2.leftTrigger(0.25).whileTrue(pickUpLeft());
-        controller2.rightTrigger(0.25).whileTrue(pickUpRight());
+        controller2.leftTrigger(0.25).whileTrue(pickUpCoral(TusksSide.Left));
+        controller2.rightTrigger(0.25).whileTrue(pickUpCoral(TusksSide.Right));
 
         tusks.ifPresent(t -> {
             elevator.ifPresent(e -> {
@@ -109,16 +109,15 @@ public class RobotContainer {
         controller1.leftBumper().onTrue(swerveDrive.runOnce(() -> swerveDrive.seedFieldCentric()));
     }
 
-    public Command pickUpLeft() {
-        if (tusks.isEmpty())
-            return Commands.none();
-        return Commands.parallel(tusks.get().pickup(), lights.pickUpLeft());
+    public enum TusksSide {
+        Left, Right
     }
 
-    public Command pickUpRight() {
-        if (tusks.isEmpty())
+    public static Command pickUpCoral(TusksSide side) {
+        if (tusks.isEmpty() || elevator.isEmpty())
             return Commands.none();
-        return Commands.parallel(tusks.get().pickup(), lights.pickUpRight());
+        return Commands.deadline(tusks.get().pickup(), elevator.get().goToLevel(Level.PickUp),
+                side.equals(TusksSide.Left) ? lights.pickUpLeft() : lights.pickUpRight());
     }
 
     public void updateGoalPoseField() {
@@ -141,8 +140,8 @@ public class RobotContainer {
 
         var targetLevel = levelFunction.apply(e);
 
-        return Commands.parallel(t.deploy(getTusksStartDeploying).asProxy(),
-                e.goToLevel(targetLevel, getElevatorMoveToDeploy).asProxy()).until(() -> !t.getState().hasCoral());
+        return Commands.deadline(t.deploy(getTusksStartDeploying),
+                e.goToLevel(targetLevel, getElevatorMoveToDeploy)).until(() -> !t.getState().hasCoral());
     }
 
     public static Command goToLevel(Level level) {
