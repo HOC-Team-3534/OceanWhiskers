@@ -28,7 +28,6 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -40,14 +39,9 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     private final Distance DEPLOY_RAISE_HEIGHT = Inches.of(5.0);
 
-    private final boolean DISABLE_MOTION_MAGIC = true;
+    private final boolean DISABLE_MOTION_MAGIC = false;
 
     private final Elevator elevator = new Elevator();
-
-    private final MotionMagicConfigs mmConfigs = new MotionMagicConfigs()
-            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(10.0))
-            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(15.0))
-            .withMotionMagicJerk(RotationsPerSecondPerSecond.of(100).per(Second));
 
     public ElevatorSubsystem() {
         super();
@@ -107,10 +101,12 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     private TrapezoidProfile currentTheorecticalProfile = new TrapezoidProfile(
             new Constraints(elevator
-                    .toHeight(RotationsPerSecond.of(mmConfigs.MotionMagicCruiseVelocity).times(Seconds.of(1)))
+                    .toHeight(RotationsPerSecond.of(elevator.getMotionMagicConfigs().MotionMagicCruiseVelocity)
+                            .times(Seconds.of(1)))
                     .in(Inches),
                     elevator.toHeight(
-                            RotationsPerSecondPerSecond.of(mmConfigs.MotionMagicAcceleration).times(Seconds.of(1))
+                            RotationsPerSecondPerSecond.of(elevator.getMotionMagicConfigs().MotionMagicAcceleration)
+                                    .times(Seconds.of(1))
                                     .times(Seconds.of(1)))
                             .in(Inches)));
 
@@ -220,6 +216,11 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         private final VoltageOut voltageOut = new VoltageOut(0);
 
+        private final MotionMagicConfigs mmConfigs = new MotionMagicConfigs()
+                .withMotionMagicCruiseVelocity(RotationsPerSecond.of(10.0))
+                .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(15.0))
+                .withMotionMagicJerk(RotationsPerSecondPerSecond.of(100).per(Second));
+
         Elevator() {
             follower.setControl(new Follower(14, true));
 
@@ -287,7 +288,8 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         public void updateHeight() {
             if (!DISABLE_MOTION_MAGIC) {
-                if (elevator.isNearTargetHeight() || state.isClimbing())
+                if ((state.getTargetLevel().equals(Level.Bottom) && elevator.isNearTargetHeight())
+                        || state.isClimbing())
                     zero();
                 else
                     leader.setControl(new MotionMagicVoltage(getTargetRawPosition()));
@@ -317,6 +319,10 @@ public class ElevatorSubsystem extends SubsystemBase {
             slotConfigs.kA = 0;
 
             leader.getConfigurator().apply(slotConfigs);
+        }
+
+        MotionMagicConfigs getMotionMagicConfigs() {
+            return mmConfigs;
         }
 
         void applyMotionMagicConfigs() {
