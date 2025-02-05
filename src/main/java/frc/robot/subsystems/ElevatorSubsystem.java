@@ -4,6 +4,9 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import java.util.function.Supplier;
@@ -19,12 +22,16 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
 import edu.wpi.first.math.filter.LinearFilter;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 public class ElevatorSubsystem extends SubsystemBase {
@@ -36,6 +43,11 @@ public class ElevatorSubsystem extends SubsystemBase {
     private final boolean DISABLE_MOTION_MAGIC = true;
 
     private final Elevator elevator = new Elevator();
+
+    private final MotionMagicConfigs mmConfigs = new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(10.0))
+            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(15.0))
+            .withMotionMagicJerk(RotationsPerSecondPerSecond.of(100).per(Second));
 
     public ElevatorSubsystem() {
         super();
@@ -75,6 +87,11 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         rpsVelocityFilter.calculate(elevator.getRawVelocity().in(RotationsPerSecond));
         SmartDashboard.putNumber("Elevator/Stats/Velocity (RPS)", rpsVelocityFilter.lastValue());
+
+        currentProfileState = currentTheorecticalProfile.calculate(0.02, currentProfileState,
+                new TrapezoidProfile.State(elevator.getTargetHeight().in(Inches), 0));
+
+        SmartDashboard.putNumber("Elevator/Stats/Theorectical Height (In.)", currentProfileState.position);
     }
 
     @Override
@@ -86,8 +103,22 @@ public class ElevatorSubsystem extends SubsystemBase {
         return goToLevel(level, () -> false);
     }
 
+    private TrapezoidProfile.State currentProfileState = new TrapezoidProfile.State();
+
+    private TrapezoidProfile currentTheorecticalProfile = new TrapezoidProfile(
+            new Constraints(elevator
+                    .toHeight(RotationsPerSecond.of(mmConfigs.MotionMagicCruiseVelocity).times(Seconds.of(1)))
+                    .in(Inches),
+                    elevator.toHeight(
+                            RotationsPerSecondPerSecond.of(mmConfigs.MotionMagicAcceleration).times(Seconds.of(1))
+                                    .times(Seconds.of(1)))
+                            .in(Inches)));
+
     public Command goToLevel(Level level, Supplier<Boolean> deploy) {
-        return runEnd(() -> {
+        return new FunctionalCommand(() -> {
+            currentProfileState = new TrapezoidProfile.State(elevator.getHeight().in(Inches),
+                    elevator.toHeight(elevator.getRawVelocity().times(Seconds.of(1))).in(Inches));
+        }, () -> {
             state.setTargetLevel(level);
             switch (level) {
                 case Bottom:
@@ -100,7 +131,7 @@ public class ElevatorSubsystem extends SubsystemBase {
                     break;
             }
             elevator.updateHeight();
-        }, elevator::slowlyLower).withName("Go To " + level.name());
+        }, (interrupted) -> elevator.slowlyLower(), () -> false, this).withName("Go To " + level.name());
     }
 
     void zero() {
@@ -289,11 +320,6 @@ public class ElevatorSubsystem extends SubsystemBase {
         }
 
         void applyMotionMagicConfigs() {
-            var mmConfigs = new MotionMagicConfigs();
-
-            mmConfigs.MotionMagicCruiseVelocity = 100;
-            mmConfigs.MotionMagicAcceleration = 300;
-            mmConfigs.MotionMagicJerk = 2500;
 
             leader.getConfigurator().apply(mmConfigs);
         }
