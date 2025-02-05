@@ -13,22 +13,26 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.RobotContainer;
-import frc.robot.generated.TunerConstants;
 import frc.robot.swerve.Swerve;
+import frc.robot.swerve.SwerveConfig;
 
 public class Drive extends Command {
+    private SwerveConfig defaultSwerve = new SwerveConfig();
     private double MaxSpeed =
-            TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+            defaultSwerve
+                    .getKSpeedAt12Volts()
+                    .in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private Distance DriveCircumference =
             Meters.of(
                             new Translation2d(
-                                            TunerConstants.kFrontLeftXPos,
-                                            TunerConstants.kFrontLeftYPos)
+                                            defaultSwerve.getKFrontLeftXPos(),
+                                            defaultSwerve.getKFrontLeftYPos())
                                     .getNorm())
                     .times(2 * Math.PI);
     private double MaxAngularRate =
             RotationsPerSecond.of(
-                            TunerConstants.kSpeedAt12Volts
+                            defaultSwerve
+                                    .getKSpeedAt12Volts()
                                     .times(Seconds.of(1))
                                     .div(DriveCircumference)
                                     .magnitude())

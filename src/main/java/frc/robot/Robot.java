@@ -5,7 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.hocLib.HocRobot;
 import frc.hocLib.Rio;
@@ -15,6 +15,7 @@ import frc.hocLib.util.CrashTracker;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
+import frc.robot.auton.Auton.AutonConfig;
 import frc.robot.codriver.Codriver;
 import frc.robot.codriver.Codriver.CodriverConfig;
 import frc.robot.configs.CBOT_2025;
@@ -24,7 +25,6 @@ import frc.robot.driver.Driver;
 import frc.robot.driver.Driver.DriverConfig;
 import frc.robot.elevator.Elevator;
 import frc.robot.elevator.Elevator.ElevatorConfig;
-import frc.robot.generated.TunerConstants;
 import frc.robot.jaws.Jaws;
 import frc.robot.jaws.Jaws.JawsConfig;
 import frc.robot.lights.Lights;
@@ -41,20 +41,18 @@ public class Robot extends HocRobot {
     @Getter private static Config config;
 
     public static class Config {
-
         public DriverConfig driver = new DriverConfig();
         public CodriverConfig codriver = new CodriverConfig();
 
-        public SwerveConfig swerve = TunerConstants.getSwerveConfig();
+        public SwerveConfig swerve = new SwerveConfig();
         public ElevatorConfig elevator = new ElevatorConfig();
         public TusksConfig tusks = new TusksConfig();
         public JawsConfig jaws = new JawsConfig();
         public AlgaeWheelConfig algaeWheel = new AlgaeWheelConfig();
 
+        public AutonConfig auton = new AutonConfig();
         public VisionConfig vision = new VisionConfig();
         public LightsConfig lights = new LightsConfig();
-
-        // TODO: add configurations for different subsystems
     }
 
     @Getter private static Driver driver;
@@ -69,10 +67,6 @@ public class Robot extends HocRobot {
     @Getter private static Lights lights;
 
     @Getter private static Auton auton;
-
-    private Command m_autonomousCommand;
-
-    private final RobotContainer m_robotContainer;
 
     public Robot() {
         super();
@@ -117,12 +111,14 @@ public class Robot extends HocRobot {
             Timer.delay(canInitDelay);
             algaeWheel = new AlgaeWheel(config.algaeWheel);
             Timer.delay(canInitDelay);
-            auton = new Auton();
+            auton = new Auton(config.auton);
             visionSystem = new VisionSystem(config.vision);
             lights = new Lights(config.lights);
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
+
+            SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
 
             Telemetry.print("--- Robot Init Complete ---");
 
@@ -131,18 +127,50 @@ public class Robot extends HocRobot {
             CrashTracker.logThrowableCrash(t);
             throw t;
         }
+    }
 
-        m_robotContainer = new RobotContainer();
+    /**
+     * This method cancels all commands and returns subsystems to their default commands and the
+     * gamepad configs are reset so that new bindings can be assigned based on mode This method
+     * should be called when each mode is initialized
+     */
+    public void resetCommandsAndButtons() {
+        CommandScheduler.getInstance().cancelAll(); // Disable any currently running commands
+        CommandScheduler.getInstance().getActiveButtonLoop().clear();
+
+        // Reset Config for all gamepads and other button bindings
+        driver.resetConfig();
+        codriver.resetConfig();
+
+        // Bind Triggers for all subsystems
+        setupStates();
+        RobotStates.setupStates();
+    }
+
+    public void clearCommandsAndButtons() {
+        CommandScheduler.getInstance().cancelAll(); // Disable any currently running commands
+        CommandScheduler.getInstance().getActiveButtonLoop().clear();
+
+        // Bind Triggers for all subsystems
+        setupStates();
+        RobotStates.setupStates();
     }
 
     @Override
     public void robotPeriodic() {
-        CommandScheduler.getInstance().run();
-        m_robotContainer.updateGoalPoseField();
+        try {
+            CommandScheduler.getInstance().run();
+        } catch (Throwable t) {
+            // intercept error and log it
+            CrashTracker.logThrowableCrash(t);
+            throw t;
+        }
     }
 
     @Override
-    public void disabledInit() {}
+    public void disabledInit() {
+        resetCommandsAndButtons();
+    }
 
     @Override
     public void disabledPeriodic() {
@@ -154,11 +182,8 @@ public class Robot extends HocRobot {
 
     @Override
     public void autonomousInit() {
-        m_autonomousCommand = m_robotContainer.getAutonomousCommand();
-
-        if (m_autonomousCommand != null) {
-            m_autonomousCommand.schedule();
-        }
+        clearCommandsAndButtons();
+        auton.init();
     }
 
     @Override
@@ -169,9 +194,7 @@ public class Robot extends HocRobot {
 
     @Override
     public void teleopInit() {
-        if (m_autonomousCommand != null) {
-            m_autonomousCommand.cancel();
-        }
+        resetCommandsAndButtons();
     }
 
     @Override
@@ -182,7 +205,7 @@ public class Robot extends HocRobot {
 
     @Override
     public void testInit() {
-        CommandScheduler.getInstance().cancelAll();
+        resetCommandsAndButtons();
     }
 
     @Override

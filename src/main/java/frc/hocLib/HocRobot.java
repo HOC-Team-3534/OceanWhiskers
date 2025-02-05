@@ -4,7 +4,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import java.util.ArrayList;
 
-public class HocRobot extends TimedRobot {
+public abstract class HocRobot extends TimedRobot {
 
     /** Create a single static instance of all of your subsystems */
     private static final ArrayList<HocSubsystem> subsystems = new ArrayList<>();
@@ -18,8 +18,13 @@ public class HocRobot extends TimedRobot {
         DriverStation.silenceJoystickConnectionWarning(true);
     }
 
-    protected void setupDefaultCommands() {
+    protected static void setupDefaultCommands() {
         // Setup Default Commands for all subsystems
         subsystems.forEach(HocSubsystem::setupDefaultCommand);
+    }
+
+    protected static void setupStates() {
+        // Bind Triggers for all subsystems
+        subsystems.forEach(HocSubsystem::setupStates);
     }
 }

@@ -5,19 +5,11 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Second;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
-import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
-import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.auton.Auton;
@@ -25,13 +17,12 @@ import frc.robot.commands.CharacterizeDrive;
 import frc.robot.elevator.Elevator;
 import frc.robot.elevator.Elevator.ElevatorConfig;
 import frc.robot.elevator.Elevator.Level;
-import frc.robot.generated.TunerConstants;
 import frc.robot.jaws.Jaws;
 import frc.robot.jaws.Jaws.JawsConfig;
 import frc.robot.lights.Lights;
 import frc.robot.lights.Lights.LightsConfig;
-import frc.robot.robot_specific.RobotConstants.EnabledSubsystems;
 import frc.robot.swerve.Swerve;
+import frc.robot.swerve.SwerveConfig;
 import frc.robot.tusks.Tusks;
 import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
@@ -44,41 +35,22 @@ public class RobotContainer {
     private static final CommandXboxController controller1 = new CommandXboxController(0);
     private static final CommandXboxController controller2 = new CommandXboxController(1);
 
-    private static final Swerve swerveDrive = new Swerve(TunerConstants.getSwerveConfig());
+    private static final Swerve swerveDrive = new Swerve(new SwerveConfig());
 
     private static final Optional<Elevator> elevator =
-            EnabledSubsystems.ELEVATOR_ENABLED
-                    ? Optional.of(new Elevator(new ElevatorConfig()))
-                    : Optional.empty();
+            false ? Optional.of(new Elevator(new ElevatorConfig())) : Optional.empty();
     private static final Optional<Jaws> jaws =
-            EnabledSubsystems.JAWS_ENABLED
-                    ? Optional.of(new Jaws(new JawsConfig()))
-                    : Optional.empty();
+            false ? Optional.of(new Jaws(new JawsConfig())) : Optional.empty();
 
     @SuppressWarnings("unused")
     private static final Optional<Tusks> tusks =
-            EnabledSubsystems.TUSKS_ENABLED
-                    ? Optional.of(new Tusks(new TusksConfig()))
-                    : Optional.empty();
+            false ? Optional.of(new Tusks(new TusksConfig())) : Optional.empty();
 
     private static final VisionSystem photonVision = new VisionSystem(new VisionConfig());
     private static final Lights lights = new Lights(new LightsConfig());
 
-    private final SendableChooser<Command> autonChooser = new SendableChooser<>();
-
-    private final Field2d goalPoseField = new Field2d();
-
     public RobotContainer() {
         configureBindings();
-
-        SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
-
-        autonChooser.setDefaultOption("No Auton", Commands.none());
-        autonChooser.addOption("Drive Forward", Auton.driveForward(Feet.of(2)));
-
-        SmartDashboard.putData(autonChooser);
-
-        Shuffleboard.getTab("Testing").add(goalPoseField).withWidget(BuiltInWidgets.kField);
     }
 
     private void configureBindings() {
@@ -142,10 +114,6 @@ public class RobotContainer {
                 side.equals(TusksSide.Left) ? lights.pickUpLeft() : lights.pickUpRight());
     }
 
-    public void updateGoalPoseField() {
-        goalPoseField.setRobotPose(Auton.getDTMtoReefStartPose().orElse(new Pose2d()));
-    }
-
     public static Command deployCoral() {
         return deployCoral(elevator -> elevator.getState().getTargetLevel());
     }
@@ -170,10 +138,6 @@ public class RobotContainer {
 
     public static Command goToLevel(Level level) {
         return elevator.map(e -> e.goToLevel(level)).orElse(Commands.none());
-    }
-
-    public Command getAutonomousCommand() {
-        return autonChooser.getSelected();
     }
 
     public static Swerve getSwerveDriveSubsystem() {

@@ -17,10 +17,4 @@ public class Driver extends Gamepad {
         super(config);
         this.config = config;
     }
-
-    @Override
-    public void setupStates() {}
-
-    @Override
-    public void setupDefaultCommand() {}
 }

@@ -25,6 +25,8 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.RobotContainer;
@@ -35,7 +37,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public final class Auton {
+public class Auton {
+    public static class AutonConfig {}
+
     // Constants
     private static final AprilTagFieldLayout aprilTagFieldLayout =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
@@ -56,6 +60,31 @@ public final class Auton {
                     MetersPerSecondPerSecond.of(4.0),
                     RotationsPerSecond.of(1.5),
                     RotationsPerSecondPerSecond.of(4.5));
+
+    private Command m_autonomousCommand;
+
+    private final SendableChooser<Command> autonChooser = new SendableChooser<>();
+
+    private AutonConfig config;
+
+    public Auton(AutonConfig config) {
+        this.config = config;
+        autonChooser.setDefaultOption("No Auton", Commands.none());
+        autonChooser.addOption("Drive Forward", driveForward(Feet.of(2)));
+        SmartDashboard.putData(autonChooser);
+    }
+
+    public void init() {
+        m_autonomousCommand = getAutonomousCommand();
+
+        if (m_autonomousCommand != null) {
+            m_autonomousCommand.schedule();
+        }
+    }
+
+    public Command getAutonomousCommand() {
+        return autonChooser.getSelected();
+    }
 
     // Drive forward
     public static Command driveForward(Distance distance) {

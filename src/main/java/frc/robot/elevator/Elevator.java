@@ -23,14 +23,21 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import java.util.function.Supplier;
+import lombok.Getter;
 
 public class Elevator extends SubsystemBase {
 
-    public static class ElevatorConfig {}
+    public static class ElevatorConfig {
+        @Getter private Distance L1 = Inches.of(10);
+        @Getter private Distance L2 = Inches.of(20);
+        @Getter private Distance L3 = Inches.of(30);
+        @Getter private Distance L4 = Inches.of(40);
+        @Getter private Distance PickUp = Inches.of(15);
+
+        @Getter private Distance Deploy = Inches.of(5.0);
+    }
 
     private final State state = new State();
-
-    private final Distance DEPLOY_RAISE_HEIGHT = Inches.of(5.0);
 
     private final boolean DISABLE_MOTION_MAGIC = true;
 
@@ -132,21 +139,30 @@ public class Elevator extends SubsystemBase {
     }
 
     public enum Level {
-        Bottom(Inches.of(0.0)),
-        L1(Inches.of(10.0)),
-        L2(Inches.of(20.0)),
-        L3(Inches.of(30.0)),
-        L4(Inches.of(40.0)),
-        PickUp(Inches.of(15.0));
+        Bottom,
+        L1,
+        L2,
+        L3,
+        L4,
+        PickUp;
 
-        final Distance height;
-
-        Level(Distance height) {
-            this.height = height;
-        }
-
-        Distance getHeight() {
-            return height;
+        Distance getHeight(ElevatorConfig config) {
+            switch (this) {
+                case Bottom:
+                    return Inches.of(0);
+                case L1:
+                    return config.getL1();
+                case L2:
+                    return config.getL2();
+                case L3:
+                    return config.getL3();
+                case L4:
+                    return config.getL4();
+                case PickUp:
+                    return config.getPickUp();
+                default:
+                    return Inches.of(0);
+            }
         }
     }
 
@@ -250,8 +266,8 @@ public class Elevator extends SubsystemBase {
 
         Distance getTargetHeight() {
             return state.getTargetLevel()
-                    .getHeight()
-                    .plus(state.isDeploying() ? DEPLOY_RAISE_HEIGHT : Inches.zero());
+                    .getHeight(config)
+                    .plus(state.isDeploying() ? config.getDeploy() : Inches.zero());
         }
 
         Angle getTargetRawPosition() {

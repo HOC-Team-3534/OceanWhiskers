@@ -20,7 +20,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.commands.Drive;
-import frc.robot.generated.TunerConstants;
 import frc.robot.utils.swerve.Telemetry;
 import java.util.Optional;
 
@@ -33,8 +32,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> impleme
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 
-    private double MaxSpeed =
-            TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private final double MaxSpeed;
 
     private final Telemetry logger;
 
@@ -55,8 +53,10 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> impleme
                 TalonFX::new,
                 CANcoder::new,
                 config.getDrivetrainConstants(),
-                config.getModules());
+                config.getSwerveModuleConstants());
         setDefaultCommand(new Drive(this));
+
+        this.MaxSpeed = config.getKSpeedAt12Volts().in(MetersPerSecond);
 
         var pathPlannerConfig = loadRobotConfig();
 

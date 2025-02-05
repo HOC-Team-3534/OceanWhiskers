@@ -12,14 +12,23 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.generated.TunerConstants;
-import frc.robot.robot_specific.RobotConstants.Options;
+import frc.hocLib.HocSubsystem;
+import frc.robot.swerve.SwerveConfig;
 import frc.robot.utils.camera.PhotonCameraPlus;
 import java.util.Optional;
+import lombok.Getter;
 
-public class VisionSystem extends SubsystemBase {
-    public static class VisionConfig {}
+public class VisionSystem implements HocSubsystem {
+    public static class VisionConfig {
+        @Getter private boolean centerCameraAttached = false;
+
+        public VisionConfig configCenterCameraAttached(boolean attached) {
+            centerCameraAttached = attached;
+            return this;
+        }
+    }
+
+    private SwerveConfig defaultSwerve = new SwerveConfig();
 
     private final Distance CAMERA_INSET_FROM_CANCODER = Inches.of(0.5);
     private final Distance CAMERA_HEIGHT_OFF_GROUND = Inches.of(10.75);
@@ -29,7 +38,7 @@ public class VisionSystem extends SubsystemBase {
             new Translation2d(CAMERA_INSET_FROM_CANCODER.in(Meters), Rotation2d.fromDegrees(45));
 
     private final Translation2d fl_xy =
-            new Translation2d(TunerConstants.kFrontLeftXPos, TunerConstants.kFrontLeftYPos)
+            new Translation2d(defaultSwerve.getKFrontLeftXPos(), defaultSwerve.getKFrontLeftYPos())
                     .minus(cameraOffset);
 
     private final Rotation3d fl_rot = new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45));
@@ -48,23 +57,25 @@ public class VisionSystem extends SubsystemBase {
     PhotonCameraPlus rl_camera = new PhotonCameraPlus("rl_camera", rl_robotToCamera);
     PhotonCameraPlus rr_camera = new PhotonCameraPlus("rr_camera", rr_robotToCamera);
 
-    Optional<PhotonCameraPlus> center_camera =
-            Options.CENTER_CAMERA
-                    ? Optional.of(
-                            new PhotonCameraPlus(
-                                    "center_camera",
-                                    new Transform3d(
-                                            Units.inchesToMeters(0),
-                                            Units.inchesToMeters(0),
-                                            Units.inchesToMeters(0),
-                                            new Rotation3d(0, Units.degreesToRadians(0), 0))))
-                    : Optional.empty();
+    Optional<PhotonCameraPlus> center_camera = Optional.empty();
 
     private VisionConfig config;
 
     public VisionSystem(VisionConfig config) {
         super();
         this.config = config;
+
+        if (config.isCenterCameraAttached()) {
+            center_camera =
+                    Optional.of(
+                            new PhotonCameraPlus(
+                                    "center_camera",
+                                    new Transform3d(
+                                            Units.inchesToMeters(0),
+                                            Units.inchesToMeters(0),
+                                            Units.inchesToMeters(0),
+                                            new Rotation3d(0, Units.degreesToRadians(0), 0))));
+        }
     }
 
     @Override
