@@ -18,6 +18,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -61,6 +62,8 @@ public class ElevatorSubsystem extends SubsystemBase {
 
     }
 
+    LinearFilter rpsVelocityFilter = LinearFilter.singlePoleIIR(0.1, 0.02);
+
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Elevator/Stats/Angle (Deg)", elevator.getRawPosition().in(Degrees));
@@ -69,7 +72,9 @@ public class ElevatorSubsystem extends SubsystemBase {
         SmartDashboard.putBoolean("Elevator/Stats/Near Target Height", elevator.isNearTargetHeight());
         SmartDashboard.putBoolean("Elevator/Stats/Deploying", state.isDeploying());
         SmartDashboard.putNumber("Elevator/Stats/Voltage Output", elevator.getVoltageOutput().in(Volts));
-        SmartDashboard.putNumber("Elevator/Stats/Velocity (RPS)", elevator.getRawVelocity().in(RotationsPerSecond));
+
+        rpsVelocityFilter.calculate(elevator.getRawVelocity().in(RotationsPerSecond));
+        SmartDashboard.putNumber("Elevator/Stats/Velocity (RPS)", rpsVelocityFilter.lastValue());
     }
 
     @Override
@@ -271,13 +276,13 @@ public class ElevatorSubsystem extends SubsystemBase {
         void applySlot0Configs() {
             var slotConfigs = new SlotConfigs();
 
-            slotConfigs.kP = 0.25;
+            slotConfigs.kP = 0.0;
             slotConfigs.kI = 0;
             slotConfigs.kD = 0;
 
-            slotConfigs.kG = 0;
-            slotConfigs.kS = 0;
-            slotConfigs.kV = 0;
+            slotConfigs.kG = 0.55;
+            slotConfigs.kS = 0.48;
+            slotConfigs.kV = 0.1086;
             slotConfigs.kA = 0;
 
             leader.getConfigurator().apply(slotConfigs);
