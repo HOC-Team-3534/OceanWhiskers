@@ -21,7 +21,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 // Gamepad class
-public abstract class Gamepad implements HocSubsystem {
+public abstract class Gamepad extends HocSubsystem {
     private Alert disconnectedAlert;
 
     public static final Trigger kFalse = new Trigger(() -> false);
@@ -75,7 +75,7 @@ public abstract class Gamepad implements HocSubsystem {
     protected Trigger testMode = Util.testMode;
     protected Trigger disabled = Util.disabled;
 
-    public static class Config {
+    public static class Config extends HocSubsystem.Config {
         @Getter private String name;
         @Getter private int port; // USB port on the DriverStation app
 
@@ -94,9 +94,16 @@ public abstract class Gamepad implements HocSubsystem {
         @Getter @Setter double triggersExp = 1.0;
         @Getter @Setter double triggersScalor = 1.0;
 
+        @Getter boolean testing;
+
         public Config(String name, int port) {
             this.name = name;
             this.port = port;
+        }
+
+        public Config testing() {
+            testing = true;
+            return this;
         }
     }
 
@@ -112,6 +119,7 @@ public abstract class Gamepad implements HocSubsystem {
      *     and its buttons, triggers, sticks, and D-pad.
      */
     protected Gamepad(Config config) {
+        super(config);
         this.config = config;
         disconnectedAlert =
                 new Alert(config.name + " Gamepad Disconnected", Alert.AlertType.kError);

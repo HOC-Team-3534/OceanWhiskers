@@ -88,6 +88,11 @@ public class Tusks extends SubsystemBase {
                 tusks.getVelocityOfMotor().in(RotationsPerSecond));
     }
 
+    public enum Side {
+        Left,
+        Right
+    }
+
     public Command up() {
         return run(() -> tusks.setAngle(Degrees.of(90)));
     }

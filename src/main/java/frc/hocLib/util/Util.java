@@ -1,3 +1,4 @@
+/** Special thanks to FRC team 3847 */
 package frc.hocLib.util;
 
 import edu.wpi.first.wpilibj.DriverStation;

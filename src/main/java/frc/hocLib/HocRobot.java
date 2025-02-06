@@ -25,6 +25,6 @@ public abstract class HocRobot extends TimedRobot {
 
     protected static void setupStates() {
         // Bind Triggers for all subsystems
-        subsystems.forEach(HocSubsystem::setupStates);
+        subsystems.forEach(HocSubsystem::setupTriggeringOfCommands);
     }
 }

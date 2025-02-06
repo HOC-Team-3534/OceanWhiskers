@@ -173,9 +173,7 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void disabledPeriodic() {
-        RobotContainer.photonVisionPeriodic();
-    }
+    public void disabledPeriodic() {}
 
     @Override
     public void disabledExit() {}

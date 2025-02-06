@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.events.EventTrigger;
 import com.pathplanner.lib.path.ConstraintsZone;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
@@ -29,15 +30,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.RobotContainer;
-import frc.robot.RobotContainer.TusksSide;
+import frc.robot.Robot;
 import frc.robot.elevator.Elevator.Level;
+import frc.robot.swerve.Swerve;
+import frc.robot.tusks.Tusks.Side;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 public class Auton {
+    public static final EventTrigger autonL4 = new EventTrigger("L4");
+
+    private static final Swerve swerve = Robot.getSwerve();
+
     public static class AutonConfig {}
 
     // Constants
@@ -137,7 +143,7 @@ public class Auton {
 
     // Full Autonomous
     public static Command autonPlace(
-            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, TusksSide>> pickupList) {
+            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
         if (placeList.size() <= 0) return Commands.none();
         var options = placeList.remove(0);
         var reefSide = options.getFirst();
@@ -146,12 +152,12 @@ public class Auton {
         if (reefSide.getID().isEmpty()) return Commands.none();
 
         return followPathToAprilTagID(reefSide::getID)
-                .andThen(deployCoral(elevatorLevel))
+                .andThen(Commands.none())
                 .andThen(autonPickup(placeList, pickupList));
     }
 
     public static Command autonPickup(
-            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, TusksSide>> pickupList) {
+            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
         if (pickupList.size() <= 0) return Commands.none();
         var options = pickupList.remove(0);
         var pickupSide = options.getFirst();
@@ -160,20 +166,8 @@ public class Auton {
         if (pickupSide.getID().isEmpty()) return Commands.none();
 
         return followPathToAprilTagID(pickupSide::getID)
-                .andThen(pickUpCoral(tusksSide))
+                .andThen(Commands.none())
                 .andThen(autonPlace(placeList, pickupList));
-    }
-
-    static Command goToLevel(Level level) {
-        return RobotContainer.goToLevel(level);
-    }
-
-    static Command deployCoral(Level level) {
-        return RobotContainer.deployCoral((e) -> level);
-    }
-
-    static Command pickUpCoral(TusksSide side) {
-        return RobotContainer.pickUpCoral(side);
     }
 
     // DTM
@@ -284,11 +278,11 @@ public class Auton {
     }
 
     private static Pose2d getPose() {
-        return RobotContainer.getSwerveDriveSubsystem().getState().Pose;
+        return swerve.getState().Pose;
     }
 
     private static Optional<Rotation2d> getRobotDriveDirection() {
-        return RobotContainer.getSwerveDriveSubsystem().getRobotDriveDirection();
+        return swerve.getRobotDriveDirection();
     }
 
     // April Tag Utilities

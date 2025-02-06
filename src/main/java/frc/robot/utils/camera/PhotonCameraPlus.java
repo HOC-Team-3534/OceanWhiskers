@@ -8,13 +8,16 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
-import frc.robot.RobotContainer;
+import frc.robot.Robot;
+import frc.robot.swerve.Swerve;
 import java.util.HashSet;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 
 public class PhotonCameraPlus {
+    private static final Swerve swerve = Robot.getSwerve();
+
     final PhotonCamera camera;
     final PhotonPoseEstimator poseEstimator;
 
@@ -55,10 +58,7 @@ public class PhotonCameraPlus {
                         var poseDifference =
                                 estmt.estimatedPose
                                         .toPose2d()
-                                        .relativeTo(
-                                                RobotContainer.getSwerveDriveSubsystem()
-                                                        .getState()
-                                                        .Pose)
+                                        .relativeTo(swerve.getState().Pose)
                                         .getTranslation()
                                         .getNorm();
 
@@ -84,11 +84,10 @@ public class PhotonCameraPlus {
                         var visionMeasurementStdDevs =
                                 VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
-                        RobotContainer.getSwerveDriveSubsystem()
-                                .addVisionMeasurement(
-                                        estmt.estimatedPose.toPose2d(),
-                                        Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                        visionMeasurementStdDevs);
+                        swerve.addVisionMeasurement(
+                                estmt.estimatedPose.toPose2d(),
+                                Utils.fpgaToCurrentTime(estmt.timestampSeconds),
+                                visionMeasurementStdDevs);
                     });
         }
     }

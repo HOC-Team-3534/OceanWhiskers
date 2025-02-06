@@ -1,9 +1,27 @@
 package frc.hocLib;
 
-import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import lombok.Getter;
+import lombok.Setter;
 
-public interface HocSubsystem extends Subsystem {
-    default void setupStates() {}
+public abstract class HocSubsystem extends SubsystemBase {
+    @Getter private Config config;
 
-    default void setupDefaultCommand() {}
+    public HocSubsystem(Config config) {
+        this.config = config;
+        HocRobot.add(this);
+    }
+
+    public boolean isAttached() {
+        return config.attached;
+    }
+
+    public abstract void setupTriggeringOfCommands();
+
+    public abstract void setupDefaultCommand();
+
+    public static class Config {
+        @Getter @Setter private String name;
+        @Getter @Setter private boolean attached = true;
+    }
 }

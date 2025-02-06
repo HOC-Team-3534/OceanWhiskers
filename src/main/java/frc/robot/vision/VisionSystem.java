@@ -18,8 +18,8 @@ import frc.robot.utils.camera.PhotonCameraPlus;
 import java.util.Optional;
 import lombok.Getter;
 
-public class VisionSystem implements HocSubsystem {
-    public static class VisionConfig {
+public class VisionSystem extends HocSubsystem {
+    public static class VisionConfig extends HocSubsystem.Config {
         @Getter private boolean centerCameraAttached = false;
 
         public VisionConfig configCenterCameraAttached(boolean attached) {
@@ -62,7 +62,7 @@ public class VisionSystem implements HocSubsystem {
     private VisionConfig config;
 
     public VisionSystem(VisionConfig config) {
-        super();
+        super(config);
         this.config = config;
 
         if (config.isCenterCameraAttached()) {
@@ -118,4 +118,10 @@ public class VisionSystem implements HocSubsystem {
         // 5. Return the transformed camera position and rotation.
         return new Transform3d(rotatedPosition, rotatedRotation);
     }
+
+    @Override
+    public void setupTriggeringOfCommands() {}
+
+    @Override
+    public void setupDefaultCommand() {}
 }

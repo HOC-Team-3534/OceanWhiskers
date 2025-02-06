@@ -11,8 +11,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.RobotContainer;
+import frc.robot.Robot;
+import frc.robot.driver.Driver;
 import frc.robot.swerve.Swerve;
 import frc.robot.swerve.SwerveConfig;
 
@@ -50,45 +50,25 @@ public class Drive extends Command {
     static final double DEADBAND = 0.20;
 
     private final Swerve swerveDrive;
-    private final CommandXboxController controller1;
+    private final Driver driver = Robot.getDriver();
 
     public Drive(Swerve swerveDrive) {
         this.swerveDrive = swerveDrive;
-        controller1 = RobotContainer.getController1();
         addRequirements(swerveDrive);
-    }
-
-    static double deadband(double in) {
-        return Math.abs(in) < DEADBAND ? 0 : (Math.abs(in) - DEADBAND) * Math.signum(in);
-    }
-
-    static double sigSqr(double in) {
-        return Math.pow(in, 2) * Math.signum(in);
-    }
-
-    static double shapeInput(double in) {
-        return Math.min(sigSqr(deadband(in)), 1);
     }
 
     @Override
     public void execute() {
-        if (Math.pow(controller1.getLeftY(), 2)
-                        + Math.pow(controller1.getLeftX(), 2)
-                        + Math.pow(controller1.getRightX(), 2)
+        if (driver.getDriveFwdPositive()
+                        + driver.getDriveLeftPositive()
+                        + driver.getDriveCCWPositive()
                 < 0.05) {
             swerveDrive.setControl(idle);
         } else {
             swerveDrive.setControl(
-                    drive.withVelocityX(
-                                    shapeInput(-controller1.getLeftY())
-                                            * MaxSpeed) // Drive forward with negative Y (forward)
-                            .withVelocityY(
-                                    shapeInput(-controller1.getLeftX())
-                                            * MaxSpeed) // Drive left with negative X (left)
-                            .withRotationalRate(
-                                    shapeInput(-controller1.getRightX())
-                                            * MaxAngularRate)); // Drive counterclockwise with
-            // negative X (left)
+                    drive.withVelocityX(driver.getDriveFwdPositive() * MaxSpeed)
+                            .withVelocityY(driver.getDriveLeftPositive() * MaxSpeed)
+                            .withRotationalRate(driver.getDriveCCWPositive() * MaxAngularRate));
         }
     }
 
