@@ -1,4 +1,4 @@
-package frc.robot.utils.motionmagic;
+package frc.hocLib.motionmagic;
 
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 

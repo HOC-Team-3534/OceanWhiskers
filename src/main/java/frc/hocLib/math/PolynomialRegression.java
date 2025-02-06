@@ -1,4 +1,4 @@
-package frc.robot.utils.math;
+package frc.hocLib.math;
 
 import org.ejml.simple.SimpleMatrix;
 

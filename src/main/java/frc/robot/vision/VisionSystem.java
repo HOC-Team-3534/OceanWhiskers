@@ -13,8 +13,8 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
+import frc.hocLib.camera.PhotonCameraPlus;
 import frc.robot.swerve.SwerveConfig;
-import frc.robot.utils.camera.PhotonCameraPlus;
 import java.util.Optional;
 import lombok.Getter;
 

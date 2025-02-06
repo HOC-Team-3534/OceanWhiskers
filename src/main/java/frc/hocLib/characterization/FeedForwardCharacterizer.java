@@ -1,4 +1,4 @@
-package frc.robot.utils.characterization;
+package frc.hocLib.characterization;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Milliseconds;
@@ -7,7 +7,7 @@ import static edu.wpi.first.units.Units.Volts;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
-import frc.robot.utils.math.PolynomialRegression;
+import frc.hocLib.math.PolynomialRegression;
 import java.util.LinkedList;
 import java.util.List;
 
