@@ -79,6 +79,9 @@ public class ElevatorSubsystem extends SubsystemBase {
         SmartDashboard.putBoolean("Elevator/Stats/Deploying", state.isDeploying());
         SmartDashboard.putNumber("Elevator/Stats/Voltage Output", elevator.getVoltageOutput().in(Volts));
 
+        SmartDashboard.putNumber("Elevator/Stats/Raw Target Reference", elevator.getRawTargetToHeight().in(Inches));
+        SmartDashboard.putNumber("Elevator/Stats/Raw Error", elevator.getRawError().in(Inches));
+
         rpsVelocityFilter.calculate(elevator.getRawVelocity().in(RotationsPerSecond));
         SmartDashboard.putNumber("Elevator/Stats/Velocity (RPS)", rpsVelocityFilter.lastValue());
 
@@ -217,7 +220,7 @@ public class ElevatorSubsystem extends SubsystemBase {
         private final VoltageOut voltageOut = new VoltageOut(0);
 
         private final MotionMagicConfigs mmConfigs = new MotionMagicConfigs()
-                .withMotionMagicCruiseVelocity(RotationsPerSecond.of(10.0))
+                .withMotionMagicCruiseVelocity(RotationsPerSecond.of(15.0))
                 .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(15.0))
                 .withMotionMagicJerk(RotationsPerSecondPerSecond.of(100).per(Second));
 
@@ -234,6 +237,14 @@ public class ElevatorSubsystem extends SubsystemBase {
 
         public Angle getRawPosition() {
             return leader.getPosition().getValue();
+        }
+
+        public Distance getRawError() {
+            return toHeight(Rotations.of(leader.getClosedLoopError().getValue()));
+        }
+
+        public Distance getRawTargetToHeight() {
+            return toHeight(Rotations.of(leader.getClosedLoopReference().getValueAsDouble()));
         }
 
         Distance toHeight(Angle angle) {
@@ -309,14 +320,14 @@ public class ElevatorSubsystem extends SubsystemBase {
         void applySlot0Configs() {
             var slotConfigs = new SlotConfigs();
 
-            slotConfigs.kP = 0.0;
+            slotConfigs.kP = 0.5;
             slotConfigs.kI = 0;
             slotConfigs.kD = 0;
 
-            slotConfigs.kG = 0.55;
-            slotConfigs.kS = 0.48;
-            slotConfigs.kV = 0.1086;
-            slotConfigs.kA = 0;
+            slotConfigs.kG = 0.48; //0.55
+            slotConfigs.kS = 0.38; //0.48
+            slotConfigs.kV = 0.125; //0.1086
+            slotConfigs.kA = 0.01;
 
             leader.getConfigurator().apply(slotConfigs);
         }
