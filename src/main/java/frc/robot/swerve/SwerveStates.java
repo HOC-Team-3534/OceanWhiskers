@@ -1,5 +1,9 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
+import static frc.robot.RobotStates.*;
+
 import frc.robot.Robot;
 import frc.robot.driver.Driver;
 
@@ -15,5 +19,7 @@ public class SwerveStates {
                         driver::getDriveCCWPositive));
     }
 
-    public static void setupBindings() {}
+    public static void setupBindings() {
+        CharacterizeDrive.whileTrue(swerve.characterize(Volts.one(), Seconds.of(4)));
+    }
 }

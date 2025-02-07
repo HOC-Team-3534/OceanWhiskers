@@ -31,9 +31,10 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.MomentOfInertia;
 import edu.wpi.first.units.measure.Voltage;
+import frc.hocLib.HocSubsystem;
 import lombok.Getter;
 
-public class SwerveConfig {
+public class SwerveConfig extends HocSubsystem.Config {
 
     // CAN bus that the devices are located on;
     // All swerve devices must share the same CAN bus
@@ -133,14 +134,10 @@ public class SwerveConfig {
     @Getter private int kFrontLeftDriveMotorId = 1;
     @Getter private int kFrontLeftSteerMotorId = 3;
     @Getter private int kFrontLeftEncoderId = 2;
-
     @Getter private Angle kFrontLeftEncoderOffset = Rotations.of(0.27392578125);
-
     @Getter private boolean kFrontLeftSteerMotorInverted = false;
     @Getter private boolean kFrontLeftEncoderInverted = false;
-
-    @Getter private Distance kFrontLeftXPos = kWheelBase.div(2);
-    @Getter private Distance kFrontLeftYPos = kTrackWidth.div(2);
+    @Getter private Distance kFrontLeftXPos, kFrontLeftYPos;
 
     // Front Right
     @Getter private int kFrontRightDriveMotorId = 4;
@@ -149,9 +146,7 @@ public class SwerveConfig {
     @Getter private Angle kFrontRightEncoderOffset = Rotations.of(0.27392578125);
     @Getter private boolean kFrontRightSteerMotorInverted = false;
     @Getter private boolean kFrontRightEncoderInverted = false;
-
-    @Getter private Distance kFrontRightXPos = kWheelBase.div(2);
-    @Getter private Distance kFrontRightYPos = kTrackWidth.div(2).unaryMinus();
+    @Getter private Distance kFrontRightXPos, kFrontRightYPos;
 
     // Back Left
     @Getter private int kBackLeftDriveMotorId = 7;
@@ -160,9 +155,7 @@ public class SwerveConfig {
     @Getter private Angle kBackLeftEncoderOffset = Rotations.of(-0.123779296875);
     @Getter private boolean kBackLeftSteerMotorInverted = false;
     @Getter private boolean kBackLeftEncoderInverted = false;
-
-    @Getter private Distance kBackLeftXPos = kWheelBase.div(2).unaryMinus();
-    @Getter private Distance kBackLeftYPos = kTrackWidth.div(2);
+    @Getter private Distance kBackLeftXPos, kBackLeftYPos;
 
     // Back Right
     @Getter private int kBackRightDriveMotorId = 10;
@@ -171,28 +164,20 @@ public class SwerveConfig {
     @Getter private Angle kBackRightEncoderOffset = Rotations.of(0.44580078125);
     @Getter private boolean kBackRightSteerMotorInverted = false;
     @Getter private boolean kBackRightEncoderInverted = false;
+    @Getter private Distance kBackRightXPos, kBackRightYPos;
 
-    @Getter private Distance kBackRightXPos = kWheelBase.div(2).unaryMinus();
-    @Getter private Distance kBackRightYPos = kTrackWidth.div(2).unaryMinus();
-
+    //
     @Getter private SwerveModuleConstants<?, ?, ?> FrontLeft, FrontRight, BackLeft, BackRight;
 
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
     @Getter private LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.96);
 
-    @Getter
-    private Distance kSwerveCircumference =
-            Meters.of(
-                            new Translation2d(kFrontLeftXPos.in(Meters), kFrontLeftYPos.in(Meters))
-                                    .getNorm())
-                    .times(2 * Math.PI);
-
-    @Getter
-    private AngularVelocity kMaxAngularRate =
-            RotationsPerSecond.of(kSpeedAt12Volts.div(kSwerveCircumference).magnitude());
+    @Getter private Distance kSwerveCircumference;
+    @Getter private AngularVelocity kMaxAngularRate;
 
     public SwerveConfig() {
+        super("Swerve");
         updateConfig();
     }
 
@@ -240,6 +225,29 @@ public class SwerveConfig {
                         .withDriveInertia(kDriveInertia)
                         .withSteerFrictionVoltage(kSteerFrictionVoltage)
                         .withDriveFrictionVoltage(kDriveFrictionVoltage);
+
+        kFrontLeftXPos = kWheelBase.div(2);
+        kFrontLeftYPos = kTrackWidth.div(2);
+
+        kFrontRightXPos = kFrontLeftXPos;
+        kFrontRightYPos = kTrackWidth.div(2).unaryMinus();
+
+        kBackLeftXPos = kWheelBase.div(2).unaryMinus();
+        kBackLeftYPos = kFrontLeftYPos;
+
+        kBackRightXPos = kBackLeftXPos;
+        kBackRightYPos = kFrontRightYPos;
+
+        kSwerveCircumference =
+                Meters.of(
+                                new Translation2d(
+                                                kFrontLeftXPos.in(Meters),
+                                                kFrontLeftYPos.in(Meters))
+                                        .getNorm())
+                        .times(2 * Math.PI);
+
+        kMaxAngularRate =
+                RotationsPerSecond.of(kSpeedAt12Volts.div(kSwerveCircumference).magnitude());
 
         FrontLeft =
                 ConstantCreator.createModuleConstants(

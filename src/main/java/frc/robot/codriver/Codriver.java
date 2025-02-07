@@ -15,8 +15,8 @@ public class Codriver extends Gamepad {
     public final Trigger GoToL3_X = X.and(noFn, teleop);
     public final Trigger GoToL4_Y = Y.and(noFn, teleop);
 
-    public final Trigger ElevatorVoltageUp_UDP;
-    public final Trigger ElevatorVoltageDown_DDP;
+    public final Trigger ElevatorVoltageUp_UDP = upDpad.and(teleop);
+    public final Trigger ElevatorVoltageDown_DDP = downDpad.and(teleop);
 
     public static class CodriverConfig extends Gamepad.Config {
         public CodriverConfig() {
@@ -28,9 +28,6 @@ public class Codriver extends Gamepad {
     public Codriver(CodriverConfig config) {
         super(config);
         this.config = config;
-
-        ElevatorVoltageUp_UDP = upDpad.and(config::isTesting, teleop);
-        ElevatorVoltageDown_DDP = downDpad.and(config::isTesting, teleop);
     }
 
     @Override

@@ -13,7 +13,11 @@ public abstract class HocSubsystem extends SubsystemBase {
     }
 
     public boolean isAttached() {
-        return config.attached;
+        return config.isAttached();
+    }
+
+    public boolean isTesting() {
+        return config.isTesting();
     }
 
     public abstract void setupBindings();
@@ -24,8 +28,15 @@ public abstract class HocSubsystem extends SubsystemBase {
         @Getter @Setter private String name;
         @Getter @Setter private boolean attached = true;
 
+        @Getter private boolean testing;
+
         public Config(String name) {
             this.name = name;
+        }
+
+        public Config testing() {
+            testing = true;
+            return this;
         }
     }
 }

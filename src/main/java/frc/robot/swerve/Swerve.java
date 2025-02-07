@@ -2,6 +2,8 @@ package frc.robot.swerve;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
+import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -17,10 +19,15 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import frc.hocLib.characterization.FeedForwardCharacterizer;
+import frc.hocLib.swerve.CustomSwerveRequest;
 import frc.hocLib.swerve.Telemetry;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -169,6 +176,32 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                         .withRotationalRate(rot));
                     }
                 });
+    }
+
+    protected Command characterize(Voltage quasVoltage, Time quasDuration) {
+        var request = new CustomSwerveRequest.CharacterizeDriveMotors();
+        var characterizer = new FeedForwardCharacterizer();
+        return new FunctionalCommand(
+                () -> {
+                    setControl(request.withVoltageX(0));
+                    characterizer.start();
+                },
+                () -> {
+                    var requestedVoltage =
+                            quasVoltage.in(Volts) * characterizer.getTimeSinceStart().in(Seconds);
+                    setControl(request.withVoltageX(requestedVoltage));
+                    var flModule = getModule(0);
+                    var voltage = flModule.getDriveMotor().getMotorVoltage().getValue();
+                    var velocity =
+                            MetersPerSecond.of(flModule.getCurrentState().speedMetersPerSecond);
+                    characterizer.add(velocity, voltage);
+                },
+                (interrupted) -> {
+                    setControl(request.withVoltageX(0));
+                    characterizer.print();
+                },
+                () -> quasDuration.minus(characterizer.getTimeSinceStart()).gt(Seconds.of(0)),
+                this);
     }
 
     public Field2d getField() {

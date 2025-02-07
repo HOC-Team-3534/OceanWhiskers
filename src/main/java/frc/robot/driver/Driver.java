@@ -1,10 +1,18 @@
 package frc.robot.driver;
 
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.gamepads.Gamepad;
 import lombok.Getter;
 import lombok.Setter;
 
 public class Driver extends Gamepad {
+
+    private DriverConfig config;
+
+    public final Trigger fn = leftBumper;
+    public final Trigger noFn = fn.negate();
+
+    public final Trigger CharacterizeSwerve_DDP = downDpad.and(teleop);
 
     public static class DriverConfig extends Config {
         @Getter @Setter private double slowModeScalor = 0.45;
@@ -33,8 +41,6 @@ public class Driver extends Gamepad {
     private boolean isSlowMode = false; // TODO: change slow and turbo to RobotStates
 
     @Getter @Setter private boolean isTurboMode = false;
-
-    private DriverConfig config;
 
     public Driver(DriverConfig config) {
         super(config);

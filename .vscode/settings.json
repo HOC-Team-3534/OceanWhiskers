@@ -35,7 +35,10 @@
     "simgui-window.json": true,
     "simgui.json": true,
     "ctre_sim": true,
-    "lombok.config": true
+    "lombok.config": true,
+    "src\\main\\java\\com": true,
+    "src\\main\\java\\edu": true,
+    "src\\main\\java\\frc\\hocLib": true
   },
   "java.test.config": [
     {

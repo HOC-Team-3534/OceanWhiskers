@@ -94,16 +94,9 @@ public abstract class Gamepad extends HocSubsystem {
         @Getter @Setter double triggersExp = 1.0;
         @Getter @Setter double triggersScalor = 1.0;
 
-        @Getter boolean testing;
-
         public Config(String name, int port) {
             super(name);
             this.port = port;
-        }
-
-        public Config testing() {
-            testing = true;
-            return this;
         }
     }
 
