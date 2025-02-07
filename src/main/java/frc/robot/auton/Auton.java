@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
+import static frc.reefscape.FieldAndTags2025.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
@@ -15,9 +16,6 @@ import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.path.Waypoint;
-import edu.wpi.first.apriltag.AprilTag;
-import edu.wpi.first.apriltag.AprilTagFieldLayout;
-import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
@@ -38,34 +36,36 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import lombok.Getter;
+import lombok.Setter;
 
 public class Auton {
     public static final EventTrigger autonL4 = new EventTrigger("L4");
 
     private static final Swerve swerve = Robot.getSwerve();
 
-    public static class AutonConfig {}
+    public static class AutonConfig {
+        @Getter @Setter
+        private PathConstraints pathConstraints =
+                new PathConstraints(
+                        MetersPerSecond.of(3.0),
+                        MetersPerSecondPerSecond.of(4.0),
+                        RotationsPerSecond.of(1.5),
+                        RotationsPerSecondPerSecond.of(4.5));
 
-    // Constants
-    private static final AprilTagFieldLayout aprilTagFieldLayout =
-            AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-    private static final Distance FIELD_LENGTH = Meters.of(aprilTagFieldLayout.getFieldLength());
-    private static final Distance FIELD_WIDTH = Meters.of(aprilTagFieldLayout.getFieldWidth());
-    private static final Distance ROBOT_BUMPERS_TO_CENTER =
-            Inches.of(17.0); // TODO: measure and change
+        @Getter @Setter
+        private PathConstraints endSlowPathConstraints =
+                new PathConstraints(
+                        MetersPerSecond.of(1.0),
+                        MetersPerSecondPerSecond.of(1.0),
+                        RotationsPerSecond.of(1.5),
+                        RotationsPerSecondPerSecond.of(4.5));
 
-    // April Tag Management
-    private static final List<AprilTag> sortedTags =
-            aprilTagFieldLayout.getTags().stream().sorted((t1, t2) -> t1.ID - t2.ID).toList();
-    private static final List<AprilTag> blueReefTags = sortedTags.subList(16, 22);
-    private static final List<AprilTag> redReefTags = sortedTags.subList(5, 11);
+        @Getter @Setter private double percentSlowEndOfPath = 0.2;
 
-    static final PathConstraints CONSTRAINTS =
-            new PathConstraints(
-                    MetersPerSecond.of(3.0),
-                    MetersPerSecondPerSecond.of(4.0),
-                    RotationsPerSecond.of(1.5),
-                    RotationsPerSecondPerSecond.of(4.5));
+        @Getter @Setter
+        private Distance offsetFromWallToCenter = Inches.of(17.0); // TODO: measure and change
+    }
 
     private Command m_autonomousCommand;
 
@@ -75,9 +75,11 @@ public class Auton {
 
     public Auton(AutonConfig config) {
         this.config = config;
+
         autonChooser.setDefaultOption("No Auton", Commands.none());
         autonChooser.addOption("Drive Forward", driveForward(Feet.of(2)));
-        SmartDashboard.putData(autonChooser);
+
+        SmartDashboard.putData("Auton/Auton Chooser", autonChooser);
     }
 
     public void init() {
@@ -93,7 +95,7 @@ public class Auton {
     }
 
     // Drive forward
-    public static Command driveForward(Distance distance) {
+    public Command driveForward(Distance distance) {
         return AutoBuilder.followPath(createPath(getPose(), getDriveForwardGoalPose(distance)));
     }
 
@@ -105,44 +107,8 @@ public class Auton {
                 getPose().getRotation());
     }
 
-    public enum ReefSide {
-        Front(7, 18),
-        FrontRight(8, 17),
-        BackRight(9, 22),
-        Back(10, 21),
-        BackLeft(11, 20),
-        FrontLeft(6, 19);
-        int redID, blueID;
-
-        ReefSide(int redID, int blueID) {
-            this.redID = redID;
-            this.blueID = blueID;
-        }
-
-        Optional<Integer> getID() {
-            return DriverStation.getAlliance()
-                    .map(alliance -> alliance.equals(Alliance.Red) ? redID : blueID);
-        }
-    }
-
-    public enum PickupSide {
-        Left(1, 13),
-        Right(2, 12);
-        int redId, blueId;
-
-        PickupSide(int redId, int blueId) {
-            this.redId = redId;
-            this.blueId = blueId;
-        }
-
-        Optional<Integer> getID() {
-            return DriverStation.getAlliance()
-                    .map(alliance -> alliance.equals(Alliance.Red) ? redId : blueId);
-        }
-    }
-
     // Full Autonomous
-    public static Command autonPlace(
+    public Command autonPlace(
             List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
         if (placeList.size() <= 0) return Commands.none();
         var options = placeList.remove(0);
@@ -156,7 +122,7 @@ public class Auton {
                 .andThen(autonPickup(placeList, pickupList));
     }
 
-    public static Command autonPickup(
+    public Command autonPickup(
             List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
         if (pickupList.size() <= 0) return Commands.none();
         var options = pickupList.remove(0);
@@ -171,21 +137,21 @@ public class Auton {
     }
 
     // DTM
-    public static Command dtmToHumanPlayerStation() {
+    public Command dtmToHumanPlayerStation() {
         return followPathToAprilTagID(Auton::findClosestHumanPlayerStationID);
     }
 
-    public static Command dtmToReef() {
+    public Command dtmToReef() {
         return followPathToAprilTagID(Auton::findClosestReefID);
     }
 
     // Path Planning Helpers
-    private static Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
+    private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
         return Commands.deferredProxy(
                 () ->
                         tagIdSupplier
                                 .get()
-                                .flatMap(Auton::findGoalPoseInFrontOfTag)
+                                .flatMap(this::findGoalPoseInFrontOfTag)
                                 .map(
                                         goalPose -> {
                                             var startHeading =
@@ -208,33 +174,8 @@ public class Auton {
                                 .orElse(Commands.none()));
     }
 
-    public static Optional<Pose2d> getDTMtoReefStartPose() {
-        return getDTMtoReefGoalPose()
-                .map(
-                        goalPose -> {
-                            var startHeading =
-                                    getRobotDriveDirection()
-                                            .orElse(
-                                                    goalPose.getTranslation()
-                                                            .minus(getPose().getTranslation())
-                                                            .getAngle());
-                            return new Pose2d(getPose().getTranslation(), startHeading);
-                        });
-    }
-
-    public static Optional<Pose2d> getDTMtoReefGoalPose() {
-        return findClosestReefID().flatMap(Auton::findGoalPoseInFrontOfTag);
-    }
-
-    private static PathPlannerPath createPath(Pose2d... poses) {
+    private PathPlannerPath createPath(Pose2d... poses) {
         List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(poses);
-
-        var endSlowContraints =
-                new PathConstraints(
-                        MetersPerSecond.of(1.0),
-                        MetersPerSecondPerSecond.of(1.0),
-                        RotationsPerSecond.of(1.5),
-                        RotationsPerSecondPerSecond.of(4.5));
 
         return new PathPlannerPath(
                 waypoints,
@@ -242,11 +183,11 @@ public class Auton {
                 Collections.emptyList(),
                 List.of(
                         new ConstraintsZone(
-                                ((double) (poses.length - 1)) - 0.2,
+                                ((double) (poses.length - 1)) - config.getPercentSlowEndOfPath(),
                                 poses.length - 1,
-                                endSlowContraints)),
+                                config.getEndSlowPathConstraints())),
                 Collections.emptyList(),
-                CONSTRAINTS,
+                config.pathConstraints,
                 null,
                 new GoalEndState(0.0, poses[poses.length - 1].getRotation()),
                 false);
@@ -271,12 +212,6 @@ public class Auton {
         return getPose().getMeasureY().gt(FIELD_WIDTH.div(2));
     }
 
-    private static List<AprilTag> getAllianceReefTags() {
-        return DriverStation.getAlliance()
-                .map(alliance -> alliance.equals(Alliance.Red) ? redReefTags : blueReefTags)
-                .orElse(List.of());
-    }
-
     private static Pose2d getPose() {
         return swerve.getState().Pose;
     }
@@ -291,8 +226,8 @@ public class Auton {
                 tag.getTranslation().toTranslation2d().getDistance(getPose().getTranslation()));
     }
 
-    private static Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {
-        return aprilTagFieldLayout
+    private Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {
+        return APRIL_TAG_FIELD_LAYOUT
                 .getTagPose(id)
                 .map(
                         p -> {
@@ -301,7 +236,8 @@ public class Auton {
                                     tagPose.getTranslation()
                                             .plus(
                                                     new Translation2d(
-                                                            ROBOT_BUMPERS_TO_CENTER.in(Meters),
+                                                            config.getOffsetFromWallToCenter()
+                                                                    .in(Meters),
                                                             tagPose.getRotation()));
                             var goalRotation =
                                     tagPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
@@ -310,32 +246,25 @@ public class Auton {
     }
 
     private static Optional<Integer> findClosestHumanPlayerStationID() {
-        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1)) || !isRobotOnOurSide()) {
+        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1)) || !isRobotOnOurSide())
             return Optional.empty();
-        }
+
         return Optional.of(
                 isRedAlliance() ? isRobotOnHighSide() ? 2 : 1 : isRobotOnHighSide() ? 13 : 12);
     }
 
     private static Optional<Integer> findClosestReefID() {
-        if (!isRobotOnOurSide()) {
-            return Optional.empty();
-        }
-        if (getAllianceReefTags().isEmpty()) {
-            return Optional.empty();
-        }
+        if (!isRobotOnOurSide() || getAllianceReefTags().isEmpty()) return Optional.empty();
+
         return Optional.of(
                 getAllianceReefTags().stream()
                         .min(
-                                (t1, t2) ->
-                                        (int)
-                                                Math.round(
-                                                        findDistanceFromRobot(t1.pose)
-                                                                        .minus(
-                                                                                findDistanceFromRobot(
-                                                                                        t2.pose))
-                                                                        .in(Meters)
-                                                                * 1000))
+                                (t1, t2) -> {
+                                    var dist1 = findDistanceFromRobot(t1.pose);
+                                    var dist2 = findDistanceFromRobot(t2.pose);
+
+                                    return (int) Math.round(dist1.minus(dist2).in(Meters) * 1000);
+                                })
                         .get()
                         .ID);
     }

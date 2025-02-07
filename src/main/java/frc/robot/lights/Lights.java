@@ -2,22 +2,24 @@ package frc.robot.lights;
 
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.hocLib.HocSubsystem;
 
-public class Lights extends SubsystemBase {
+public class Lights extends HocSubsystem {
 
     private LightsConfig config;
 
-    public static class LightsConfig {}
+    public static class LightsConfig extends HocSubsystem.Config {
+        public LightsConfig() {
+            super("Lights");
+        }
+    }
 
     final Spark leftLights = new Spark(0);
     final Spark rightLights = new Spark(1);
 
     public Lights(LightsConfig config) {
-        super();
+        super(config);
         this.config = config;
-
-        setDefaultCommand(normal());
     }
 
     public Command normal() {
@@ -44,7 +46,7 @@ public class Lights extends SubsystemBase {
                 .withName("Lights Pick Up Left");
     }
 
-    public Command dtm() {
+    public Command followingPath() {
         return run(() -> {
                     leftLights.set(
                             0.43); // color 1 and 2 beats per minute, impacted by adj. 1 and 2
@@ -52,5 +54,17 @@ public class Lights extends SubsystemBase {
                             0.43); // color 1 and 2 beats per minute, impacted by adj. 1 and 2
                 })
                 .withName("Lights DTM");
+    }
+
+    @Override
+    public void setupBindings() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setupBindings'");
+    }
+
+    @Override
+    public void setupDefaultCommand() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setupDefaultCommand'");
     }
 }

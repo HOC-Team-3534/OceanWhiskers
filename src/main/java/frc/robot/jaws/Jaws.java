@@ -1,174 +1,62 @@
 package frc.robot.jaws;
 
-import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
-import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.FunctionalCommand;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.hocLib.mechanism.TalonSRXMechanism;
+import lombok.Getter;
 
-public class Jaws extends SubsystemBase {
+public class Jaws extends TalonSRXMechanism {
+    public static class JawsConfig extends TalonSRXMechanism.Config {
+        @Getter private Power spikeThreshold = Watts.of(5.0);
+        @Getter private Voltage openAndCloseVoltage = Volts.of(5.0); // close is positive
 
-    public static class JawsConfig {}
-
-    private final Wheel wheel = new Wheel();
-    private final WindowMotor windowMotor = new WindowMotor();
+        public JawsConfig() {
+            super("Jaws", 18);
+        }
+    }
 
     private JawsConfig config;
 
     public Jaws(JawsConfig config) {
-        super();
+        super(config);
         this.config = config;
-
-        SmartDashboard.putData("Jaws/Jaws", this);
-
-        SmartDashboard.putData("Jaws/Commands/Grab", grab());
-        SmartDashboard.putData("Jaws/Commands/Release", release());
     }
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber(
-                "Jaws/Stats/Wheel Power Out (Watts)", wheel.getMotorOutputPower().in(Watts));
-        SmartDashboard.putNumber(
-                "Jaws/Stats/Window Motor Power Out (Watts)",
-                windowMotor.getMotorOutputPower().in(Watts));
+        SmartDashboard.putNumber("Jaws/Power (Watts)", getPower().in(Watts));
     }
 
-    Command setPosition(Position position) {
-        return Commands.runEnd(
-                        () -> {
-                            switch (position) {
-                                case Closed:
-                                    windowMotor.close();
-                                    break;
-                                case Opened:
-                                    windowMotor.open();
-                                    break;
-                            }
-                        },
-                        windowMotor::zero)
-                .until(windowMotor::isPowerSpiking);
+    private boolean isPowerSpikeExceeded() {
+        return getPower().gt(config.getSpikeThreshold());
     }
 
-    Command wheelGrab() {
-        return new FunctionalCommand(
-                () -> {},
-                wheel::in,
-                (interrupted) -> {
-                    if (interrupted) wheel.zero();
-                    else wheel.hold();
-                },
-                wheel::isPowerSpiking);
+    protected Command zero() {
+        return run(() -> setVoltageOut(Volts.zero()));
     }
 
-    public Command grab() {
-        var command = Commands.deadline(wheelGrab(), setPosition(Position.Closed));
-
-        command.addRequirements(this);
-
-        return command;
+    protected Command open() {
+        return run(() -> setVoltageOut(config.getOpenAndCloseVoltage().unaryMinus()))
+                .until(this::isPowerSpikeExceeded);
     }
 
-    Command wheelRelease() {
-        return Commands.runEnd(wheel::out, wheel::zero).withTimeout(Seconds.of(0.25));
+    protected Command close() {
+        return run(() -> setVoltageOut(config.getOpenAndCloseVoltage()))
+                .until(this::isPowerSpikeExceeded);
     }
 
-    public Command release() {
-        var command =
-                Commands.deadline(wheelRelease(), setPosition(Position.Closed))
-                        .andThen(setPosition(Position.Opened));
-
-        command.addRequirements(this);
-
-        return command;
+    @Override
+    public void setupBindings() {
+        JawsStates.setupBindings();
     }
 
-    enum Position {
-        Opened,
-        Closed
-    }
-
-    class PowerSpikeMotor extends TalonSRX {
-
-        final Power POWER_SPIKE_THRESHOLD;
-
-        PowerSpikeMotor(int id, Power spikeThreshold) {
-            super(id);
-
-            POWER_SPIKE_THRESHOLD = spikeThreshold;
-        }
-
-        public Power getMotorOutputPower() {
-            return Amps.of(getStatorCurrent()).times(Volts.of(Math.abs(getMotorOutputVoltage())));
-        }
-
-        public boolean isPowerSpiking() {
-            return getMotorOutputPower().gt(POWER_SPIKE_THRESHOLD);
-        }
-
-        void setVoltageOutput(Voltage volts) {
-            set(ControlMode.PercentOutput, volts.in(Volts) / getBusVoltage());
-        }
-    }
-
-    class Wheel {
-        private final PowerSpikeMotor motor = new PowerSpikeMotor(16, Watts.of(5.0));
-
-        void hold() {
-            motor.setVoltageOutput(Volts.of(3.0));
-        }
-
-        void in() {
-            motor.setVoltageOutput(Volts.of(5.0));
-        }
-
-        void out() {
-            motor.setVoltageOutput(Volts.of(-5.0));
-        }
-
-        void zero() {
-            motor.setVoltageOutput(Volts.zero());
-        }
-
-        boolean isPowerSpiking() {
-            return motor.isPowerSpiking();
-        }
-
-        Power getMotorOutputPower() {
-            return motor.getMotorOutputPower();
-        }
-    }
-
-    class WindowMotor {
-        private final PowerSpikeMotor motor = new PowerSpikeMotor(18, Watts.of(5.0));
-
-        void open() {
-            motor.setVoltageOutput(Volts.of(-5.0));
-        }
-
-        void close() {
-            motor.setVoltageOutput(Volts.of(5.0));
-        }
-
-        void zero() {
-            motor.setVoltageOutput(Volts.zero());
-        }
-
-        boolean isPowerSpiking() {
-            return motor.isPowerSpiking();
-        }
-
-        Power getMotorOutputPower() {
-            return motor.getMotorOutputPower();
-        }
+    @Override
+    public void setupDefaultCommand() {
+        JawsStates.setupDefaultCommand();
     }
 }

@@ -1,6 +1,7 @@
 /** Special thanks to FRC team 3847 */
 package frc.hocLib.util;
 
+import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 // Based on 254-2023 Class
@@ -33,6 +34,10 @@ public class CanDeviceId {
 
     public TalonFX toTalonFX() {
         return new TalonFX(mDeviceNumber, mBus);
+    }
+
+    public TalonSRX toTalonSRX() {
+        return new TalonSRX(mDeviceNumber);
     }
 
     @Override

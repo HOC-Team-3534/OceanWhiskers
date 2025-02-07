@@ -21,22 +21,21 @@ public class Driver extends Gamepad {
         @Getter @Setter private double slowModeScalor = 0.45;
         @Getter @Setter private double defaultTurnScalor = 0.75;
         @Getter @Setter private double turboModeScalor = 1;
-        private double deadzone = 0.001;
 
         public DriverConfig() {
             super("Driver", 0);
-            setTriggersDeadzone(0.0);
-            setLeftStickDeadzone(deadzone);
+
+            setLeftStickDeadzone(0.1);
             setLeftStickExp(2.0);
-            setLeftStickScalor(6);
+            // setLeftStickScalor(1);
 
-            setRightStickDeadzone(deadzone);
+            setRightStickDeadzone(0.1);
             setRightStickExp(2.0);
-            setRightStickScalor(12);
+            // setRightStickScalor(1);
 
-            setTriggersDeadzone(deadzone);
-            setTriggersExp(1);
-            setTriggersScalor(1);
+            setTriggersDeadzone(0.25);
+            // setTriggersExp(1);
+            // setTriggersScalor(1);
         }
     }
 

@@ -38,7 +38,6 @@
     "lombok.config": true,
     "src\\main\\java\\com": true,
     "src\\main\\java\\edu": true,
-    "src\\main\\java\\frc\\hocLib": true,
     ".DataLogTool": true,
     ".SysId": true
   },
@@ -91,10 +90,9 @@
   "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m -Xlog:disable",
   "[java]": {
     "spotlessGradle.format.enable": true,
-    "spotlessGradle.diagnostics.enable": true,
+    //"spotlessGradle.diagnostics.enable": true,
     "editor.codeActionsOnSave": {
       "source.fixAll.spotlessGradle": "explicit"
     },
-    "editor.defaultFormatter": "richardwillis.vscode-spotless-gradle"
   },
 }

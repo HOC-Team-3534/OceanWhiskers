@@ -1,14 +1,81 @@
 package frc.robot.algaeWheel;
 
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import static edu.wpi.first.units.Units.Volts;
+import static edu.wpi.first.units.Units.Watts;
 
-public class AlgaeWheel extends SubsystemBase {
-    public static class AlgaeWheelConfig {}
+import edu.wpi.first.units.measure.Power;
+import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.hocLib.mechanism.TalonSRXMechanism;
+import lombok.Getter;
+import lombok.Setter;
+
+public class AlgaeWheel extends TalonSRXMechanism {
+    public static class AlgaeWheelConfig extends TalonSRXMechanism.Config {
+        @Getter private Power spikeThreshold = Watts.of(5.0);
+        @Getter private Voltage grabVoltage = Volts.of(5.0);
+        @Getter private Voltage releaseVoltage = Volts.of(-7.0);
+        @Getter private Voltage holdVoltage = Volts.of(0.3);
+
+        public AlgaeWheelConfig() {
+            super("Algae Wheel", 16);
+        }
+    }
 
     private AlgaeWheelConfig config;
 
+    @Getter private State state;
+
     public AlgaeWheel(AlgaeWheelConfig config) {
-        super();
+        super(config);
         this.config = config;
+    }
+
+    @Override
+    public void periodic() {
+        if (isPowerSpikeExceeded() && getVoltage().gt(Volts.zero())) {
+            state.setHoldingBall(true);
+        }
+
+        if (getVoltage().lt(Volts.zero())) {
+            state.setHoldingBall(false);
+        }
+
+        SmartDashboard.putNumber("Algae Wheel/Power (Watts)", getPower().in(Watts));
+    }
+
+    private boolean isPowerSpikeExceeded() {
+        return getPower().gt(config.getSpikeThreshold());
+    }
+
+    protected Command zero() {
+        return run(() -> setVoltageOut(Volts.zero()));
+    }
+
+    protected Command grab() {
+        return run(() -> setVoltageOut(config.getGrabVoltage()));
+    }
+
+    protected Command release() {
+        return run(() -> setVoltageOut(config.getReleaseVoltage()));
+    }
+
+    protected Command hold() {
+        return run(() -> setVoltageOut(config.getHoldVoltage()));
+    }
+
+    public static class State {
+        @Getter @Setter private boolean holdingBall;
+    }
+
+    @Override
+    public void setupBindings() {
+        AlgaeWheelStates.setupBindings();
+    }
+
+    @Override
+    public void setupDefaultCommand() {
+        AlgaeWheelStates.setupDefaultCommand();
     }
 }
