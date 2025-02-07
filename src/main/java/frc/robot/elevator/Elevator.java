@@ -18,6 +18,11 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.hocLib.mechanism.TalonFXMechanism;
 import lombok.Getter;
 
@@ -72,6 +77,16 @@ public class Elevator extends TalonFXMechanism {
 
     private ElevatorConfig config;
 
+    private SysIdRoutine upSysIdRoutine =
+            new SysIdRoutine(
+                    new SysIdRoutine.Config(null, Volts.of(6), null, (state) -> {}),
+                    new SysIdRoutine.Mechanism(this::setVoltageOutput, this::logMotor, this));
+
+    private SysIdRoutine downSysIdRoutine =
+            new SysIdRoutine(
+                    new SysIdRoutine.Config(null, Volts.of(0.5), null, (state) -> {}),
+                    new SysIdRoutine.Mechanism(this::setVoltageOutput, this::logMotor, this));
+
     public Elevator(ElevatorConfig config) {
         super(config);
         this.config = config;
@@ -109,6 +124,13 @@ public class Elevator extends TalonFXMechanism {
         setVoltageOutput(Volts.zero());
     }
 
+    void logMotor(SysIdRoutineLog log) {
+        log.motor("elevator")
+                .voltage(getVoltage())
+                .angularVelocity(getVelocity())
+                .angularPosition(getPosition());
+    }
+
     private Distance getTargetHeight() {
         return state.getTargetLevel()
                 .getHeight(config)
@@ -143,6 +165,28 @@ public class Elevator extends TalonFXMechanism {
                     slowlyLower();
                 }
             }
+        }
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        switch (direction) {
+            case kForward:
+                return upSysIdRoutine.quasistatic(Direction.kForward);
+            case kReverse:
+                return downSysIdRoutine.quasistatic(Direction.kReverse);
+            default:
+                return Commands.none();
+        }
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        switch (direction) {
+            case kForward:
+                return upSysIdRoutine.dynamic(Direction.kForward);
+            case kReverse:
+                return downSysIdRoutine.dynamic(Direction.kReverse);
+            default:
+                return Commands.none();
         }
     }
 

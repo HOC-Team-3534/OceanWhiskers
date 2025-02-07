@@ -1,5 +1,6 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
@@ -24,8 +25,10 @@ import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.characterization.FeedForwardCharacterizer;
 import frc.hocLib.swerve.CustomSwerveRequest;
 import frc.hocLib.swerve.Telemetry;
@@ -43,6 +46,15 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     private final Telemetry logger;
 
     private boolean warmedUp;
+
+    private SysIdRoutine sysIdRoutine =
+            new SysIdRoutine(
+                    new SysIdRoutine.Config(null, Volts.of(4), null, (state) -> {}),
+                    new SysIdRoutine.Mechanism(
+                            this::characterizeDriveWithVoltage, this::logFLMotor, this));
+
+    private CustomSwerveRequest.CharacterizeDriveMotors characterizeDriveMotors =
+            new CustomSwerveRequest.CharacterizeDriveMotors();
 
     private final SwerveConfig config;
 
@@ -106,6 +118,19 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     void driveWithSpeeds(ChassisSpeeds speeds) {
         this.setControl(new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speeds));
+    }
+
+    void characterizeDriveWithVoltage(Voltage voltage) {
+        setControl(characterizeDriveMotors.withVoltageX(voltage.in(Volts)));
+    }
+
+    void logFLMotor(SysIdRoutineLog log) {
+        var fl = getModule(0);
+        var fl_drive = fl.getDriveMotor();
+        log.motor("FL")
+                .voltage(fl_drive.getMotorVoltage().getValue())
+                .linearVelocity(MetersPerSecond.of(fl.getCurrentState().speedMetersPerSecond))
+                .linearPosition(Meters.of(fl.getPosition(true).distanceMeters));
     }
 
     @Override
@@ -176,6 +201,14 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                         .withRotationalRate(rot));
                     }
                 });
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.quasistatic(direction);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.dynamic(direction);
     }
 
     protected Command characterize(Voltage quasVoltage, Time quasDuration) {

@@ -15,8 +15,14 @@ public class RobotStates {
     private static final Swerve swerve = Robot.getSwerve();
     public static final Trigger isSwerveTesting = new Trigger(swerve::isTesting);
 
-    public static final Trigger CharacterizeDrive =
-            driver.CharacterizeSwerve_DDP.and(isSwerveTesting);
+    public static final Trigger SwerveQuasiasticForward =
+            driver.SwerveQuasiasticForward_UDP.and(isSwerveTesting);
+    public static final Trigger SwerveQuasiasticBackward =
+            driver.SwerveQuasiasticBackward_DDP.and(isSwerveTesting);
+    public static final Trigger SwerveDynamicForward =
+            driver.SwerveDynamicForward_UDP.and(isSwerveTesting);
+    public static final Trigger SwerveDynamicBackward =
+            driver.SwerveDynamicBackward_DDP.and(isSwerveTesting);
 
     private static final Elevator elevator = Robot.getElevator();
     public static final Trigger isElevatorTesting = new Trigger(elevator::isTesting);
@@ -30,6 +36,15 @@ public class RobotStates {
             codriver.ElevatorVoltageUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorVoltageDown =
             codriver.ElevatorVoltageDown_DDP.and(isElevatorTesting);
+
+    public static final Trigger ElevatorQuasiasticUp =
+            codriver.ElevatorQuasiasticUp_UDP.and(isElevatorTesting);
+    public static final Trigger ElevatorQuasiasticDown =
+            codriver.ElevatorQuasiasticDown_DDP.and(isElevatorTesting);
+    public static final Trigger ElevatorDynamicUp =
+            codriver.ElevatorDynamicUp_UDP.and(isElevatorTesting);
+    public static final Trigger ElevatorDynamicDown =
+            codriver.ElevatorDynamicDown_DDP.and(isElevatorTesting);
 
     public static final Trigger ReadyToDeploy = new Trigger(() -> false);
 

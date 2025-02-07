@@ -1,9 +1,8 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Seconds;
-import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.RobotStates.*;
 
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Robot;
 import frc.robot.driver.Driver;
 
@@ -20,6 +19,9 @@ public class SwerveStates {
     }
 
     public static void setupBindings() {
-        CharacterizeDrive.whileTrue(swerve.characterize(Volts.one(), Seconds.of(4)));
+        SwerveQuasiasticForward.whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
+        SwerveQuasiasticBackward.whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
+        SwerveDynamicForward.whileTrue(swerve.sysIdDynamic(Direction.kForward));
+        SwerveDynamicBackward.whileTrue(swerve.sysIdDynamic(Direction.kReverse));
     }
 }

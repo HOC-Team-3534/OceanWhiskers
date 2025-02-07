@@ -38,7 +38,9 @@
     "lombok.config": true,
     "src\\main\\java\\com": true,
     "src\\main\\java\\edu": true,
-    "src\\main\\java\\frc\\hocLib": true
+    "src\\main\\java\\frc\\hocLib": true,
+    ".DataLogTool": true,
+    ".SysId": true
   },
   "java.test.config": [
     {

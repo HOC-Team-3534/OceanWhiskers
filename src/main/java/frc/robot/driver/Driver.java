@@ -12,7 +12,10 @@ public class Driver extends Gamepad {
     public final Trigger fn = leftBumper;
     public final Trigger noFn = fn.negate();
 
-    public final Trigger CharacterizeSwerve_DDP = downDpad.and(teleop);
+    public final Trigger SwerveQuasiasticForward_UDP = upDpad.and(noFn, teleop);
+    public final Trigger SwerveQuasiasticBackward_DDP = downDpad.and(noFn, teleop);
+    public final Trigger SwerveDynamicForward_UDP = rightDpad.and(fn, teleop);
+    public final Trigger SwerveDynamicBackward_DDP = leftDpad.and(fn, teleop);
 
     public static class DriverConfig extends Config {
         @Getter @Setter private double slowModeScalor = 0.45;
