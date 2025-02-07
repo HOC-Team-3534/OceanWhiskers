@@ -17,7 +17,7 @@ public class ElevatorStates {
         elevator.setDefaultCommand(goToLevel(Level.Bottom));
     }
 
-    public static void setupTriggeringOfCommands() {
+    public static void setupBindings() {
         GoToL1.and(ReadyToDeploy.not()).whileTrue(goToLevel(Level.L1, () -> false));
         GoToL1.and(ReadyToDeploy).whileTrue(goToLevel(Level.L1, () -> true));
 

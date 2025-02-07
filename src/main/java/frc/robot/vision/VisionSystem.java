@@ -22,6 +22,10 @@ public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
         @Getter private boolean centerCameraAttached = false;
 
+        public VisionConfig() {
+            super("Photon Vision");
+        }
+
         public VisionConfig configCenterCameraAttached(boolean attached) {
             centerCameraAttached = attached;
             return this;
@@ -120,7 +124,7 @@ public class VisionSystem extends HocSubsystem {
     }
 
     @Override
-    public void setupTriggeringOfCommands() {}
+    public void setupBindings() {}
 
     @Override
     public void setupDefaultCommand() {}

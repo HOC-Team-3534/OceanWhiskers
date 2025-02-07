@@ -16,12 +16,16 @@ public abstract class HocSubsystem extends SubsystemBase {
         return config.attached;
     }
 
-    public abstract void setupTriggeringOfCommands();
+    public abstract void setupBindings();
 
     public abstract void setupDefaultCommand();
 
     public static class Config {
         @Getter @Setter private String name;
         @Getter @Setter private boolean attached = true;
+
+        public Config(String name) {
+            this.name = name;
+        }
     }
 }

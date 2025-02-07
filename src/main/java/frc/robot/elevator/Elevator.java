@@ -222,8 +222,8 @@ public class Elevator extends TalonFXMechanism {
     }
 
     @Override
-    public void setupTriggeringOfCommands() {
-        ElevatorStates.setupTriggeringOfCommands();
+    public void setupBindings() {
+        ElevatorStates.setupBindings();
     }
 
     @Override

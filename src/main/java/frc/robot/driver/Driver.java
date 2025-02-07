@@ -76,7 +76,7 @@ public class Driver extends Gamepad {
     }
 
     @Override
-    public void setupTriggeringOfCommands() {}
+    public void setupBindings() {}
 
     @Override
     public void setupDefaultCommand() {}

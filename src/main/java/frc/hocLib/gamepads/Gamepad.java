@@ -97,7 +97,7 @@ public abstract class Gamepad extends HocSubsystem {
         @Getter boolean testing;
 
         public Config(String name, int port) {
-            this.name = name;
+            super(name);
             this.port = port;
         }
 

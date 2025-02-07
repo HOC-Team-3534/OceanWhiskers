@@ -1,10 +1,12 @@
 package frc.robot.swerve;
 
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
@@ -18,25 +20,24 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.Command;
 import frc.hocLib.swerve.Telemetry;
-import frc.robot.commands.Drive;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
  * be used in command-based projects.
  */
-public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> implements Subsystem {
+public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
-
-    private final double MaxSpeed;
-
     private final Telemetry logger;
 
     private boolean warmedUp;
+
+    private final SwerveConfig config;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -54,9 +55,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> impleme
                 CANcoder::new,
                 config.getDrivetrainConstants(),
                 config.getSwerveModuleConstants());
-        setDefaultCommand(new Drive(this));
-
-        this.MaxSpeed = config.getKSpeedAt12Volts().in(MetersPerSecond);
+        this.config = config;
 
         var pathPlannerConfig = loadRobotConfig();
 
@@ -76,7 +75,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> impleme
                                 () -> false,
                                 this));
 
-        logger = new Telemetry(MaxSpeed);
+        logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
 
         registerTelemetry(logger::telemeterize);
     }
@@ -144,7 +143,45 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> impleme
         }
     }
 
+    protected Command drive(
+            Supplier<Double> xInput, Supplier<Double> yInput, Supplier<Double> rotInput) {
+        var idle = new SwerveRequest.Idle();
+
+        /* Setting up bindings for necessary control of the swerve drive platform */
+        var fieldCentric =
+                new SwerveRequest.FieldCentric()
+                        .withDriveRequestType(
+                                DriveRequestType
+                                        .OpenLoopVoltage); // Use open-loop control for drive motors
+        return run(
+                () -> {
+                    var maxSpeed = config.getKSpeedAt12Volts().in(MetersPerSecond);
+                    var x = xInput.get() * maxSpeed;
+                    var y = yInput.get() * maxSpeed;
+                    var rot = rotInput.get() * config.getKMaxAngularRate().in(RadiansPerSecond);
+                    if (x + y + rot < 0.05) {
+                        setControl(idle);
+                    } else {
+                        setControl(
+                                fieldCentric
+                                        .withVelocityX(x)
+                                        .withVelocityY(y)
+                                        .withRotationalRate(rot));
+                    }
+                });
+    }
+
     public Field2d getField() {
         return logger.getField();
+    }
+
+    @Override
+    public void setupDefaultCommand() {
+        SwerveStates.setupDefaultCommand();
+    }
+
+    @Override
+    public void setupBindings() {
+        SwerveStates.setupBindings();
     }
 }

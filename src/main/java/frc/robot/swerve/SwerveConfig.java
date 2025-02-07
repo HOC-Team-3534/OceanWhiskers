@@ -3,8 +3,10 @@ package frc.robot.swerve;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -21,7 +23,9 @@ import com.ctre.phoenix6.swerve.SwerveModuleConstants.DriveMotorArrangement;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerFeedbackType;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerMotorArrangement;
 import com.ctre.phoenix6.swerve.SwerveModuleConstantsFactory;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -104,10 +108,6 @@ public class SwerveConfig {
 
     @Getter private CANcoderConfiguration encoderInitialConfigs = new CANcoderConfiguration();
 
-    // Theoretical free speed (m/s) at 12 V applied output;
-    // This needs to be tuned to your individual robot
-    @Getter private LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.96);
-
     // Every 1 rotation of the azimuth results in kCoupleRatio drive motor turns;
     // This may need to be tuned to your individual robot
     @Getter private double kCoupleRatio = 3.5714285714285716;
@@ -176,6 +176,21 @@ public class SwerveConfig {
     @Getter private Distance kBackRightYPos = kTrackWidth.div(2).unaryMinus();
 
     @Getter private SwerveModuleConstants<?, ?, ?> FrontLeft, FrontRight, BackLeft, BackRight;
+
+    // Theoretical free speed (m/s) at 12 V applied output;
+    // This needs to be tuned to your individual robot
+    @Getter private LinearVelocity kSpeedAt12Volts = MetersPerSecond.of(4.96);
+
+    @Getter
+    private Distance kSwerveCircumference =
+            Meters.of(
+                            new Translation2d(kFrontLeftXPos.in(Meters), kFrontLeftYPos.in(Meters))
+                                    .getNorm())
+                    .times(2 * Math.PI);
+
+    @Getter
+    private AngularVelocity kMaxAngularRate =
+            RotationsPerSecond.of(kSpeedAt12Volts.div(kSwerveCircumference).magnitude());
 
     public SwerveConfig() {
         updateConfig();

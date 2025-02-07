@@ -184,7 +184,7 @@ public abstract class TalonFXMechanism extends HocSubsystem {
         }
 
         public FollowerConfig(String name, int id, String canbus, boolean opposeLeader) {
-            setName(name);
+            super(name);
             this.id = new CanDeviceId(id, canbus);
             this.opposeLeader = opposeLeader;
         }
@@ -207,7 +207,7 @@ public abstract class TalonFXMechanism extends HocSubsystem {
         }
 
         public Config(String name, int id, String canbus) {
-            setName(name);
+            super(name);
             this.id = new CanDeviceId(id, canbus);
         }
 
