@@ -34,7 +34,7 @@ public class RobotStates {
     public static final Trigger isElevatorTesting =
             new Trigger(elevator::isTesting).and(isSwerveTesting.not());
     public static final Trigger isTusksTesting =
-            new Trigger(tusks::isTesting).and(isElevatorTesting.not());
+            new Trigger(tusks::isTesting).and(isElevatorTesting.not(), isSwerveTesting.not());
 
     public static final Trigger GoToL1 = codriver.GoToL1_A;
     public static final Trigger GoToL2 = codriver.GoToL2_B;
