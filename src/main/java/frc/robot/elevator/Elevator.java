@@ -38,7 +38,7 @@ public class Elevator extends TalonFXMechanism {
         @Getter private Distance L4Pre = Inches.of(35);
         @Getter private Distance PickUp = Inches.of(15);
 
-        @Getter private boolean motionMagicEnabled = false;
+        @Getter private boolean motionMagicEnabled;
 
         public ElevatorConfig() {
             super("Elevator Leader", 14);
@@ -85,12 +85,13 @@ public class Elevator extends TalonFXMechanism {
 
     private SysIdRoutine upSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(null, Volts.of(6), null, (state) -> {}),
+                    new SysIdRoutine.Config(null, Volts.of(4), null, (state) -> {}),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     private SysIdRoutine downSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(null, Volts.of(0.5), null, (state) -> {}),
+                    new SysIdRoutine.Config(
+                            Volts.of(0.25).per(Second), Volts.of(0.5), null, (state) -> {}),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     public Elevator(ElevatorConfig config) {

@@ -10,7 +10,7 @@ public class Codriver extends Gamepad {
     public final Trigger fn = leftBumper;
     public final Trigger noFn = fn.negate();
 
-    public final Trigger UseSysIdOverManual = Trigger.kTrue;
+    public final Trigger UseSysIdOverManual = Trigger.kFalse;
 
     public final Trigger GoToL1_A = A.and(teleop);
     public final Trigger GoToL2_B = B.and(teleop);
