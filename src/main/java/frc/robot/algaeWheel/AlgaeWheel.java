@@ -25,7 +25,7 @@ public class AlgaeWheel extends TalonSRXMechanism {
 
     private AlgaeWheelConfig config;
 
-    @Getter private State state;
+    @Getter private State state = new State();
 
     public AlgaeWheel(AlgaeWheelConfig config) {
         super(config);

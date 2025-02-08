@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -74,6 +75,9 @@ public class Robot extends HocRobot {
 
         try {
             Telemetry.print("--- Robot Init Starting ---");
+
+            SmartDashboard.putString(
+                    "Rio Serial Number", isReal() ? RobotController.getSerialNumber() : "");
 
             /** Set up the config */
             switch (Rio.id) {

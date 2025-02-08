@@ -96,7 +96,9 @@ public class Elevator extends TalonFXMechanism {
         super(config);
         this.config = config;
 
-        motor.setPosition(0);
+        if (isAttached()) {
+            motor.setPosition(0);
+        }
     }
 
     @Override
@@ -137,7 +139,7 @@ public class Elevator extends TalonFXMechanism {
     }
 
     public Command safelyLowerToBottom() {
-        if (!isAttached()) return Commands.none();
+        if (!isAttached()) return run(() -> {});
         return startRun(
                         () -> {
                             state.setTargetLevel(Level.Bottom);
@@ -153,7 +155,7 @@ public class Elevator extends TalonFXMechanism {
     }
 
     public Command goToLevel(Level level) {
-        if (!isAttached()) return Commands.none();
+        if (!isAttached()) return run(() -> {});
 
         if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
 
@@ -249,7 +251,7 @@ public class Elevator extends TalonFXMechanism {
 
     public class State {
         @Getter @Setter private boolean climbing;
-        @Getter @Setter private Level targetLevel;
+        @Getter @Setter private Level targetLevel = Level.Bottom;
 
         public boolean isReadyToDeploy() {
             return getHeight().plus(Inches.of(0.5)).gt(targetLevel.getReadyToDeployHeight(config));

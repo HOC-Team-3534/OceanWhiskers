@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -168,8 +167,6 @@ public abstract class Gamepad extends HocSubsystem {
             rightStickY = rightYTrigger(Threshold.ABS_GREATER, config.rightStickDeadzone);
             rightStickX = rightXTrigger(Threshold.ABS_GREATER, config.rightStickDeadzone);
         }
-
-        CommandScheduler.getInstance().registerSubsystem(this);
     }
 
     @Override
@@ -179,7 +176,7 @@ public abstract class Gamepad extends HocSubsystem {
 
     // Configure the pilot controller
     public void configure() {
-        if (config.isAttached()) {
+        if (isAttached()) {
             disconnectedAlert.set(!isConnected()); // Display if the controller is disconnected
 
             // Detect whether the Xbox controller has been plugged in after start-up

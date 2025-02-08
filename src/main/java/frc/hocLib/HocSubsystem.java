@@ -1,6 +1,7 @@
 package frc.hocLib;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -32,6 +33,9 @@ public abstract class HocSubsystem extends SubsystemBase {
 
         public Config(String name) {
             this.name = name;
+            if (Robot.isSimulation()) {
+                attached = false;
+            }
         }
 
         public Config testing() {

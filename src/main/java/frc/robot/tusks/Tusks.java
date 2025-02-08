@@ -70,9 +70,11 @@ public class Tusks extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
-        motor.setSensorPhase(true);
+        if (isAttached()) {
+            motor.setSensorPhase(true);
 
-        motor.setSelectedSensorPosition(positionToPositionInSensorTicks(Degrees.of(90)));
+            motor.setSelectedSensorPosition(positionToPositionInSensorTicks(Degrees.of(90)));
+        }
     }
 
     @Override

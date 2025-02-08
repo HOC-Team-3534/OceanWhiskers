@@ -32,7 +32,8 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(isSwerveTesting);
 
-    public static final Trigger isElevatorTesting = new Trigger(elevator::isTesting);
+    public static final Trigger isElevatorTesting =
+            new Trigger(elevator::isTesting).and(isSwerveTesting.not());
     public static final Trigger isTusksTesting =
             new Trigger(tusks::isTesting).and(isElevatorTesting.not());
 
