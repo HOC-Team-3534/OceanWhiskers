@@ -18,17 +18,17 @@ public class ElevatorStates {
     }
 
     public static void setupBindings() {
-        GoToL1.and(ReadyToDeploy.not()).whileTrue(goToLevel(Level.L1, () -> false));
-        GoToL1.and(ReadyToDeploy).whileTrue(goToLevel(Level.L1, () -> true));
+        GoToL1.and(Deploy.not()).whileTrue(goToLevel(Level.L1Pre));
+        GoToL1.and(Deploy).whileTrue(goToLevel(Level.L1));
 
-        GoToL2.and(ReadyToDeploy.not()).whileTrue(goToLevel(Level.L2, () -> false));
-        GoToL2.and(ReadyToDeploy).whileTrue(goToLevel(Level.L2, () -> true));
+        GoToL2.and(Deploy.not()).whileTrue(goToLevel(Level.L2Pre));
+        GoToL2.and(Deploy).whileTrue(goToLevel(Level.L2));
 
-        GoToL3.and(ReadyToDeploy.not()).whileTrue(goToLevel(Level.L3, () -> false));
-        GoToL3.and(ReadyToDeploy).whileTrue(goToLevel(Level.L3, () -> true));
+        GoToL3.and(Deploy.not()).whileTrue(goToLevel(Level.L3Pre));
+        GoToL3.and(Deploy).whileTrue(goToLevel(Level.L3));
 
-        GoToL4.and(ReadyToDeploy.not()).whileTrue(goToLevel(Level.L4, () -> false));
-        GoToL4.and(ReadyToDeploy).whileTrue(goToLevel(Level.L4, () -> true));
+        GoToL4.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
+        GoToL4.and(Deploy).whileTrue(goToLevel(Level.L4));
 
         PickupCoralLeft.or(PickupCoralRight).whileTrue(goToLevel(Level.PickUp));
 
@@ -42,27 +42,7 @@ public class ElevatorStates {
     }
 
     static Command goToLevel(Level level) {
-        return goToLevel(level, () -> false);
-    }
-
-    static Command goToLevel(Level level, Supplier<Boolean> deploy) {
-        return elevator.runEnd(
-                        () -> {
-                            elevator.getState().setTargetLevel(level);
-                            switch (level) {
-                                case Bottom:
-                                    elevator.getState().setDeploying(false);
-                                    break;
-                                default:
-                                    if (deploy.get()) {
-                                        elevator.getState().setDeploying(true);
-                                    }
-                                    break;
-                            }
-                            elevator.updateHeight();
-                        },
-                        elevator::slowlyLower)
-                .withName("Elevator.Go To " + level.name());
+        return elevator.goToLevel(level);
     }
 
     static Command voltageOut(Supplier<Voltage> volts) {

@@ -20,17 +20,18 @@ public class Codriver extends Gamepad {
     public final Trigger ElevatorVoltageUp_UDP = upDpad.and(teleop, UseSysIdOverManual.not());
     public final Trigger ElevatorVoltageDown_DDP = downDpad.and(teleop, UseSysIdOverManual.not());
 
-    public final Trigger ElevatorQuasiasticUp_UDP = upDpad.and(noFn, teleop, UseSysIdOverManual);
-    public final Trigger ElevatorQuasiasticDown_DDP =
-            downDpad.and(noFn, teleop, UseSysIdOverManual);
-    public final Trigger ElevatorDynamicUp_UDP = upDpad.and(fn, teleop, UseSysIdOverManual);
-    public final Trigger ElevatorDynamicDown_DDP = downDpad.and(fn, teleop, UseSysIdOverManual);
+    public final Trigger QuasiasticUp_UDP = upDpad.and(noFn, teleop, UseSysIdOverManual);
+    public final Trigger QuasiasticDown_DDP = downDpad.and(noFn, teleop, UseSysIdOverManual);
+    public final Trigger DynamicUp_UDP = upDpad.and(fn, teleop, UseSysIdOverManual);
+    public final Trigger DynamicDown_DDP = downDpad.and(fn, teleop, UseSysIdOverManual);
 
     public final Trigger GrabAlgae_RT = rightTrigger.and(fn, teleop);
     public final Trigger ReleaseAlgae_LT = leftTrigger.and(fn, teleop);
 
     public final Trigger PickupCoralLeft_LT = leftTrigger.and(noFn, teleop);
     public final Trigger PickupCoralRight_RT = rightTrigger.and(noFn, teleop);
+
+    public final Trigger Deploy_LS = leftStickClick.and(teleop);
 
     public static class CodriverConfig extends Gamepad.Config {
         public CodriverConfig() {

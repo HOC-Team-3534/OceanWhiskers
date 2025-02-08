@@ -1,5 +1,6 @@
 package frc.robot;
 
+import static frc.robot.RobotStates.isTusksTesting;
 import static frc.robot.auton.Auton.*;
 
 import com.pathplanner.lib.commands.PathPlannerAuto;
@@ -9,6 +10,7 @@ import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
 import frc.robot.elevator.Elevator;
 import frc.robot.swerve.Swerve;
+import frc.robot.tusks.Tusks;
 
 public class RobotStates {
     private static final Driver driver = Robot.getDriver();
@@ -17,6 +19,7 @@ public class RobotStates {
     private static final Swerve swerve = Robot.getSwerve();
     private static final Elevator elevator = Robot.getElevator();
     private static final AlgaeWheel algaeWheel = Robot.getAlgaeWheel();
+    private static final Tusks tusks = Robot.getTusks();
 
     public static final Trigger isSwerveTesting = new Trigger(swerve::isTesting);
 
@@ -30,6 +33,8 @@ public class RobotStates {
             driver.SwerveDynamicBackward_DDP.and(isSwerveTesting);
 
     public static final Trigger isElevatorTesting = new Trigger(elevator::isTesting);
+    public static final Trigger isTusksTesting =
+            new Trigger(tusks::isTesting).and(isElevatorTesting.not());
 
     public static final Trigger GoToL1 = codriver.GoToL1_A;
     public static final Trigger GoToL2 = codriver.GoToL2_B;
@@ -42,13 +47,18 @@ public class RobotStates {
             codriver.ElevatorVoltageDown_DDP.and(isElevatorTesting);
 
     public static final Trigger ElevatorQuasiasticUp =
-            codriver.ElevatorQuasiasticUp_UDP.and(isElevatorTesting);
+            codriver.QuasiasticUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorQuasiasticDown =
-            codriver.ElevatorQuasiasticDown_DDP.and(isElevatorTesting);
-    public static final Trigger ElevatorDynamicUp =
-            codriver.ElevatorDynamicUp_UDP.and(isElevatorTesting);
+            codriver.QuasiasticDown_DDP.and(isElevatorTesting);
+    public static final Trigger ElevatorDynamicUp = codriver.DynamicUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorDynamicDown =
-            codriver.ElevatorDynamicDown_DDP.and(isElevatorTesting);
+            codriver.DynamicDown_DDP.and(isElevatorTesting);
+
+    public static final Trigger TusksQuasiasticUp = codriver.QuasiasticUp_UDP.and(isTusksTesting);
+    public static final Trigger TusksQuasiasticDown =
+            codriver.QuasiasticDown_DDP.and(isTusksTesting);
+    public static final Trigger TusksDynamicUp = codriver.DynamicUp_UDP.and(isTusksTesting);
+    public static final Trigger TusksDynamicDown = codriver.DynamicDown_DDP.and(isTusksTesting);
 
     public static final Trigger HoldingAlgae =
             new Trigger(() -> algaeWheel.getState().isHoldingBall());
@@ -60,7 +70,17 @@ public class RobotStates {
     public static final Trigger PickupCoralLeft = codriver.PickupCoralLeft_LT;
     public static final Trigger PickupCoralRight = codriver.PickupCoralRight_RT;
 
-    public static final Trigger ReadyToDeploy = new Trigger(() -> false);
+    public static final Trigger HoldingCoral = new Trigger(() -> tusks.getState().isHoldingCoral());
+
+    public static final Trigger ElevatorReadyToDeploy =
+            new Trigger(() -> elevator.getState().isReadyToDeploy());
+
+    public static final Trigger TusksReadyToDeploy =
+            new Trigger(() -> tusks.getState().isReadyToDeploy());
+
+    // TODO: add in check on position for auto deploy
+    public static final Trigger Deploy =
+            (ElevatorReadyToDeploy.and(TusksReadyToDeploy)).and(codriver.Deploy_LS);
 
     public static final Trigger FollowingPath =
             new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();

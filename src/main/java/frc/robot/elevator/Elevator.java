@@ -13,7 +13,6 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.InvertedValue;
-import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,17 +23,20 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.hocLib.mechanism.TalonFXMechanism;
 import lombok.Getter;
+import lombok.Setter;
 
 public class Elevator extends TalonFXMechanism {
 
     public static class ElevatorConfig extends Config {
         @Getter private Distance L1 = Inches.of(10);
+        @Getter private Distance L1Pre = Inches.of(5.0);
         @Getter private Distance L2 = Inches.of(20);
+        @Getter private Distance L2Pre = Inches.of(15.0);
         @Getter private Distance L3 = Inches.of(30);
+        @Getter private Distance L3Pre = Inches.of(25);
         @Getter private Distance L4 = Inches.of(40);
+        @Getter private Distance L4Pre = Inches.of(35);
         @Getter private Distance PickUp = Inches.of(15);
-
-        @Getter private Distance Deploy = Inches.of(5.0);
 
         @Getter private boolean motionMagicEnabled = false;
 
@@ -101,10 +103,7 @@ public class Elevator extends TalonFXMechanism {
     public void periodic() {
         SmartDashboard.putNumber("Elevator/Stats/Angle (Deg)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Elevator/Stats/Height (In.)", getHeight().in(Inches));
-        SmartDashboard.putNumber(
-                "Elevator/Stats/Target Height (In.)", getTargetHeight().in(Inches));
         SmartDashboard.putBoolean("Elevator/Stats/Near Target Height", state.isNearTargetHeight());
-        SmartDashboard.putBoolean("Elevator/Stats/Deploying", state.isDeploying());
         SmartDashboard.putNumber("Elevator/Stats/Voltage Output", getVoltage().in(Volts));
         SmartDashboard.putNumber(
                 "Elevator/Stats/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
@@ -119,14 +118,6 @@ public class Elevator extends TalonFXMechanism {
         return getLinearPosition();
     }
 
-    void slowlyLower() {
-        setVoltageOut(Volts.of(0.35));
-    }
-
-    void zero() {
-        setVoltageOut(Volts.zero());
-    }
-
     void logMotor(SysIdRoutineLog log) {
         log.motor("elevator")
                 .voltage(getVoltage())
@@ -134,40 +125,47 @@ public class Elevator extends TalonFXMechanism {
                 .angularPosition(getPosition());
     }
 
-    private Distance getTargetHeight() {
-        return state.getTargetLevel()
-                .getHeight(config)
-                .plus(state.isDeploying() ? config.getDeploy() : Inches.zero());
-    }
-
-    private Angle getTargetRawPosition() {
-        return linearPositionToPosition(getTargetHeight());
-    }
-
     @Override
     protected void setVoltageOut(Voltage volts) {
         if (getHeight().gt(config.getMaxLinearPosition().minus(Inches.of(3.0)))) {
             volts = Volts.of(0.35);
         }
-        if (volts.lt(Volts.zero())) {
-            volts = Volts.of(0.35);
+        if (getHeight().isNear(Inches.zero(), Inches.of(4.0))) {
+            volts = Volts.of(Math.max(volts.in(Volts), 0.35));
         }
         super.setVoltageOut(volts);
     }
 
-    void updateHeight() {
-        if (isAttached()) {
-            if (config.isMotionMagicEnabled()) {
-                if (state.isNearTargetHeight() || state.isClimbing()) zero();
-                else motor.setControl(motionMagicVoltage.withPosition(getTargetRawPosition()));
-            } else {
-                if (getHeight().lt(Inches.of(1.0))) {
-                    zero();
-                } else {
-                    slowlyLower();
-                }
-            }
-        }
+    public Command safelyLowerToBottom() {
+        if (!isAttached()) return Commands.none();
+        return startRun(
+                        () -> {
+                            state.setTargetLevel(Level.Bottom);
+                        },
+                        () -> {
+                            if (state.isNearTargetHeight()) {
+                                setVoltageOut(Volts.zero());
+                            } else {
+                                setVoltageOut(Volts.of(0.35));
+                            }
+                        })
+                .withName("Elevator.Safely Lower to Bottom");
+    }
+
+    public Command goToLevel(Level level) {
+        if (!isAttached()) return Commands.none();
+
+        if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
+
+        return startRun(
+                        () -> {
+                            state.setTargetLevel(level);
+                        },
+                        () ->
+                                motor.setControl(
+                                        motionMagicVoltage.withPosition(
+                                                linearPositionToPosition(level.getHeight(config)))))
+                .withName("Elevator.Go To " + level.name());
     }
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
@@ -198,16 +196,18 @@ public class Elevator extends TalonFXMechanism {
 
     public enum Level {
         Bottom,
+        L1Pre,
         L1,
+        L2Pre,
         L2,
+        L3Pre,
         L3,
+        L4Pre,
         L4,
         PickUp;
 
         Distance getHeight(ElevatorConfig config) {
             switch (this) {
-                case Bottom:
-                    return Inches.of(0);
                 case L1:
                     return config.getL1();
                 case L2:
@@ -218,52 +218,45 @@ public class Elevator extends TalonFXMechanism {
                     return config.getL4();
                 case PickUp:
                     return config.getPickUp();
+                case L1Pre:
+                    return config.getL1Pre();
+                case L2Pre:
+                    return config.getL2Pre();
+                case L3Pre:
+                    return config.getL3Pre();
+                case L4Pre:
+                    return config.getL4Pre();
                 default:
                     return Inches.of(0);
+            }
+        }
+
+        Distance getReadyToDeployHeight(ElevatorConfig config) {
+            switch (this) {
+                case L1, L1Pre:
+                    return config.getL1Pre();
+                case L2, L2Pre:
+                    return config.getL2Pre();
+                case L3, L3Pre:
+                    return config.getL3Pre();
+                case L4, L4Pre:
+                    return config.getL4Pre();
+                default:
+                    return config.getMaxLinearPosition(); // theoretically never
             }
         }
     }
 
     public class State {
-        private boolean climbing = false;
-        private Level targetLevel = Level.Bottom;
-        private boolean deploying;
+        @Getter @Setter private boolean climbing;
+        @Getter @Setter private Level targetLevel;
 
-        public boolean isClimbing() {
-            return climbing;
-        }
-
-        void setClimbing(boolean climbing) {
-            this.climbing = climbing;
-        }
-
-        public Level getTargetLevel() {
-            return targetLevel;
-        }
-
-        void setTargetLevel(Level targetHeight) {
-            this.targetLevel = targetHeight;
-        }
-
-        boolean isDeploying() {
-            return deploying;
-        }
-
-        void setDeploying(boolean deploying) {
-            this.deploying = deploying;
-        }
-
-        public boolean isReefTargetHeight() {
-            switch (targetLevel) {
-                case L1, L2, L3, L4:
-                    return true;
-                default:
-                    return false;
-            }
+        public boolean isReadyToDeploy() {
+            return getHeight().plus(Inches.of(0.5)).gt(targetLevel.getReadyToDeployHeight(config));
         }
 
         public boolean isNearTargetHeight() {
-            return getHeight().isNear(getTargetHeight(), Inches.of(0.5));
+            return getHeight().isNear(targetLevel.getHeight(config), Inches.of(0.5));
         }
     }
 

@@ -58,13 +58,11 @@ public class Lights extends HocSubsystem {
 
     @Override
     public void setupBindings() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setupBindings'");
+        LightsStates.setupBindings();
     }
 
     @Override
     public void setupDefaultCommand() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'setupDefaultCommand'");
+        LightsStates.setupDefaultCommand();
     }
 }

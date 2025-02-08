@@ -13,11 +13,11 @@ import com.ctre.phoenix.motorcontrol.can.SlotConfiguration;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.mechanism.TalonSRXMechanism;
-import frc.hocLib.motionmagic.MotionMagicV5;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +26,11 @@ public class Tusks extends TalonSRXMechanism {
 
     public static class TusksConfig extends TalonSRXMechanism.Config {
         @Getter private boolean motionMagicEnabled;
+
+        @Getter private Angle up = Degrees.of(90);
+        @Getter private Angle pickup = Degrees.of(30);
+        @Getter private Angle preDeploy = Degrees.of(50);
+        @Getter private Angle deploy = Degrees.of(-20);
 
         @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0, 0, 0);
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
@@ -41,19 +46,7 @@ public class Tusks extends TalonSRXMechanism {
             slotConfig.kI = 0.0;
             slotConfig.kD = 0.0;
 
-            slotConfig.kF = MotionMagicV5.convV6toV5(0.0, Volts.of(12), 4096);
-
             talonConfig.slot0 = slotConfig;
-
-            var slot1Config = new SlotConfiguration();
-
-            slot1Config.kP = 0.0;
-            slot1Config.kI = 0.0;
-            slot1Config.kD = 0.0;
-
-            slot1Config.kF = MotionMagicV5.convV6toV5(0.0, Volts.of(12), 4096);
-
-            talonConfig.slot1 = slot1Config;
 
             setMMConfigs(RotationsPerSecond.of(1.0), RotationsPerSecondPerSecond.of(1.0), 2);
         }
@@ -64,6 +57,11 @@ public class Tusks extends TalonSRXMechanism {
         }
     }
 
+    private SysIdRoutine sysIdRoutine =
+            new SysIdRoutine(
+                    new SysIdRoutine.Config(null, Volts.of(2), null, (state) -> {}),
+                    new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
+
     final State state = new State();
 
     private TusksConfig config;
@@ -72,35 +70,38 @@ public class Tusks extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
+        motor.setSensorPhase(true);
+
         motor.setSelectedSensorPosition(positionToPositionInSensorTicks(Degrees.of(90)));
     }
 
     @Override
     public void periodic() {
-        if (!state.hasCoral() // has no coral
-                && getVelocity()
-                        .lt(
-                                DegreesPerSecond
-                                        .zero()) // tusks are moving down despite the motor moving
-                // up
+        if (!state.isHoldingCoral() // has no coral
+                && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
                 && getError().gt(Degrees.of(5))) { // tusks are far below target angle
-            state.setHasCoral(true); //
+            state.setHoldingCoral(true); //
         }
 
         if (getPosition().lt(Degrees.of(-15))) {
-            state.setHasCoral(false);
+            state.setHoldingCoral(false);
         }
 
-        SmartDashboard.putNumber("Tusks/Stats/Angle (Deg.)", getPosition().in(Degrees));
-        SmartDashboard.putNumber("Tusks/Stats/Output Voltage", getVoltage().in(Volts));
-        SmartDashboard.putBoolean("Tusks/Stats/Deploying", state.isDeploying());
-        SmartDashboard.putNumber(
-                "Tusks/Stats/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
+        SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
+        SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
+        SmartDashboard.putNumber("Tusks/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
     }
 
     public enum Side {
         Left,
         Right
+    }
+
+    private void logMotor(SysIdRoutineLog log) {
+        log.motor("tusks")
+                .voltage(getVoltage())
+                .angularPosition(getPosition())
+                .angularVelocity(getVelocity());
     }
 
     public Command up() {
@@ -111,20 +112,12 @@ public class Tusks extends TalonSRXMechanism {
         return run(() -> setAngle(Degrees.of(20)));
     }
 
-    public Command deploy() {
-        return deploy(() -> true);
+    public Command preDeploy() {
+        return run(() -> setAngle(Degrees.of(50)));
     }
 
-    public Command deploy(Supplier<Boolean> deploy) {
-        return runEnd(
-                        () -> {
-                            if (deploy.get()) state.setDeploying(true);
-
-                            if (state.isDeploying()) setAngle(Degrees.of(-30));
-                            else setAngle(Degrees.of(90));
-                        },
-                        () -> state.notDeploying())
-                .until(() -> !state.hasCoral());
+    public Command deploy() {
+        return run(() -> setAngle(Degrees.of(-40)));
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {
@@ -137,7 +130,7 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     ArmFeedforward getCurrentFF() {
-        return (state.hasCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
+        return (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
     }
 
     double getArbitraryFF() {
@@ -164,9 +157,17 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     protected void setVoltageOut(Voltage voltage) {
-        if (getPosition().gt(Degrees.of(90))) voltage = Volts.of(Math.min(voltage.in(Volts), 0.0));
+        if (getPosition().gt(Degrees.of(85))) voltage = Volts.of(Math.min(voltage.in(Volts), 0.0));
         if (getPosition().lt(Degrees.of(-50))) voltage = Volts.of(Math.max(voltage.in(Volts), 0.0));
         super.setVoltageOut(voltage);
+    }
+
+    public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.quasistatic(direction);
+    }
+
+    public Command sysIdDynamic(SysIdRoutine.Direction direction) {
+        return sysIdRoutine.dynamic(direction);
     }
 
     public State getState() {
@@ -174,28 +175,10 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public class State {
-        boolean hasCoral;
-        Timer angleDownTimer = new Timer();
-        boolean deploying;
+        @Getter @Setter private boolean holdingCoral;
 
-        void setHasCoral(boolean hasCoral) {
-            this.hasCoral = hasCoral;
-        }
-
-        public boolean hasCoral() {
-            return hasCoral;
-        }
-
-        boolean isDeploying() {
-            return deploying;
-        }
-
-        void setDeploying(boolean deploying) {
-            this.deploying = deploying;
-        }
-
-        void notDeploying() {
-            deploying = false;
+        public boolean isReadyToDeploy() {
+            return getPosition().minus(Degrees.of(3.0)).lt(config.getPreDeploy());
         }
     }
 
