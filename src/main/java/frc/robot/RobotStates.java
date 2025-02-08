@@ -1,6 +1,5 @@
 package frc.robot;
 
-import static frc.robot.RobotStates.isTusksTesting;
 import static frc.robot.auton.Auton.*;
 
 import com.pathplanner.lib.commands.PathPlannerAuto;

@@ -46,6 +46,7 @@ public class Elevator extends TalonFXMechanism {
 
             var slot0Configs = new Slot0Configs();
 
+            // TODO: transfer tuning from old-main and/or retune using sysid
             slot0Configs.kP = 0.25;
             slot0Configs.kI = 0;
             slot0Configs.kD = 0;
