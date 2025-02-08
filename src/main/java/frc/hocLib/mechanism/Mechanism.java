@@ -12,6 +12,7 @@ import frc.hocLib.HocSubsystem;
 import frc.hocLib.util.CachedValue;
 import java.util.function.Supplier;
 import lombok.Getter;
+import lombok.Setter;
 
 public abstract class Mechanism extends HocSubsystem {
     private final CachedValue<Voltage> cachedVoltage;
@@ -23,6 +24,8 @@ public abstract class Mechanism extends HocSubsystem {
     private final CachedValue<Distance> cachedLinearPosition;
 
     private Config config;
+
+    @Getter @Setter private boolean instantiated;
 
     public Mechanism(Config config) {
         super(config);
@@ -38,7 +41,8 @@ public abstract class Mechanism extends HocSubsystem {
     }
 
     protected <T> CachedValue<T> createCache(Supplier<T> orgSupplier, T defValue) {
-        return new CachedValue<T>(isAttached() ? orgSupplier : () -> defValue);
+        return new CachedValue<T>(
+                isAttached() ? () -> instantiated ? orgSupplier.get() : defValue : () -> defValue);
     }
 
     protected abstract Voltage updateVoltage();

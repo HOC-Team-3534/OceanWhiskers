@@ -78,9 +78,6 @@ public abstract class Gamepad extends HocSubsystem {
         @Getter private String name;
         @Getter private int port; // USB port on the DriverStation app
 
-        // A configured value to say if we should use this controller on this robot
-        @Getter @Setter private boolean attached;
-
         @Getter @Setter double leftStickDeadzone = 0.001;
         @Getter @Setter double leftStickExp = 1.0;
         @Getter @Setter double leftStickScalor = 1.0;
@@ -136,7 +133,7 @@ public abstract class Gamepad extends HocSubsystem {
                         config.getTriggersScalor(),
                         config.getTriggersDeadzone());
 
-        if (config.attached) {
+        if (isAttached()) {
             xboxController = new CommandXboxController(config.port);
             A = xboxController.a();
             B = xboxController.b();
@@ -406,7 +403,7 @@ public abstract class Gamepad extends HocSubsystem {
     }
 
     public boolean isConnected() {
-        if (config.attached) {
+        if (isAttached()) {
             return this.getHID().isConnected();
         } else {
             return false;
@@ -463,7 +460,7 @@ public abstract class Gamepad extends HocSubsystem {
     }
 
     protected GenericHID getHID() {
-        if (!config.attached) {
+        if (!isAttached()) {
             return null;
         }
         return xboxController.getHID();

@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static frc.robot.RobotStates.TusksVoltageUp;
+
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -164,6 +166,7 @@ public class Robot extends HocRobot {
     public void robotPeriodic() {
         try {
             CommandScheduler.getInstance().run();
+            SmartDashboard.putBoolean("Tusks Voltage Up", TusksVoltageUp.getAsBoolean());
         } catch (Throwable t) {
             // intercept error and log it
             CrashTracker.logThrowableCrash(t);

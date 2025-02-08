@@ -41,6 +41,8 @@ public abstract class TalonFXMechanism extends Mechanism {
                         TalonFXFactory.createPermanentFollower(
                                 followerConfig.getId(), motor, followerConfig.opposeLeader);
             }
+
+            setInstantiated(true);
         }
     }
 

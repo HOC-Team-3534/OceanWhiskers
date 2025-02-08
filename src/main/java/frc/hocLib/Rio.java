@@ -21,7 +21,7 @@ import java.util.Map;
 
 public enum Rio {
     TBOT_2025("00", false), // TODO: Get serial number
-    PBOT_2025("00", false), // TODO: Get serial number
+    PBOT_2025("03073eaa", false), // TODO: Get serial number
     CBOT_2025("00", false), // TODO: Get serial number
     SIM("", true), // e.g. test default or simulation
     UNKNOWN(null, true);

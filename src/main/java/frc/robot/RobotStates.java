@@ -41,10 +41,12 @@ public class RobotStates {
     public static final Trigger GoToL3 = codriver.GoToL3_X;
     public static final Trigger GoToL4 = codriver.GoToL4_Y.or(autonL4);
 
-    public static final Trigger ElevatorVoltageUp =
-            codriver.ElevatorVoltageUp_UDP.and(isElevatorTesting);
+    public static final Trigger ElevatorVoltageUp = codriver.VoltageUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorVoltageDown =
-            codriver.ElevatorVoltageDown_DDP.and(isElevatorTesting);
+            codriver.VoltageDown_DDP.and(isElevatorTesting);
+
+    public static final Trigger TusksVoltageUp = codriver.VoltageUp_UDP.and(isTusksTesting);
+    public static final Trigger TusksVoltageDown = codriver.VoltageDown_DDP.and(isTusksTesting);
 
     public static final Trigger ElevatorQuasiasticUp =
             codriver.QuasiasticUp_UDP.and(isElevatorTesting);

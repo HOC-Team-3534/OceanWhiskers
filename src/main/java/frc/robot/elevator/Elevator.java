@@ -47,28 +47,34 @@ public class Elevator extends TalonFXMechanism {
             var slot0Configs = new Slot0Configs();
 
             // TODO: transfer tuning from old-main and/or retune using sysid
-            slot0Configs.kP = 0.25;
+            slot0Configs.kP = 3.0;
             slot0Configs.kI = 0;
             slot0Configs.kD = 0;
 
-            slot0Configs.kG = 0;
-            slot0Configs.kS = 0;
-            slot0Configs.kV = 0;
-            slot0Configs.kA = 0;
+            slot0Configs.kG = 0.805;
+            slot0Configs.kS = 0.0559;
+            slot0Configs.kV = 0.11793;
+            slot0Configs.kA = 0.01689;
 
             setSlot0Configs(slot0Configs);
 
             setMMConfigs(
                     new MotionMagicConfigs()
-                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(15.0))
-                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(15.0))
-                            .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(100)));
+                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(80.0))
+                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(60.0))
+                            .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(2000)));
 
             setMotorOutputConfigs(
                     new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));
 
             configMaxLinearPosition(Inches.of(54.625));
             configMaxPosition(Rotations.of(23.713));
+
+            setAttached(false);
+
+            // testing();
+
+            // enableMotionMagic();
         }
 
         public ElevatorConfig enableMotionMagic() {
@@ -85,13 +91,12 @@ public class Elevator extends TalonFXMechanism {
 
     private SysIdRoutine upSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(null, Volts.of(4), null, (state) -> {}),
+                    new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(1.3), null),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     private SysIdRoutine downSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(
-                            Volts.of(0.25).per(Second), Volts.of(0.5), null, (state) -> {}),
+                    new SysIdRoutine.Config(Volts.of(0.1).per(Second), Volts.of(0.1), null),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     public Elevator(ElevatorConfig config) {
@@ -165,10 +170,15 @@ public class Elevator extends TalonFXMechanism {
                         () -> {
                             state.setTargetLevel(level);
                         },
-                        () ->
+                        () -> {
+                            if (state.isNearTargetHeight()
+                                    && state.getTargetLevel().equals(Level.Bottom))
+                                setVoltageOut(Volts.zero());
+                            else
                                 motor.setControl(
                                         motionMagicVoltage.withPosition(
-                                                linearPositionToPosition(level.getHeight(config)))))
+                                                linearPositionToPosition(level.getHeight(config))));
+                        })
                 .withName("Elevator.Go To " + level.name());
     }
 

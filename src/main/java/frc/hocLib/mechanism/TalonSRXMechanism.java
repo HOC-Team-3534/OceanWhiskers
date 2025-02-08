@@ -49,6 +49,8 @@ public abstract class TalonSRXMechanism extends Mechanism {
                 followerMotors[i] =
                         TalonSRXFactory.createPermanentFollower(followerConfig.getId(), motor);
             }
+
+            setInstantiated(true);
         }
 
         cachedPositionInSensorTicks = createCache(this::updatePositionInSensorTicks, 0.0);

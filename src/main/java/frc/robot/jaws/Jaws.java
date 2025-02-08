@@ -16,7 +16,8 @@ public class Jaws extends TalonSRXMechanism {
         @Getter private Voltage openAndCloseVoltage = Volts.of(5.0); // close is positive
 
         public JawsConfig() {
-            super("Jaws", 18);
+            super("Jaws", 17);
+            setAttached(false);
         }
     }
 

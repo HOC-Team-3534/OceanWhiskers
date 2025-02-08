@@ -10,15 +10,15 @@ public class Codriver extends Gamepad {
     public final Trigger fn = leftBumper;
     public final Trigger noFn = fn.negate();
 
-    public final Trigger UseSysIdOverManual = Trigger.kFalse;
+    public final Trigger UseSysIdOverManual = Trigger.kTrue;
 
     public final Trigger GoToL1_A = A.and(teleop);
     public final Trigger GoToL2_B = B.and(teleop);
     public final Trigger GoToL3_X = X.and(teleop);
     public final Trigger GoToL4_Y = Y.and(teleop);
 
-    public final Trigger ElevatorVoltageUp_UDP = upDpad.and(teleop, UseSysIdOverManual.not());
-    public final Trigger ElevatorVoltageDown_DDP = downDpad.and(teleop, UseSysIdOverManual.not());
+    public final Trigger VoltageUp_UDP = upDpad.and(teleop, UseSysIdOverManual.not());
+    public final Trigger VoltageDown_DDP = downDpad.and(teleop, UseSysIdOverManual.not());
 
     public final Trigger QuasiasticUp_UDP = upDpad.and(noFn, teleop, UseSysIdOverManual);
     public final Trigger QuasiasticDown_DDP = downDpad.and(noFn, teleop, UseSysIdOverManual);

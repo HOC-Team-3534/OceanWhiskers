@@ -20,6 +20,7 @@ public class AlgaeWheel extends TalonSRXMechanism {
 
         public AlgaeWheelConfig() {
             super("Algae Wheel", 16);
+            setAttached(false);
         }
     }
 
