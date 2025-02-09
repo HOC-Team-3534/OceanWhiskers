@@ -38,12 +38,14 @@ public class Tusks extends TalonSRXMechanism {
 
         @Getter @Setter
         ArmFeedforward ff_noCoral =
-                new ArmFeedforward(0.88061, 0.20175, 4.6592 / (Math.PI * 2), 0.5 / (Math.PI * 2));
+                new ArmFeedforward(
+                        0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.55681 / (Math.PI * 2));
 
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
         @Getter @Setter
-        TrapezoidProfile.Constraints profileConstants = new TrapezoidProfile.Constraints(1, 1);
+        TrapezoidProfile.Constraints profileConstants =
+                new TrapezoidProfile.Constraints(0.25, 0.25);
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -78,7 +80,7 @@ public class Tusks extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
-        pid = new ProfiledPIDController(0.0, 0.0, 0.0, config.profileConstants);
+        pid = new ProfiledPIDController(0.05, 0.0, 0.0, config.profileConstants);
 
         if (isAttached()) {
 
