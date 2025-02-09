@@ -39,7 +39,8 @@
     "src\\main\\java\\com": true,
     "src\\main\\java\\edu": true,
     ".DataLogTool": true,
-    ".SysId": true
+    ".SysId": true,
+    ".roboRIOTeamNumberSetter": true
   },
   "java.test.config": [
     {
