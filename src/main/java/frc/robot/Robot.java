@@ -40,8 +40,7 @@ import frc.robot.vision.VisionSystem.VisionConfig;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
-    @Getter
-    private static Config config;
+    @Getter private static Config config;
 
     public static class Config {
         public DriverConfig driver = new DriverConfig();
@@ -58,28 +57,18 @@ public class Robot extends HocRobot {
         public LightsConfig lights = new LightsConfig();
     }
 
-    @Getter
-    private static Driver driver;
-    @Getter
-    private static Codriver codriver;
+    @Getter private static Driver driver;
+    @Getter private static Codriver codriver;
 
-    @Getter
-    private static Swerve swerve;
-    @Getter
-    private static Elevator elevator;
-    @Getter
-    private static Tusks tusks;
-    @Getter
-    private static Jaws jaws;
-    @Getter
-    private static AlgaeWheel algaeWheel;
-    @Getter
-    private static VisionSystem visionSystem;
-    @Getter
-    private static Lights lights;
+    @Getter private static Swerve swerve;
+    @Getter private static Elevator elevator;
+    @Getter private static Tusks tusks;
+    @Getter private static Jaws jaws;
+    @Getter private static AlgaeWheel algaeWheel;
+    @Getter private static VisionSystem visionSystem;
+    @Getter private static Lights lights;
 
-    @Getter
-    private static Auton auton;
+    @Getter private static Auton auton;
 
     public Robot() {
         super();
@@ -194,12 +183,10 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void disabledPeriodic() {
-    }
+    public void disabledPeriodic() {}
 
     @Override
-    public void disabledExit() {
-    }
+    public void disabledExit() {}
 
     @Override
     public void autonomousInit() {
@@ -208,12 +195,10 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void autonomousPeriodic() {
-    }
+    public void autonomousPeriodic() {}
 
     @Override
-    public void autonomousExit() {
-    }
+    public void autonomousExit() {}
 
     @Override
     public void teleopInit() {
@@ -221,12 +206,10 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void teleopPeriodic() {
-    }
+    public void teleopPeriodic() {}
 
     @Override
-    public void teleopExit() {
-    }
+    public void teleopExit() {}
 
     @Override
     public void testInit() {
@@ -234,14 +217,11 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void testPeriodic() {
-    }
+    public void testPeriodic() {}
 
     @Override
-    public void testExit() {
-    }
+    public void testExit() {}
 
     @Override
-    public void simulationPeriodic() {
-    }
+    public void simulationPeriodic() {}
 }
