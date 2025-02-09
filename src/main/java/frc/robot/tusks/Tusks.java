@@ -108,6 +108,7 @@ public class Tusks extends TalonSRXMechanism {
         SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
         SmartDashboard.putNumber("Tusks/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
+        SmartDashboard.putNumber("Tusks/Setpoint (Rots)", pid.getSetpoint().position);
     }
 
     public enum Side {
