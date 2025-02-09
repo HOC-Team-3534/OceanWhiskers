@@ -31,7 +31,6 @@ public class Tusks extends TalonSRXMechanism {
     public static class TusksConfig extends TalonSRXMechanism.Config {
         @Getter private boolean motionMagicEnabled;
 
-        @Getter private Angle up = Degrees.of(90);
         @Getter private Angle pickup = Degrees.of(30);
         @Getter private Angle preDeploy = Degrees.of(50);
         @Getter private Angle deploy = Degrees.of(-20);
@@ -44,8 +43,7 @@ public class Tusks extends TalonSRXMechanism {
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
         @Getter @Setter
-        TrapezoidProfile.Constraints profileConstants =
-                new TrapezoidProfile.Constraints(0.25, 0.25);
+        TrapezoidProfile.Constraints profileConstants = new TrapezoidProfile.Constraints(0.5, 0.5);
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -80,7 +78,7 @@ public class Tusks extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
-        pid = new ProfiledPIDController(0.05, 0.0, 0.0, config.profileConstants);
+        pid = new ProfiledPIDController(0.001, 0.0, 0.0, config.profileConstants);
 
         if (isAttached()) {
 
@@ -128,15 +126,15 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command pickup() {
-        return run(() -> setAngle(Degrees.of(20)));
+        return run(() -> setAngle(config.pickup));
     }
 
     public Command preDeploy() {
-        return run(() -> setAngle(Degrees.of(50)));
+        return run(() -> setAngle(config.preDeploy));
     }
 
     public Command deploy() {
-        return run(() -> setAngle(Degrees.of(-40)));
+        return run(() -> setAngle(config.deploy));
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {

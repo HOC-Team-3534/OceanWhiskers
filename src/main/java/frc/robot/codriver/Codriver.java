@@ -31,6 +31,8 @@ public class Codriver extends Gamepad {
     public final Trigger PickupCoralLeft_LT = leftTrigger.and(noFn, teleop);
     public final Trigger PickupCoralRight_RT = rightTrigger.and(noFn, teleop);
 
+    public final Trigger RawRT = rightTrigger;
+
     public final Trigger Deploy_LS = leftStickClick.and(teleop);
 
     public static class CodriverConfig extends Gamepad.Config {

@@ -60,6 +60,8 @@ public abstract class Gamepad extends HocSubsystem {
 
     private Rotation2d storedLeftStickDirection = new Rotation2d();
     private Rotation2d storedRightStickDirection = new Rotation2d();
+
+    @Getter
     private boolean configured =
             false; // Used to determine if we detected the gamepad is plugged and we have configured
     // it

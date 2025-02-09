@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import static frc.robot.RobotStates.TusksVoltageUp;
-
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -15,6 +13,7 @@ import frc.hocLib.Rio;
 import frc.hocLib.Telemetry;
 import frc.hocLib.Telemetry.PrintPriority;
 import frc.hocLib.util.CrashTracker;
+import frc.hocLib.util.Util;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
@@ -41,7 +40,8 @@ import frc.robot.vision.VisionSystem.VisionConfig;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
-    @Getter private static Config config;
+    @Getter
+    private static Config config;
 
     public static class Config {
         public DriverConfig driver = new DriverConfig();
@@ -58,18 +58,28 @@ public class Robot extends HocRobot {
         public LightsConfig lights = new LightsConfig();
     }
 
-    @Getter private static Driver driver;
-    @Getter private static Codriver codriver;
+    @Getter
+    private static Driver driver;
+    @Getter
+    private static Codriver codriver;
 
-    @Getter private static Swerve swerve;
-    @Getter private static Elevator elevator;
-    @Getter private static Tusks tusks;
-    @Getter private static Jaws jaws;
-    @Getter private static AlgaeWheel algaeWheel;
-    @Getter private static VisionSystem visionSystem;
-    @Getter private static Lights lights;
+    @Getter
+    private static Swerve swerve;
+    @Getter
+    private static Elevator elevator;
+    @Getter
+    private static Tusks tusks;
+    @Getter
+    private static Jaws jaws;
+    @Getter
+    private static AlgaeWheel algaeWheel;
+    @Getter
+    private static VisionSystem visionSystem;
+    @Getter
+    private static Lights lights;
 
-    @Getter private static Auton auton;
+    @Getter
+    private static Auton auton;
 
     public Robot() {
         super();
@@ -165,8 +175,12 @@ public class Robot extends HocRobot {
     @Override
     public void robotPeriodic() {
         try {
+            SmartDashboard.putBoolean("Pickup Coral Right", getCodriver().RawRT.getAsBoolean());
+            SmartDashboard.putBoolean("Codriver No Fn", getCodriver().noFn.getAsBoolean());
+            SmartDashboard.putBoolean("Teleop Trigger", Util.teleop.getAsBoolean());
+            SmartDashboard.putBoolean("Codriver Configured", getCodriver().isConfigured());
+
             CommandScheduler.getInstance().run();
-            SmartDashboard.putBoolean("Tusks Voltage Up", TusksVoltageUp.getAsBoolean());
         } catch (Throwable t) {
             // intercept error and log it
             CrashTracker.logThrowableCrash(t);
@@ -180,10 +194,12 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+    }
 
     @Override
-    public void disabledExit() {}
+    public void disabledExit() {
+    }
 
     @Override
     public void autonomousInit() {
@@ -192,10 +208,12 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void autonomousPeriodic() {}
+    public void autonomousPeriodic() {
+    }
 
     @Override
-    public void autonomousExit() {}
+    public void autonomousExit() {
+    }
 
     @Override
     public void teleopInit() {
@@ -203,10 +221,12 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void teleopPeriodic() {}
+    public void teleopPeriodic() {
+    }
 
     @Override
-    public void teleopExit() {}
+    public void teleopExit() {
+    }
 
     @Override
     public void testInit() {
@@ -214,11 +234,14 @@ public class Robot extends HocRobot {
     }
 
     @Override
-    public void testPeriodic() {}
+    public void testPeriodic() {
+    }
 
     @Override
-    public void testExit() {}
+    public void testExit() {
+    }
 
     @Override
-    public void simulationPeriodic() {}
+    public void simulationPeriodic() {
+    }
 }
