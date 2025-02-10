@@ -135,19 +135,19 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command up() {
-        return run(() -> setAngle(config.up));
+        return goToAngle(config.up);
     }
 
     public Command pickup() {
-        return run(() -> setAngle(config.pickup));
+        return goToAngle(config.pickup);
     }
 
     public Command preDeploy() {
-        return run(() -> setAngle(config.preDeploy));
+        return goToAngle(config.preDeploy);
     }
 
     public Command deploy() {
-        return run(() -> setAngle(config.deploy));
+        return goToAngle(config.deploy);
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {
@@ -159,12 +159,16 @@ public class Tusks extends TalonSRXMechanism {
                 motor.getClosedLoopTarget() - motor.getSelectedSensorPosition());
     }
 
-    void setAngle(Angle angle) {
-        if (isAttached()) {
-            profile.setGoal(angle);
-            if (config.isMotionProfilingEnabled()) setVoltageOut(profile.calculate());
-            else zero();
-        }
+    Command goToAngle(Angle angle) {
+        if (!isAttached()) return run(() -> {});
+
+        if (!config.isMotionProfilingEnabled()) return run(this::zero);
+
+        return voltageOut(
+                () -> {
+                    profile.setGoal(angle);
+                    return profile.calculate();
+                });
     }
 
     protected void zero() {
