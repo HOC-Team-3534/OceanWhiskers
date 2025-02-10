@@ -155,6 +155,7 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     Angle getError() {
+        if (!isAttached()) return Rotations.zero();
         return positionInSensorTicksToPosition(
                 motor.getClosedLoopTarget() - motor.getSelectedSensorPosition());
     }
