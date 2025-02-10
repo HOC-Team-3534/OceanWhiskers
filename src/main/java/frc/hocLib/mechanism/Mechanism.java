@@ -10,6 +10,7 @@ import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.util.CachedValue;
+import frc.robot.Robot;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -144,6 +145,9 @@ public abstract class Mechanism extends HocSubsystem {
 
         public Config(String name) {
             super(name);
+            if (Robot.isSimulation()) {
+                setAttached(false);
+            }
         }
 
         public Config configMaxLinearPosition(Distance max) {
