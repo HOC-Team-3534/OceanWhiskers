@@ -55,7 +55,7 @@ public class Telemetry extends DogLog implements Subsystem {
                         .withCaptureDs(true)
                         .withCaptureNt(captureNt)
                         .withCaptureConsole(true)
-                        .withLogExtras(true));
+                        .withLogExtras(false));
         Telemetry.setPdh(new PowerDistribution());
         /* Display the currently running commands on SmartDashboard*/
         SmartDashboard.putData(CommandScheduler.getInstance());

@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.hocLib.HocRobot;
 import frc.hocLib.Rio;
 import frc.hocLib.Telemetry;
-import frc.hocLib.Telemetry.PrintPriority;
 import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.Util;
 import frc.robot.algaeWheel.AlgaeWheel;
@@ -72,7 +71,7 @@ public class Robot extends HocRobot {
 
     public Robot() {
         super();
-        Telemetry.start(true, true, PrintPriority.NORMAL);
+        // Telemetry.start(true, true, PrintPriority.NORMAL);
 
         try {
             Telemetry.print("--- Robot Init Starting ---");

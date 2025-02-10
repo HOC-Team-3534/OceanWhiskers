@@ -24,6 +24,7 @@ public class VisionSystem extends HocSubsystem {
 
         public VisionConfig() {
             super("Photon Vision");
+            setAttached(false);
         }
 
         public VisionConfig configCenterCameraAttached(boolean attached) {
