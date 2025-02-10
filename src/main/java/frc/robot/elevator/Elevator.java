@@ -54,7 +54,9 @@ public class Elevator extends TalonFXMechanism {
             slot0Configs.kG = 0.805;
             slot0Configs.kS = 0.0559;
             slot0Configs.kV = 0.11793;
-            slot0Configs.kA = 0.01689;
+            slot0Configs.kA =
+                    0.01689; // TODO: try with a kA that meets the kG / kA is 9.8 m/s sqrd rule
+            // with 0.805 kG, kA should be more like 0.0048
 
             setSlot0Configs(slot0Configs);
 

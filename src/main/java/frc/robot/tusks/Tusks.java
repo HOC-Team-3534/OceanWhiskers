@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
@@ -29,36 +28,50 @@ import lombok.Setter;
 public class Tusks extends TalonSRXMechanism {
 
     public static class TusksConfig extends TalonSRXMechanism.Config {
-        @Getter private boolean motionMagicEnabled;
+        @Getter private boolean motionProfilingEnabled;
 
+        @Getter private Angle up = Degrees.of(90);
         @Getter private Angle pickup = Degrees.of(30);
         @Getter private Angle preDeploy = Degrees.of(50);
         @Getter private Angle deploy = Degrees.of(-20);
 
+        @Getter
+        private double kP =
+                0.001; // TODO: tune once feedforward and good motion profile created and roughly
+        // following
+
+        @Getter private double kI = 0.0;
+        @Getter private double kD = 0.0;
+
         @Getter @Setter
         ArmFeedforward ff_noCoral =
                 new ArmFeedforward(
-                        0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.55681 / (Math.PI * 2));
+                        0.6425,
+                        0.14478,
+                        5.4109 / (Math.PI * 2),
+                        0.55681 / (Math.PI * 2)); // TODO: Need more testing
+        // Going to fast and osciallating still... if tusks are about 14in and kg is 0.14478, then
+        // kA before conversion should be 0.0217
 
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
+        // profile in rotations while ff in radians
         @Getter @Setter
-        TrapezoidProfile.Constraints profileConstants = new TrapezoidProfile.Constraints(0.5, 0.5);
+        TrapezoidProfile.Constraints profileConstants =
+                new TrapezoidProfile.Constraints(0.5, 0.5); // TODO: tune along with arm feedforward
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
-
-            setMMConfigs(RotationsPerSecond.of(1.5), RotationsPerSecondPerSecond.of(1.5), 2);
 
             // setAttached(false);
 
             // testing();
 
-            enableMotionMagic();
+            enableMotionProfiling();
         }
 
-        public TusksConfig enableMotionMagic() {
-            this.motionMagicEnabled = true;
+        public TusksConfig enableMotionProfiling() {
+            this.motionProfilingEnabled = true;
             return this;
         }
     }
@@ -70,7 +83,7 @@ public class Tusks extends TalonSRXMechanism {
 
     final State state = new State();
 
-    final ProfiledPIDController pid;
+    final MotionProfileCalculator profile;
 
     private TusksConfig config;
 
@@ -78,7 +91,7 @@ public class Tusks extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
-        pid = new ProfiledPIDController(0.001, 0.0, 0.0, config.profileConstants);
+        profile = new MotionProfileCalculator();
 
         if (isAttached()) {
 
@@ -106,7 +119,7 @@ public class Tusks extends TalonSRXMechanism {
         SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
         SmartDashboard.putNumber("Tusks/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
-        SmartDashboard.putNumber("Tusks/Setpoint (Rots)", pid.getSetpoint().position);
+        SmartDashboard.putNumber("Tusks/Setpoint (Rots)", profile.getSetpoint().position);
     }
 
     public enum Side {
@@ -122,7 +135,7 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command up() {
-        return run(() -> setAngle(Degrees.of(90)));
+        return run(() -> setAngle(config.up));
     }
 
     public Command pickup() {
@@ -146,23 +159,10 @@ public class Tusks extends TalonSRXMechanism {
                 motor.getClosedLoopTarget() - motor.getSelectedSensorPosition());
     }
 
-    ArmFeedforward getCurrentFF() {
-        return (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
-    }
-
-    double getFF(AngularVelocity nextVelocity) {
-        return getCurrentFF()
-                .calculateWithVelocities(
-                        getPosition().in(Radians),
-                        getVelocity().in(RadiansPerSecond),
-                        nextVelocity.in(RadiansPerSecond));
-    }
-
     void setAngle(Angle angle) {
         if (isAttached()) {
-            var pidOutput = pid.calculate(getPosition().in(Rotations), angle.in(Rotations));
-            var ff = getFF(RotationsPerSecond.of(pid.getSetpoint().velocity));
-            if (config.isMotionMagicEnabled()) setVoltageOut(Volts.of(pidOutput + ff));
+            profile.setGoal(angle);
+            if (config.isMotionProfilingEnabled()) setVoltageOut(profile.calculate());
             else zero();
         }
     }
@@ -188,6 +188,43 @@ public class Tusks extends TalonSRXMechanism {
 
     public State getState() {
         return state;
+    }
+
+    public class MotionProfileCalculator {
+        final ProfiledPIDController pid;
+
+        public MotionProfileCalculator() {
+            pid =
+                    new ProfiledPIDController(
+                            config.kP, config.kI, config.kD, config.profileConstants);
+        }
+
+        TrapezoidProfile.State getSetpoint() {
+            return pid.getSetpoint();
+        }
+
+        void setGoal(Angle angle) {
+            pid.setGoal(angle.in(Rotations));
+        }
+
+        ArmFeedforward getCurrentFF() {
+            return (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
+        }
+
+        Voltage getFF(AngularVelocity nextVelocity) {
+            return Volts.of(
+                    getCurrentFF()
+                            .calculateWithVelocities(
+                                    getPosition().in(Radians),
+                                    getVelocity().in(RadiansPerSecond),
+                                    nextVelocity.in(RadiansPerSecond)));
+        }
+
+        Voltage calculate() {
+            var pidOutput = pid.calculate(getPosition().in(Rotations));
+            var ff = getFF(RotationsPerSecond.of(pid.getSetpoint().velocity));
+            return ff.plus(Volts.of(pidOutput));
+        }
     }
 
     public class State {

@@ -123,8 +123,6 @@ public class Robot extends HocRobot {
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
 
-            SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
-
             Telemetry.print("--- Robot Init Complete ---");
 
         } catch (Throwable t) {
