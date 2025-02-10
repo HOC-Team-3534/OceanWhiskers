@@ -60,7 +60,6 @@ public enum Rio {
             // SEGVs because it does the wrong
             // thing with JNIs, so don't do that.
             serialNumber = RobotController.getSerialNumber();
-            Telemetry.print("RIO SERIAL: " + serialNumber);
         } else {
             serialNumber = "";
         }
@@ -70,7 +69,6 @@ public enum Rio {
             rioIdAlert.setText("Rio: " + id.name());
             rioIdAlert.set(true);
 
-            Telemetry.print("RIO NAME: " + id.name());
             if (id.isRio2) {
                 rio1alert.set(true);
             }
