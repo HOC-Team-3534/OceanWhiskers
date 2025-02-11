@@ -1,10 +1,9 @@
 package frc.robot;
 
-import static frc.robot.auton.Auton.*;
-
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.algaeWheel.AlgaeWheel;
+import frc.robot.auton.Auton;
 import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
 import frc.robot.elevator.Elevator;
@@ -19,6 +18,8 @@ public class RobotStates {
     private static final Elevator elevator = Robot.getElevator();
     private static final AlgaeWheel algaeWheel = Robot.getAlgaeWheel();
     private static final Tusks tusks = Robot.getTusks();
+
+    private static final Auton auton = Robot.getAuton();
 
     public static final Trigger isSwerveTesting = new Trigger(swerve::isTesting);
 
@@ -36,10 +37,10 @@ public class RobotStates {
     public static final Trigger isTusksTesting =
             new Trigger(tusks::isTesting).and(isElevatorTesting.not(), isSwerveTesting.not());
 
-    public static final Trigger GoToL1 = codriver.GoToL1_A;
-    public static final Trigger GoToL2 = codriver.GoToL2_B;
-    public static final Trigger GoToL3 = codriver.GoToL3_X;
-    public static final Trigger GoToL4 = codriver.GoToL4_Y.or(autonL4);
+    public static final Trigger GoToL1 = codriver.GoToL1_A.or(auton.autonL1);
+    public static final Trigger GoToL2 = codriver.GoToL2_B.or(auton.autonL2);
+    public static final Trigger GoToL3 = codriver.GoToL3_X.or(auton.autonL3);
+    public static final Trigger GoToL4 = codriver.GoToL4_Y.or(auton.autonL4);
 
     public static final Trigger ElevatorVoltageUp = codriver.VoltageUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorVoltageDown =
@@ -69,8 +70,10 @@ public class RobotStates {
     public static final Trigger HoldAlgae = HoldingAlgae.and(ReleaseAlgae.not());
     public static final Trigger GrabAlgae = codriver.GrabAlgae_RT.and(HoldAlgae.not());
 
-    public static final Trigger PickupCoralLeft = codriver.PickupCoralLeft_LT;
-    public static final Trigger PickupCoralRight = codriver.PickupCoralRight_RT;
+    public static final Trigger PickupCoralLeft =
+            codriver.PickupCoralLeft_LT.or(auton.autonPickupLeft);
+    public static final Trigger PickupCoralRight =
+            codriver.PickupCoralRight_RT.or(auton.autonPickupRight);
 
     public static final Trigger HoldingCoral = new Trigger(() -> tusks.getState().isHoldingCoral());
 

@@ -16,10 +16,14 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import edu.wpi.first.math.controller.HolonomicDriveController;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -89,9 +93,10 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                         new PIDConstants(3.0, 0.0, 0.0),
                                         new PIDConstants(3.0, 0.0, 0.0)),
                                 cfg,
-                                // TODO: Would it be easier / possible to just worry about the blue
-                                // side and then flip everything for red alliance side?
-                                () -> false,
+                                () ->
+                                        DriverStation.getAlliance()
+                                                .map(alliance -> alliance.equals(Alliance.Red))
+                                                .orElse(false),
                                 this));
 
         logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
@@ -235,6 +240,54 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 },
                 () -> quasDuration.minus(characterizer.getTimeSinceStart()).gt(Seconds.of(0)),
                 this);
+    }
+
+    public Command preciseAlignment(Pose2d targetPose) {
+        var command =
+                new Command() {
+                    private HolonomicDriveController holonomicDriveController;
+
+                    @Override
+                    public void initialize() {
+                        holonomicDriveController =
+                                new HolonomicDriveController(
+                                        new PIDController(3.0, 0.0, 0.0),
+                                        new PIDController(3.0, 0.0, 0.0),
+                                        new ProfiledPIDController(
+                                                3.0,
+                                                0.0,
+                                                0.0,
+                                                new TrapezoidProfile.Constraints(
+                                                        config.getKMaxAngularRate()
+                                                                .in(RadiansPerSecond),
+                                                        config.getKMaxAngularRate()
+                                                                        .in(RadiansPerSecond)
+                                                                * 0.75)));
+                        holonomicDriveController.setTolerance(
+                                new Pose2d(0.025, 0.025, Rotation2d.fromDegrees(1)));
+                    }
+
+                    @Override
+                    public void execute() {
+                        driveWithSpeeds(
+                                holonomicDriveController.calculate(
+                                        getPose(), targetPose, 0, targetPose.getRotation()));
+                    }
+
+                    @Override
+                    public void end(boolean interrupted) {
+                        driveWithSpeeds(new ChassisSpeeds());
+                    }
+
+                    @Override
+                    public boolean isFinished() {
+                        return holonomicDriveController.atReference();
+                    }
+                };
+
+        command.addRequirements(this);
+
+        return command;
     }
 
     public Field2d getField() {

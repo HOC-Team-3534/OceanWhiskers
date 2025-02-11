@@ -147,7 +147,8 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command deploy() {
-        return goToAngle(config.deploy);
+        return goToAngle(config.deploy)
+                .until(() -> getPosition().isNear(config.deploy, Degrees.one()));
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {

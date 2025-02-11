@@ -15,7 +15,9 @@ public class TusksStates {
 
     public static void setupBindings() {
         PickupCoralLeft.or(PickupCoralRight).whileTrue(tusks.pickup());
-        ElevatorReadyToDeploy.and(Deploy.not()).whileTrue(tusks.preDeploy());
+        GoToL1.or(GoToL2, GoToL3, GoToL4)
+                .and(ElevatorReadyToDeploy.and(Deploy.not()))
+                .whileTrue(tusks.preDeploy());
         Deploy.onTrue(tusks.deploy());
 
         TusksVoltageUp.whileTrue(tusks.voltageOut(() -> Volts.of(0.75)));
