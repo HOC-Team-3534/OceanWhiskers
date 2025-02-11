@@ -58,12 +58,12 @@ public class Tusks extends TalonSRXMechanism {
         // profile in rotations while ff in radians
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
-                new TrapezoidProfile.Constraints(0.5, 0.5); // TODO: tune along with arm feedforward
+                new TrapezoidProfile.Constraints(0.5 * Math.PI * 2, 0.5 * Math.PI * 2); // TODO: tune along with arm feedforward
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
 
-            // setAttached(false);
+            setAttached(true);
 
             // testing();
 
@@ -209,25 +209,24 @@ public class Tusks extends TalonSRXMechanism {
         }
 
         void setGoal(Angle angle) {
-            pid.setGoal(angle.in(Rotations));
+            pid.setGoal(angle.in(Radians));
         }
 
         ArmFeedforward getCurrentFF() {
             return (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
         }
 
-        Voltage getFF(AngularVelocity nextVelocity) {
+        Voltage getFF() {
+            var position = pid.getSetpoint().position;
+            var velocity = pid.getSetpoint().velocity;
             return Volts.of(
-                    getCurrentFF()
-                            .calculateWithVelocities(
-                                    getPosition().in(Radians),
-                                    getVelocity().in(RadiansPerSecond),
-                                    nextVelocity.in(RadiansPerSecond)));
+                    getCurrentFF().calculate(position, 
+                    velocity, velocity - getVelocity().in(RadiansPerSecond)));
         }
 
         Voltage calculate() {
             var pidOutput = pid.calculate(getPosition().in(Rotations));
-            var ff = getFF(RotationsPerSecond.of(pid.getSetpoint().velocity));
+            var ff = getFF();
             return ff.plus(Volts.of(pidOutput));
         }
     }

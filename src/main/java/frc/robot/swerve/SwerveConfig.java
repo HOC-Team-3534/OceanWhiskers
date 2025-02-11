@@ -85,7 +85,7 @@ public class SwerveConfig extends HocSubsystem.Config {
 
     // The remote sensor feedback type to use for the steer motors;
     // When not Pro-licensed, Fused*/Sync* automatically fall back to Remote*
-    @Getter private SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.FusedCANcoder;
+    @Getter private SteerFeedbackType kSteerFeedbackType = SteerFeedbackType.RemoteCANcoder;
 
     // The stator current at which the wheels start to slip;
     // This needs to be tuned to your individual robot
