@@ -13,12 +13,12 @@ import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import java.util.function.Supplier;
@@ -37,7 +37,7 @@ public class Tusks extends TalonSRXMechanism {
 
         @Getter
         private double kP =
-                0.001; // TODO: tune once feedforward and good motion profile created and roughly
+                0.2; // TODO: tune once feedforward and good motion profile created and roughly
         // following
 
         @Getter private double kI = 0.0;
@@ -49,21 +49,21 @@ public class Tusks extends TalonSRXMechanism {
                         0.6425,
                         0.14478,
                         5.4109 / (Math.PI * 2),
-                        0.55681 / (Math.PI * 2)); // TODO: Need more testing
-        // Going to fast and osciallating still... if tusks are about 14in and kg is 0.14478, then
-        // kA before conversion should be 0.0217
+                        0.002752); // TODO: Need more testing //0.002752
 
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
         // profile in rotations while ff in radians
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
-                new TrapezoidProfile.Constraints(0.5 * Math.PI * 2, 0.5 * Math.PI * 2); // TODO: tune along with arm feedforward
+                new TrapezoidProfile.Constraints(
+                        0.5 * Math.PI * 2,
+                        1.0 * Math.PI * 2); // TODO: tune along with arm feedforward
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
 
-            setAttached(true);
+            // setAttached(false);
 
             // testing();
 
@@ -166,11 +166,13 @@ public class Tusks extends TalonSRXMechanism {
 
         if (!config.isMotionProfilingEnabled()) return run(this::zero);
 
-        return voltageOut(
-                () -> {
-                    profile.setGoal(angle);
-                    return profile.calculate();
-                });
+        return voltageOut(() -> profile.calculate())
+                .alongWith(
+                        new InstantCommand(
+                                () -> {
+                                    profile.reset();
+                                    profile.setGoal(angle);
+                                }));
     }
 
     protected void zero() {
@@ -209,6 +211,12 @@ public class Tusks extends TalonSRXMechanism {
             return pid.getSetpoint();
         }
 
+        void reset() {
+            pid.reset(
+                    new TrapezoidProfile.State(
+                            getPosition().in(Radians), getVelocity().in(RadiansPerSecond)));
+        }
+
         void setGoal(Angle angle) {
             pid.setGoal(angle.in(Radians));
         }
@@ -221,8 +229,11 @@ public class Tusks extends TalonSRXMechanism {
             var position = pid.getSetpoint().position;
             var velocity = pid.getSetpoint().velocity;
             return Volts.of(
-                    getCurrentFF().calculate(position, 
-                    velocity, velocity - getVelocity().in(RadiansPerSecond)));
+                    getCurrentFF()
+                            .calculate(
+                                    position,
+                                    velocity,
+                                    velocity - getVelocity().in(RadiansPerSecond)));
         }
 
         Voltage calculate() {

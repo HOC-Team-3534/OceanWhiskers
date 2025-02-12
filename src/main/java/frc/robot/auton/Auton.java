@@ -10,7 +10,6 @@ import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static frc.reefscape.FieldAndTags2025.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
-import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
@@ -24,12 +23,10 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.reefscape.FieldAndTags2025.ReefSide;
 import frc.reefscape.FieldAndTags2025.SideOfField;
 import frc.robot.Robot;
-import frc.robot.RobotStates;
 import frc.robot.swerve.Swerve;
 import frc.robot.tusks.Tusks;
 import java.util.Optional;
@@ -103,11 +100,6 @@ public class Auton {
 
         SmartDashboard.putData("Auton/Pickup 2 Side", pickup2Side);
         SmartDashboard.putData("Auton/Pickup 3 Side", pickup3Side);
-
-        NamedCommands.registerCommand(
-                "waitUntilCoralDeployed", new WaitUntilCommand(RobotStates.HoldingCoral.not()));
-        NamedCommands.registerCommand(
-                "waitUntilCoralPickedUp", new WaitUntilCommand(RobotStates.HoldingCoral));
     }
 
     private SendableChooser<Integer> buildLevelChooser() {
