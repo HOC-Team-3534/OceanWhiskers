@@ -5,6 +5,7 @@ import frc.hocLib.gamepads.Gamepad;
 
 public class Codriver extends Gamepad {
 
+    @SuppressWarnings("unused")
     private final CodriverConfig config;
 
     public final Trigger fn = leftBumper;

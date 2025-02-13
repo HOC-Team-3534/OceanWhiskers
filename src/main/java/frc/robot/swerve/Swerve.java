@@ -53,7 +53,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     private SysIdRoutine sysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(null, Volts.of(4), null, (state) -> {}),
+                    new SysIdRoutine.Config(null, Volts.of(4), null),
                     new SysIdRoutine.Mechanism(
                             this::characterizeDriveWithVoltage, this::logFLMotor, this));
 
@@ -190,6 +190,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                         .withDriveRequestType(
                                 DriveRequestType
                                         .OpenLoopVoltage); // Use open-loop control for drive motors
+
+        // TODO: limit drive speed in case of elevator up or other reasons
+
         return run(
                 () -> {
                     var maxSpeed = config.getKSpeedAt12Volts().in(MetersPerSecond);

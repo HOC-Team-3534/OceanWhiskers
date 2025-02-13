@@ -94,9 +94,8 @@ public class RobotStates {
 
     public static void setupStates() {
         NamedCommands.registerCommand(
-                "waitUntilCoralDeployed", new WaitUntilCommand(RobotStates.HoldingCoral.not()));
-        NamedCommands.registerCommand(
-                "waitUntilCoralPickedUp", new WaitUntilCommand(RobotStates.HoldingCoral));
+                "waitUntilCoralDeployed", new WaitUntilCommand(HoldingCoral.not()));
+        NamedCommands.registerCommand("waitUntilCoralPickedUp", new WaitUntilCommand(HoldingCoral));
     }
 
     private RobotStates() {

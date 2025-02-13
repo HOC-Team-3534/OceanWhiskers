@@ -46,17 +46,14 @@ public class Elevator extends TalonFXMechanism {
 
             var slot0Configs = new Slot0Configs();
 
-            // TODO: transfer tuning from old-main and/or retune using sysid
             slot0Configs.kP = 3.0;
             slot0Configs.kI = 0;
             slot0Configs.kD = 0;
 
             slot0Configs.kG = 0.805;
             slot0Configs.kS = 0.0559;
-            slot0Configs.kV = 0.11793; // 0.11793
-            slot0Configs.kA =
-                    0.0048; // TODO: try with a kA that meets the kG / kA is 9.8 m/s sqrd rule
-            // with 0.805 kG, kA should be more like 0.0048
+            slot0Configs.kV = 0.11793;
+            slot0Configs.kA = 0.0048;
 
             setSlot0Configs(slot0Configs);
 
@@ -71,10 +68,6 @@ public class Elevator extends TalonFXMechanism {
 
             configMaxLinearPosition(Inches.of(54.625));
             configMaxPosition(Rotations.of(23.713));
-
-            // setAttached(false);
-
-            // testing();
 
             enableMotionMagic();
         }

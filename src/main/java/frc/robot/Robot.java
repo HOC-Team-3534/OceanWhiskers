@@ -78,6 +78,8 @@ public class Robot extends HocRobot {
 
             /** Set up the config */
             switch (Rio.id) {
+                    // TODO: setup config for each robots tunings outside of subsystems, removing
+                    // defaults where confusing
                 case CBOT_2025:
                     config = new CBOT_2025();
                     break;

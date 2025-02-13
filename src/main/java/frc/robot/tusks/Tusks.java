@@ -35,30 +35,21 @@ public class Tusks extends TalonSRXMechanism {
         @Getter private Angle preDeploy = Degrees.of(50);
         @Getter private Angle deploy = Degrees.of(-20);
 
-        @Getter
-        private double kP =
-                0.2; // TODO: tune once feedforward and good motion profile created and roughly
-        // following
+        @Getter private double kP = 0.2;
 
         @Getter private double kI = 0.0;
         @Getter private double kD = 0.0;
 
         @Getter @Setter
         ArmFeedforward ff_noCoral =
-                new ArmFeedforward(
-                        0.6425,
-                        0.14478,
-                        5.4109 / (Math.PI * 2),
-                        0.002752); // TODO: Need more testing //0.002752
+                new ArmFeedforward(0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.002752);
 
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
         // profile in rotations while ff in radians
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
-                new TrapezoidProfile.Constraints(
-                        0.5 * Math.PI * 2,
-                        1.0 * Math.PI * 2); // TODO: tune along with arm feedforward
+                new TrapezoidProfile.Constraints(0.5 * Math.PI * 2, 1.0 * Math.PI * 2);
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -106,6 +97,7 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
+        // TODO: Fix logic - not accurately detecting when coral on
         if (!state.isHoldingCoral() // has no coral
                 && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
                 && getError().gt(Degrees.of(5))) { // tusks are far below target angle
@@ -135,6 +127,8 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command up() {
+        // TODO: consider continuing to drive the motor a little to hold up
+        // TODO: could reset position to 90 if greater than 90
         return goToAngle(config.up);
     }
 

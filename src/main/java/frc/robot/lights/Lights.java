@@ -6,6 +6,7 @@ import frc.hocLib.HocSubsystem;
 
 public class Lights extends HocSubsystem {
 
+    @SuppressWarnings("unused")
     private LightsConfig config;
 
     public static class LightsConfig extends HocSubsystem.Config {

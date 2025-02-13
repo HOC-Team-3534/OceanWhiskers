@@ -97,6 +97,7 @@ public abstract class Gamepad extends HocSubsystem {
         }
     }
 
+    @SuppressWarnings("unused")
     private Config config;
 
     /**

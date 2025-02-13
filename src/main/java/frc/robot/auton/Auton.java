@@ -67,9 +67,7 @@ public class Auton {
 
         Distance driveForwardDistance = Feet.of(2);
 
-        double percentSlowEndOfPath = 0.2;
-
-        Distance offsetFromWallToCenter = Inches.of(17.0); // TODO: measure and change
+        Distance offsetFromWallToCenter = Inches.of(17.0);
     }
 
     private Command m_autonomousCommand;
@@ -80,9 +78,12 @@ public class Auton {
 
     private AutonConfig config;
 
+    // TODO: create auton paths in pathplanner gui
+
     public Auton(AutonConfig config) {
         this.config = config;
 
+        // TODO: switch to multiple autonchoosers, combining them into one sequential command
         autonChooser = AutoBuilder.buildAutoChooser();
 
         SmartDashboard.putData("Auton/Auton", autonChooser);
@@ -101,6 +102,9 @@ public class Auton {
         SmartDashboard.putData("Auton/Pickup 2 Side", pickup2Side);
         SmartDashboard.putData("Auton/Pickup 3 Side", pickup3Side);
     }
+
+    // TODO: add visualizer for selected autonomous
+    // TODO: add visualizer for dtm
 
     private SendableChooser<Integer> buildLevelChooser() {
         var chooser = new SendableChooser<Integer>();
