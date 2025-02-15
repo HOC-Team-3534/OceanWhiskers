@@ -10,17 +10,20 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 public class AlgaeWheel extends TalonSRXMechanism {
+    @Getter
+    @Setter
+    @Accessors(chain = true)
     public static class AlgaeWheelConfig extends TalonSRXMechanism.Config {
-        @Getter private Power spikeThreshold = Watts.of(5.0);
-        @Getter private Voltage grabVoltage = Volts.of(5.0);
-        @Getter private Voltage releaseVoltage = Volts.of(-7.0);
-        @Getter private Voltage holdVoltage = Volts.of(0.3);
+        Power spikeThreshold = Watts.of(5.0);
+        Voltage grabVoltage = Volts.of(5.0);
+        Voltage releaseVoltage = Volts.of(-7.0);
+        Voltage holdVoltage = Volts.of(0.3);
 
         public AlgaeWheelConfig() {
             super("Algae Wheel", 16);
-            setAttached(false);
         }
     }
 

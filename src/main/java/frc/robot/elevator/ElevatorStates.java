@@ -39,6 +39,8 @@ public class ElevatorStates {
         ElevatorQuasiasticDown.whileTrue(elevator.sysIdQuasistatic(Direction.kReverse));
         ElevatorDynamicUp.whileTrue(elevator.sysIdDynamic(Direction.kForward));
         ElevatorDynamicDown.whileTrue(elevator.sysIdDynamic(Direction.kReverse));
+
+        // TODO: add elevator climb and climbing logic to keep the elevator from breaking
     }
 
     static Command goToLevel(Level level) {

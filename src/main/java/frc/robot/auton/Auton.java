@@ -11,75 +11,119 @@ import static frc.reefscape.FieldAndTags2025.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
-import com.pathplanner.lib.path.ConstraintsZone;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
-import com.pathplanner.lib.path.Waypoint;
-import edu.wpi.first.math.Pair;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.reefscape.FieldAndTags2025.ReefSide;
+import frc.reefscape.FieldAndTags2025.SideOfField;
 import frc.robot.Robot;
-import frc.robot.elevator.Elevator.Level;
 import frc.robot.swerve.Swerve;
-import frc.robot.tusks.Tusks.Side;
-import java.util.Collections;
-import java.util.List;
+import frc.robot.tusks.Tusks;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 public class Auton {
-    public static final EventTrigger autonL4 = new EventTrigger("L4");
+    static final EventTrigger autonDeploy1 = new EventTrigger("Deploy1");
+    static final EventTrigger autonDeploy2 = new EventTrigger("Deploy2");
+    static final EventTrigger autonDeploy3 = new EventTrigger("Deploy3");
+
+    static final EventTrigger autonPickup2 = new EventTrigger("Pickup2");
+    static final EventTrigger autonPickup3 = new EventTrigger("Pickup3");
+
+    public Trigger autonL4 = Trigger.kFalse;
+    public Trigger autonL3 = Trigger.kFalse;
+    public Trigger autonL2 = Trigger.kFalse;
+    public Trigger autonL1 = Trigger.kFalse;
+
+    public Trigger autonPickupLeft = Trigger.kFalse;
+    public Trigger autonPickupRight = Trigger.kFalse;
 
     private static final Swerve swerve = Robot.getSwerve();
 
+    @Getter
+    @Setter
+    @Accessors(chain = true)
     public static class AutonConfig {
-        @Getter @Setter
-        private PathConstraints pathConstraints =
+
+        PathConstraints pathConstraints =
                 new PathConstraints(
                         MetersPerSecond.of(3.0),
                         MetersPerSecondPerSecond.of(4.0),
                         RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
 
-        @Getter @Setter
-        private PathConstraints endSlowPathConstraints =
-                new PathConstraints(
-                        MetersPerSecond.of(1.0),
-                        MetersPerSecondPerSecond.of(1.0),
-                        RotationsPerSecond.of(1.5),
-                        RotationsPerSecondPerSecond.of(4.5));
+        Distance driveForwardDistance = Feet.of(2);
 
-        @Getter @Setter private double percentSlowEndOfPath = 0.2;
-
-        @Getter @Setter
-        private Distance offsetFromWallToCenter = Inches.of(17.0); // TODO: measure and change
+        Distance offsetFromWallToCenter = Inches.of(17.0);
     }
 
     private Command m_autonomousCommand;
 
-    private final SendableChooser<Command> autonChooser = new SendableChooser<>();
+    private final SendableChooser<Command> autonChooser;
+    private final SendableChooser<Integer> deploy1Level, deploy2Level, deploy3Level;
+    private final SendableChooser<Tusks.Side> pickup2Side, pickup3Side;
 
     private AutonConfig config;
+
+    // TODO: create auton paths in pathplanner gui
 
     public Auton(AutonConfig config) {
         this.config = config;
 
-        autonChooser.setDefaultOption("No Auton", Commands.none());
-        autonChooser.addOption("Drive Forward", driveForward(Feet.of(2)));
+        // TODO: switch to multiple autonchoosers, combining them into one sequential command
+        autonChooser = AutoBuilder.buildAutoChooser();
 
-        SmartDashboard.putData("Auton/Auton Chooser", autonChooser);
+        SmartDashboard.putData("Auton/Auton", autonChooser);
+
+        deploy1Level = buildLevelChooser();
+        deploy2Level = buildLevelChooser();
+        deploy3Level = buildLevelChooser();
+
+        SmartDashboard.putData("Auton/Deploy 1 Level", deploy1Level);
+        SmartDashboard.putData("Auton/Deploy 2 Level", deploy2Level);
+        SmartDashboard.putData("Auton/Deploy 3 Level", deploy3Level);
+
+        pickup2Side = buildPickupSideChooser();
+        pickup3Side = buildPickupSideChooser();
+
+        SmartDashboard.putData("Auton/Pickup 2 Side", pickup2Side);
+        SmartDashboard.putData("Auton/Pickup 3 Side", pickup3Side);
+    }
+
+    // TODO: add visualizer for selected autonomous
+    // TODO: add visualizer for dtm
+
+    private SendableChooser<Integer> buildLevelChooser() {
+        var chooser = new SendableChooser<Integer>();
+
+        chooser.setDefaultOption("4", 4);
+        chooser.addOption("3", 3);
+        chooser.addOption("2", 2);
+        chooser.addOption("1", 1);
+
+        return chooser;
+    }
+
+    private SendableChooser<Tusks.Side> buildPickupSideChooser() {
+        var chooser = new SendableChooser<Tusks.Side>();
+
+        chooser.setDefaultOption("Left", Tusks.Side.Left);
+        chooser.addOption("Right", Tusks.Side.Right);
+
+        return chooser;
     }
 
     public void init() {
@@ -90,52 +134,87 @@ public class Auton {
         }
     }
 
-    public Command getAutonomousCommand() {
+    void updateDeployLevel(int level, Trigger trigger) {
+        switch (level) {
+            case 1:
+                autonL1 = autonL1.or(trigger);
+                break;
+            case 2:
+                autonL2 = autonL2.or(trigger);
+                break;
+            case 3:
+                autonL3 = autonL3.or(trigger);
+                break;
+            case 4:
+                autonL4 = autonL4.or(trigger);
+                break;
+        }
+    }
+
+    void updateTusksPickupSide(Tusks.Side side, Trigger trigger) {
+        switch (side) {
+            case Left:
+                autonPickupLeft = autonPickupLeft.or(trigger);
+                break;
+            case Right:
+                autonPickupRight = autonPickupRight.or(trigger);
+                break;
+        }
+    }
+
+    void updateAutonTriggers() {
+        autonL1 = Trigger.kFalse;
+        autonL2 = Trigger.kFalse;
+        autonL3 = Trigger.kFalse;
+        autonL4 = Trigger.kFalse;
+
+        autonPickupLeft = Trigger.kFalse;
+        autonPickupRight = Trigger.kFalse;
+
+        updateDeployLevel(deploy1Level.getSelected(), autonDeploy1);
+        updateDeployLevel(deploy2Level.getSelected(), autonDeploy2);
+        updateDeployLevel(deploy3Level.getSelected(), autonDeploy3);
+
+        updateTusksPickupSide(pickup2Side.getSelected(), autonPickup2);
+        updateTusksPickupSide(pickup3Side.getSelected(), autonPickup3);
+    }
+
+    Command getAutonomousCommand() {
+        updateAutonTriggers();
         return autonChooser.getSelected();
     }
 
     // Drive forward
     public Command driveForward(Distance distance) {
-        return AutoBuilder.followPath(createPath(getPose(), getDriveForwardGoalPose(distance)));
+
+        return Commands.deferredProxy(
+                () -> {
+                    var goalPose = calculatePoseXDistanceAhead(distance);
+
+                    var path =
+                            new PathPlannerPath(
+                                    PathPlannerPath.waypointsFromPoses(getPose(), goalPose),
+                                    config.pathConstraints,
+                                    null,
+                                    new GoalEndState(0.0, goalPose.getRotation()));
+
+                    path.preventFlipping = true;
+
+                    return AutoBuilder.followPath(path);
+                });
     }
 
-    public static Pose2d getDriveForwardGoalPose(Distance distance) {
-        return new Pose2d(
-                getPose()
-                        .getTranslation()
-                        .plus(new Translation2d(distance.in(Meters), getPose().getRotation())),
-                getPose().getRotation());
+    public static Pose2d calculatePoseXDistanceAhead(Distance x) {
+        return getPose().plus(new Transform2d(x, Meters.zero(), new Rotation2d()));
     }
 
-    // Full Autonomous
-    public Command autonPlace(
-            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
-        if (placeList.size() <= 0) return Commands.none();
-        var options = placeList.remove(0);
-        var reefSide = options.getFirst();
-        var elevatorLevel = options.getSecond();
-
-        if (reefSide.getID().isEmpty()) return Commands.none();
-
-        return followPathToAprilTagID(reefSide::getID)
-                .andThen(Commands.none())
-                .andThen(autonPickup(placeList, pickupList));
+    public static class PlaceOption {
+        @Getter private ReefSide reefSide;
     }
 
-    public Command autonPickup(
-            List<Pair<ReefSide, Level>> placeList, List<Pair<PickupSide, Side>> pickupList) {
-        if (pickupList.size() <= 0) return Commands.none();
-        var options = pickupList.remove(0);
-        var pickupSide = options.getFirst();
-        var tusksSide = options.getSecond();
-
-        if (pickupSide.getID().isEmpty()) return Commands.none();
-
-        return followPathToAprilTagID(pickupSide::getID)
-                .andThen(Commands.none())
-                .andThen(autonPlace(placeList, pickupList));
+    public static class PickupOption {
+        @Getter private Tusks.Side tusksSide;
     }
-
     // DTM
     public Command dtmToHumanPlayerStation() {
         return followPathToAprilTagID(Auton::findClosestHumanPlayerStationID);
@@ -148,76 +227,54 @@ public class Auton {
     // Path Planning Helpers
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
         return Commands.deferredProxy(
-                () ->
-                        tagIdSupplier
-                                .get()
-                                .flatMap(this::findGoalPoseInFrontOfTag)
-                                .map(
-                                        goalPose -> {
-                                            var startHeading =
-                                                    getRobotDriveDirection()
-                                                            .orElse(
-                                                                    goalPose.getTranslation()
-                                                                            .minus(
-                                                                                    getPose()
-                                                                                            .getTranslation())
-                                                                            .getAngle());
+                () -> {
+                    return tagIdSupplier
+                            .get()
+                            .flatMap(this::findGoalPoseInFrontOfTag)
+                            .map(
+                                    goalPose -> {
+                                        var startPose =
+                                                new Pose2d(
+                                                        getPose().getTranslation(),
+                                                        calculateDirectionToStartDrivingIn(
+                                                                goalPose));
+                                        var path =
+                                                new PathPlannerPath(
+                                                        PathPlannerPath.waypointsFromPoses(
+                                                                startPose, goalPose),
+                                                        config.pathConstraints,
+                                                        null,
+                                                        new GoalEndState(
+                                                                0.0, goalPose.getRotation()));
 
-                                            var startPose =
-                                                    new Pose2d(
-                                                            getPose().getTranslation(),
-                                                            startHeading);
-                                            var path = createPath(startPose, goalPose);
+                                        path.preventFlipping = true;
 
-                                            return AutoBuilder.followPath(path);
-                                        })
-                                .orElse(Commands.none()));
+                                        return (Command)
+                                                AutoBuilder.followPath(path)
+                                                        .andThen(swerve.preciseAlignment(goalPose));
+                                    })
+                            .orElse(Commands.none());
+                });
     }
 
-    private PathPlannerPath createPath(Pose2d... poses) {
-        List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(poses);
-
-        return new PathPlannerPath(
-                waypoints,
-                Collections.emptyList(),
-                Collections.emptyList(),
-                List.of(
-                        new ConstraintsZone(
-                                ((double) (poses.length - 1)) - config.getPercentSlowEndOfPath(),
-                                poses.length - 1,
-                                config.getEndSlowPathConstraints())),
-                Collections.emptyList(),
-                config.pathConstraints,
-                null,
-                new GoalEndState(0.0, poses[poses.length - 1].getRotation()),
-                false);
+    private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {
+        return swerve.getRobotDriveDirection().orElse(calculateDirectionFromCurrentPose(goalPose));
     }
 
-    // Position and Alliance Helpers
-    private static boolean isRedAlliance() {
-        return DriverStation.getAlliance()
-                .map(alliance -> alliance.equals(Alliance.Red))
-                .orElse(false);
+    private static Rotation2d calculateDirectionFromCurrentPose(Pose2d goalPose) {
+        return goalPose.getTranslation().minus(getPose().getTranslation()).getAngle();
     }
 
     private static boolean isRobotOnOurSide() {
-        var distanceFromAllianceWall =
-                isRedAlliance()
-                        ? FIELD_LENGTH.minus(getPose().getMeasureX())
-                        : getPose().getMeasureX();
-        return distanceFromAllianceWall.lte(FIELD_LENGTH.div(2).plus(Feet.of(1)));
-    }
-
-    private static boolean isRobotOnHighSide() {
-        return getPose().getMeasureY().gt(FIELD_WIDTH.div(2));
+        var values = getAllianceValues();
+        if (values.isEmpty()) return false;
+        return values.get()
+                .getDistanceFromAllianceWall(getPose())
+                .lte(FIELD_LENGTH.div(2).plus(Feet.of(1)));
     }
 
     private static Pose2d getPose() {
         return swerve.getState().Pose;
-    }
-
-    private static Optional<Rotation2d> getRobotDriveDirection() {
-        return swerve.getRobotDriveDirection();
     }
 
     // April Tag Utilities
@@ -230,27 +287,20 @@ public class Auton {
         return APRIL_TAG_FIELD_LAYOUT
                 .getTagPose(id)
                 .map(
-                        p -> {
-                            var tagPose = p.toPose2d();
-                            var goalTranslation =
-                                    tagPose.getTranslation()
-                                            .plus(
-                                                    new Translation2d(
-                                                            config.getOffsetFromWallToCenter()
-                                                                    .in(Meters),
-                                                            tagPose.getRotation()));
-                            var goalRotation =
-                                    tagPose.getRotation().rotateBy(Rotation2d.fromDegrees(180));
-                            return new Pose2d(goalTranslation, goalRotation);
-                        });
+                        p ->
+                                p.toPose2d()
+                                        .plus(
+                                                new Transform2d(
+                                                        config.getOffsetFromWallToCenter(),
+                                                        Meters.zero(),
+                                                        Rotation2d.fromDegrees(180))));
     }
 
     private static Optional<Integer> findClosestHumanPlayerStationID() {
         if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1)) || !isRobotOnOurSide())
             return Optional.empty();
 
-        return Optional.of(
-                isRedAlliance() ? isRobotOnHighSide() ? 2 : 1 : isRobotOnHighSide() ? 13 : 12);
+        return SideOfField.getCurrentSide(getPose()).flatMap(SideOfField::getPickUpID);
     }
 
     private static Optional<Integer> findClosestReefID() {

@@ -5,11 +5,15 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 public final class FieldAndTags2025 {
     public static final AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT =
@@ -46,19 +50,55 @@ public final class FieldAndTags2025 {
         }
     }
 
-    public enum PickupSide {
-        Left(1, 13),
-        Right(2, 12);
-        int redId, blueId;
+    @RequiredArgsConstructor
+    public enum AllianceValues {
+        Blue(13, 12, pose -> pose.getMeasureX(), pose -> pose.getMeasureY()),
+        Red(
+                1,
+                2,
+                pose -> FIELD_LENGTH.minus(pose.getMeasureX()),
+                pose -> FIELD_WIDTH.minus(pose.getMeasureY()));
+        @Getter final int leftPickupId, rightPickupId;
+        final Function<Pose2d, Distance> distanceFromAllianceWall, distanceFromRightWall;
 
-        PickupSide(int redId, int blueId) {
-            this.redId = redId;
-            this.blueId = blueId;
+        public Distance getDistanceFromAllianceWall(Pose2d blueOriginPose) {
+            return distanceFromAllianceWall.apply(blueOriginPose);
         }
 
-        public Optional<Integer> getID() {
-            return DriverStation.getAlliance()
-                    .map(alliance -> alliance.equals(Alliance.Red) ? redId : blueId);
+        public Distance getDistanceFromRightWall(Pose2d blueOriginPose) {
+            return distanceFromRightWall.apply(blueOriginPose);
+        }
+
+        public static AllianceValues fromAlliance(Alliance alliance) {
+            return alliance.equals(Alliance.Blue) ? Blue : Red;
+        }
+    }
+
+    public static Optional<AllianceValues> getAllianceValues() {
+        return DriverStation.getAlliance().map(AllianceValues::fromAlliance);
+    }
+
+    public enum SideOfField {
+        Left,
+        Right;
+
+        public SideOfField opposite() {
+            return this.equals(Left) ? Right : Left;
+        }
+
+        public Optional<Integer> getPickUpID() {
+            return getAllianceValues()
+                    .map(a -> this.equals(Left) ? a.getLeftPickupId() : a.getRightPickupId());
+        }
+
+        public static Optional<SideOfField> getCurrentSide(Pose2d blueOriginCurrentPose) {
+            return getAllianceValues()
+                    .map(values -> values.getDistanceFromRightWall(blueOriginCurrentPose))
+                    .map(
+                            distance ->
+                                    distance.gt(FIELD_WIDTH.div(2))
+                                            ? SideOfField.Left
+                                            : SideOfField.Right);
         }
     }
 

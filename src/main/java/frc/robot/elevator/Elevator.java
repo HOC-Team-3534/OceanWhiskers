@@ -46,7 +46,6 @@ public class Elevator extends TalonFXMechanism {
 
             var slot0Configs = new Slot0Configs();
 
-            // TODO: transfer tuning from old-main and/or retune using sysid
             slot0Configs.kP = 3.0;
             slot0Configs.kI = 0;
             slot0Configs.kD = 0;
@@ -54,14 +53,14 @@ public class Elevator extends TalonFXMechanism {
             slot0Configs.kG = 0.805;
             slot0Configs.kS = 0.0559;
             slot0Configs.kV = 0.11793;
-            slot0Configs.kA = 0.01689;
+            slot0Configs.kA = 0.0048;
 
             setSlot0Configs(slot0Configs);
 
             setMMConfigs(
                     new MotionMagicConfigs()
-                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(80.0))
-                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(60.0))
+                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(37.0))
+                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80.0))
                             .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(2000)));
 
             setMotorOutputConfigs(
@@ -70,11 +69,7 @@ public class Elevator extends TalonFXMechanism {
             configMaxLinearPosition(Inches.of(54.625));
             configMaxPosition(Rotations.of(23.713));
 
-            setAttached(false);
-
-            // testing();
-
-            // enableMotionMagic();
+            enableMotionMagic();
         }
 
         public ElevatorConfig enableMotionMagic() {
@@ -91,12 +86,12 @@ public class Elevator extends TalonFXMechanism {
 
     private SysIdRoutine upSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(1.3), null),
+                    new SysIdRoutine.Config(Volts.of(1).per(Second), Volts.of(3.0), null),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     private SysIdRoutine downSysIdRoutine =
             new SysIdRoutine(
-                    new SysIdRoutine.Config(Volts.of(0.1).per(Second), Volts.of(0.1), null),
+                    new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(0.5), null),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     public Elevator(ElevatorConfig config) {

@@ -12,7 +12,6 @@ import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.HocSubsystem;
-import frc.hocLib.Telemetry;
 import frc.hocLib.util.ExpCurve;
 import frc.hocLib.util.Util;
 import java.util.function.DoubleSupplier;
@@ -98,6 +97,7 @@ public abstract class Gamepad extends HocSubsystem {
         }
     }
 
+    @SuppressWarnings("unused")
     private Config config;
 
     /**
@@ -182,14 +182,12 @@ public abstract class Gamepad extends HocSubsystem {
             if (!configured) {
                 if (!isConnected()) {
                     if (!printed) {
-                        Telemetry.print("##" + getName() + ": GAMEPAD NOT CONNECTED ##");
                         printed = true;
                     }
                     return;
                 }
 
                 configured = true;
-                Telemetry.print("## " + getName() + ": gamepad is connected ##");
             }
         }
     }

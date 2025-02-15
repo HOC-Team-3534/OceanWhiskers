@@ -21,7 +21,7 @@ import java.util.Map;
 
 public enum Rio {
     TBOT_2025("00", false), // TODO: Get serial number
-    PBOT_2025("03073eaa", false), // TODO: Get serial number
+    PBOT_2025("03073eaa", false),
     CBOT_2025("00", false), // TODO: Get serial number
     SIM("", true), // e.g. test default or simulation
     UNKNOWN(null, true);
@@ -60,7 +60,6 @@ public enum Rio {
             // SEGVs because it does the wrong
             // thing with JNIs, so don't do that.
             serialNumber = RobotController.getSerialNumber();
-            Telemetry.print("RIO SERIAL: " + serialNumber);
         } else {
             serialNumber = "";
         }
@@ -70,7 +69,6 @@ public enum Rio {
             rioIdAlert.setText("Rio: " + id.name());
             rioIdAlert.set(true);
 
-            Telemetry.print("RIO NAME: " + id.name());
             if (id.isRio2) {
                 rio1alert.set(true);
             }

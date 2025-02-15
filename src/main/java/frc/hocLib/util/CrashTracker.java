@@ -1,9 +1,6 @@
 /** Special thanks to FRC team 3847 */
 package frc.hocLib.util;
 
-import edu.wpi.first.wpilibj.RobotBase;
-import frc.hocLib.Telemetry;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -53,17 +50,7 @@ public class CrashTracker {
 
             writer.println();
         } catch (IOException e) {
-            if (e instanceof FileNotFoundException) {
-                if (RobotBase.isSimulation()) {
-                    Telemetry.print(
-                            "CrashTracker failed to save crash file to robot: running in simulation mode");
-                } else {
-                    Telemetry.print(
-                            "CrashTracker failed to save crash file to robot: path `/home/lvuser/crash_tracking.txt` not found");
-                }
-            } else {
-                e.printStackTrace();
-            }
+            e.printStackTrace();
         }
     }
 }

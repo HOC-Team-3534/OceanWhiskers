@@ -24,6 +24,7 @@ public class VisionSystem extends HocSubsystem {
 
         public VisionConfig() {
             super("Photon Vision");
+            setAttached(false);
         }
 
         public VisionConfig configCenterCameraAttached(boolean attached) {
@@ -63,6 +64,7 @@ public class VisionSystem extends HocSubsystem {
 
     Optional<PhotonCameraPlus> center_camera = Optional.empty();
 
+    @SuppressWarnings("unused")
     private VisionConfig config;
 
     public VisionSystem(VisionConfig config) {
@@ -74,6 +76,7 @@ public class VisionSystem extends HocSubsystem {
                     Optional.of(
                             new PhotonCameraPlus(
                                     "center_camera",
+                                    // TODO: define position of camera
                                     new Transform3d(
                                             Units.inchesToMeters(0),
                                             Units.inchesToMeters(0),

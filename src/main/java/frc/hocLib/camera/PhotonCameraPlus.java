@@ -75,6 +75,7 @@ public class PhotonCameraPlus {
                         var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
 
                         double xyStds = 2.0;
+                        // TODO: consider modifying weights to help with center camera and alignment
                         if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
                         else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
                         else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
