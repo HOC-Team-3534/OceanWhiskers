@@ -12,6 +12,7 @@ import lombok.Getter;
 
 public class Jaws extends TalonSRXMechanism {
     public static class JawsConfig extends TalonSRXMechanism.Config {
+        // TODO: tune power spike and output voltage levels
         @Getter private Power spikeThreshold = Watts.of(5.0);
         @Getter private Voltage openAndCloseVoltage = Volts.of(5.0); // close is positive
 
