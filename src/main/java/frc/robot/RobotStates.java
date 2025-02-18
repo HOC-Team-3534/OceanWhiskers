@@ -2,9 +2,7 @@ package frc.robot;
 
 import static frc.robot.auton.Auton.*;
 
-import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.codriver.Codriver;
@@ -97,11 +95,7 @@ public class RobotStates {
     public static final Trigger FollowingPath =
             new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();
 
-    public static void setupStates() {
-        NamedCommands.registerCommand(
-                "WaitUntilCoralDeployed", new WaitUntilCommand(HoldingCoral.not()));
-        NamedCommands.registerCommand("WaitUntilCoralPickedUp", new WaitUntilCommand(HoldingCoral));
-    }
+    public static void setupStates() {}
 
     private RobotStates() {
         throw new IllegalStateException("Utility class");
