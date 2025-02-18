@@ -53,7 +53,8 @@ public class ElevatorStates {
                     elevator.getCurrentCommand()
                             .setName(
                                     "Elevator.Apply Voltage Out - "
-                                            + elevator.getVoltage().in(Volts));
+                                            + Math.round(elevator.getVoltage().in(Volts) * 100)
+                                                    / 100.0);
                     elevator.setVoltageOut(volts.get());
                 });
     }

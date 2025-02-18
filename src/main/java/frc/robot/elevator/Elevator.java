@@ -28,6 +28,7 @@ import lombok.Setter;
 public class Elevator extends TalonFXMechanism {
 
     public static class ElevatorConfig extends Config {
+        // TODO: tune heights for each level and pickup height
         @Getter private Distance L1 = Inches.of(10);
         @Getter private Distance L1Pre = Inches.of(5.0);
         @Getter private Distance L2 = Inches.of(20);
@@ -144,7 +145,7 @@ public class Elevator extends TalonFXMechanism {
     }
 
     public Command safelyLowerToBottom() {
-        if (!isAttached()) return run(() -> {});
+        if (!isAttached()) return doNothing();
         return startRun(
                         () -> {
                             state.setTargetLevel(Level.Bottom);
@@ -159,8 +160,12 @@ public class Elevator extends TalonFXMechanism {
                 .withName("Elevator.Safely Lower to Bottom");
     }
 
+    Command doNothing() {
+        return run(() -> {}).withName("Elevator.Do Nothing");
+    }
+
     public Command goToLevel(Level level) {
-        if (!isAttached()) return run(() -> {});
+        if (!isAttached()) return doNothing();
 
         if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
 
@@ -183,9 +188,13 @@ public class Elevator extends TalonFXMechanism {
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         switch (direction) {
             case kForward:
-                return upSysIdRoutine.quasistatic(Direction.kForward);
+                return upSysIdRoutine
+                        .quasistatic(Direction.kForward)
+                        .withName("Elevator.Quas Forward");
             case kReverse:
-                return downSysIdRoutine.quasistatic(Direction.kReverse);
+                return downSysIdRoutine
+                        .quasistatic(Direction.kReverse)
+                        .withName("Elevator.Quas Reverse");
             default:
                 return Commands.none();
         }
@@ -194,9 +203,11 @@ public class Elevator extends TalonFXMechanism {
     public Command sysIdDynamic(SysIdRoutine.Direction direction) {
         switch (direction) {
             case kForward:
-                return upSysIdRoutine.dynamic(Direction.kForward);
+                return upSysIdRoutine.dynamic(Direction.kForward).withName("Elevator.Dyn Forward");
             case kReverse:
-                return downSysIdRoutine.dynamic(Direction.kReverse);
+                return downSysIdRoutine
+                        .dynamic(Direction.kReverse)
+                        .withName("Elevator.Dyn Reverse");
             default:
                 return Commands.none();
         }
