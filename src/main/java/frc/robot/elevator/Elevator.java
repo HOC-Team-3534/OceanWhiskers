@@ -69,6 +69,9 @@ public class Elevator extends TalonFXMechanism {
             configMaxLinearPosition(Inches.of(54.625));
             configMaxPosition(Rotations.of(23.713));
 
+            // TODO: set elevator in brake mode, hoping it causes the elevator not to fall when
+            // disabled
+
             enableMotionMagic();
         }
 
