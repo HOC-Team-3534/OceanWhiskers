@@ -1,7 +1,10 @@
 package frc.robot.driver;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.gamepads.Gamepad;
+import frc.robot.Robot;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +21,7 @@ public class Driver extends Gamepad {
     public final Trigger SwerveDynamicBackward_DDP = downDpad.and(fn, teleop);
 
     public static class DriverConfig extends Config {
-        @Getter @Setter private double slowModeScalor = 0.45;
+        @Getter @Setter private double creepModeScalor = 0.45;
         @Getter @Setter private double defaultTurnScalor = 0.75;
         @Getter @Setter private double turboModeScalor = 1;
 
@@ -39,10 +42,11 @@ public class Driver extends Gamepad {
         }
     }
 
-    @Getter @Setter
-    private boolean isSlowMode = false; // TODO: change slow and turbo to RobotStates
+    private Trigger CreepMode =
+            (rightBumper.or(() -> Robot.getElevator().getHeight().gt(Inches.of(25)))).and(teleop);
 
-    @Getter @Setter private boolean isTurboMode = false;
+    @Getter @Setter
+    private boolean isTurboMode = false; // TODO: change slow and turbo to RobotStates
 
     public Driver(DriverConfig config) {
         super(config);
@@ -53,8 +57,8 @@ public class Driver extends Gamepad {
     // Applies Exponential Curve, Deadzone, and Slow Mode toggle
     public double getDriveFwdPositive() {
         double fwdPositive = leftStickCurve.calculate(-1 * getLeftY());
-        if (isSlowMode) {
-            fwdPositive *= Math.abs(config.getSlowModeScalor());
+        if (CreepMode.getAsBoolean()) {
+            fwdPositive *= Math.abs(config.getCreepModeScalor());
         }
         return fwdPositive;
     }
@@ -63,8 +67,8 @@ public class Driver extends Gamepad {
     // Applies Exponential Curve, Deadzone, and Slow Mode toggle
     public double getDriveLeftPositive() {
         double leftPositive = -1 * leftStickCurve.calculate(getLeftX());
-        if (isSlowMode) {
-            leftPositive *= Math.abs(config.getSlowModeScalor());
+        if (CreepMode.getAsBoolean()) {
+            leftPositive *= Math.abs(config.getCreepModeScalor());
         }
         return leftPositive;
     }
@@ -73,8 +77,8 @@ public class Driver extends Gamepad {
     // Applies Exponential Curve, Deadzone, and Slow Mode toggle
     public double getDriveCCWPositive() {
         double ccwPositive = rightStickCurve.calculate(getRightX());
-        if (isSlowMode) {
-            ccwPositive *= Math.abs(config.getSlowModeScalor());
+        if (CreepMode.getAsBoolean()) {
+            ccwPositive *= Math.abs(config.getCreepModeScalor());
         } else if (isTurboMode) {
             ccwPositive *= Math.abs(config.getTurboModeScalor());
         } else {
