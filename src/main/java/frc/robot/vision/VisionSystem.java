@@ -105,6 +105,8 @@ public class VisionSystem extends HocSubsystem {
             rl_camera.update();
             rr_camera.update();
 
+            // TODO: try latest photonvision release with new PNP solver from 6238
+
             center_camera.ifPresent(
                     cc -> {
                         cc.update();

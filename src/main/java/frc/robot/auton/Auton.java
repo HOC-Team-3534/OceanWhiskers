@@ -89,6 +89,8 @@ public class Auton {
     // TODO: add visualizer for selected autonomous
     // TODO: add visualizer for dtm
 
+    // TODO: test and tune gui paths
+
     enum ReefBranch {
         // spotless:off
         A, B, C, D, E, F, G, H, I, J, K, L;
@@ -345,6 +347,7 @@ public class Auton {
 
     // Path Planning Helpers
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
+        // TODO: add precise alignment after main path follow just like autonomous
         return Commands.deferredProxy(
                 () -> {
                     return tagIdSupplier

@@ -41,7 +41,8 @@
     ".DataLogTool": true,
     ".SysId": true,
     ".roboRIOTeamNumberSetter": true,
-    "logs": true
+    "logs": true,
+    "gradle.properties": true
   },
   "java.test.config": [
     {
