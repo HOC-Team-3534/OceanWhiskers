@@ -20,8 +20,7 @@ import lombok.Getter;
 
 public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
-        @Getter
-        private boolean centerCameraAttached = false;
+        @Getter private boolean centerCameraAttached = false;
 
         public VisionConfig() {
             super("Photon Vision");
@@ -40,22 +39,23 @@ public class VisionSystem extends HocSubsystem {
     private final Distance CAMERA_HEIGHT_OFF_GROUND = Inches.of(10.75);
     private final Angle CAMERA_PITCH = Degrees.of(15.0);
 
-    private final Translation2d cameraOffset = new Translation2d(CAMERA_INSET_FROM_CANCODER.in(Meters),
-            Rotation2d.fromDegrees(45));
+    private final Translation2d cameraOffset =
+            new Translation2d(CAMERA_INSET_FROM_CANCODER.in(Meters), Rotation2d.fromDegrees(45));
 
-    private final Translation2d fl_xy = new Translation2d(defaultSwerve.getKFrontLeftXPos(),
-            defaultSwerve.getKFrontLeftYPos())
-            .minus(cameraOffset);
+    private final Translation2d fl_xy =
+            new Translation2d(defaultSwerve.getKFrontLeftXPos(), defaultSwerve.getKFrontLeftYPos())
+                    .minus(cameraOffset);
 
     private final Rotation3d fl_rot = new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45));
 
-    private final Transform3d fl_robotToCamera = calcRobotToCam(fl_xy, CAMERA_HEIGHT_OFF_GROUND, fl_rot);
-    private final Transform3d fr_robotToCamera = rotateAroundCenter(fl_robotToCamera,
-            new Rotation3d(Rotation2d.fromDegrees(-90)));
-    private final Transform3d rl_robotToCamera = rotateAroundCenter(fl_robotToCamera,
-            new Rotation3d(Rotation2d.fromDegrees(90)));
-    private final Transform3d rr_robotToCamera = rotateAroundCenter(fl_robotToCamera,
-            new Rotation3d(Rotation2d.fromDegrees(180)));
+    private final Transform3d fl_robotToCamera =
+            calcRobotToCam(fl_xy, CAMERA_HEIGHT_OFF_GROUND, fl_rot);
+    private final Transform3d fr_robotToCamera =
+            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(-90)));
+    private final Transform3d rl_robotToCamera =
+            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(90)));
+    private final Transform3d rr_robotToCamera =
+            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(180)));
 
     PhotonCameraPlus fl_camera = new PhotonCameraPlus("fl_camera", fl_robotToCamera);
     PhotonCameraPlus fr_camera = new PhotonCameraPlus("fr_camera", fr_robotToCamera);
@@ -72,19 +72,26 @@ public class VisionSystem extends HocSubsystem {
         this.config = config;
 
         if (config.isCenterCameraAttached()) {
-            center_camera = Optional.of(
-                    new PhotonCameraPlus(
-                            "center_camera",
-                            /*
-                            * NOTICE: I'm not sure which direction is which with respect to the robot, 
-                            * so I assumed that the front-back direction is 'x' value, the left-right direction is the 'y' value,
-                            * and pitch is the direction in which the camera was tilted. -Nathaniel
-                            */
-                            new Transform3d(
-                                    Units.inchesToMeters(10.5), //This value is the offset of the camera from the center considered in relation to the front and back.
-                                    Units.inchesToMeters(3), //This value is the offset of the camera from the center considered in relation to the left and right.
-                                    Units.inchesToMeters(3.5),
-                                    new Rotation3d(0, Units.degreesToRadians(45), 0))));
+            center_camera =
+                    Optional.of(
+                            new PhotonCameraPlus(
+                                    "center_camera",
+                                    /*
+                                     * NOTICE: I'm not sure which direction is which with respect to the robot,
+                                     * so I assumed that the front-back direction is 'x' value, the left-right direction is the 'y' value,
+                                     * and pitch is the direction in which the camera was tilted. -Nathaniel
+                                     */
+                                    new Transform3d(
+                                            Units.inchesToMeters(
+                                                    10.5), // This value is the offset of the camera
+                                            // from the center considered in relation
+                                            // to the front and back.
+                                            Units.inchesToMeters(
+                                                    3), // This value is the offset of the camera
+                                            // from the center considered in relation to
+                                            // the left and right.
+                                            Units.inchesToMeters(3.5),
+                                            new Rotation3d(0, Units.degreesToRadians(45), 0))));
         }
     }
 
@@ -132,10 +139,8 @@ public class VisionSystem extends HocSubsystem {
     }
 
     @Override
-    public void setupBindings() {
-    }
+    public void setupBindings() {}
 
     @Override
-    public void setupDefaultCommand() {
-    }
+    public void setupDefaultCommand() {}
 }
