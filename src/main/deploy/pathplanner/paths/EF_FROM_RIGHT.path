@@ -1,0 +1,61 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 1.385669191919192,
+        "y": 0.8944444444444435
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.618810244191067,
+        "y": 1.7790036826178977
+      },
+      "isLocked": false,
+      "linkedName": "Right"
+    },
+    {
+      "anchor": {
+        "x": 5.1565656565656575,
+        "y": 2.8967803030303028
+      },
+      "prevControl": {
+        "x": 4.160479797979798,
+        "y": 1.6567550505050495
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "EF"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Deploy",
+      "waypointRelativePos": 0.42133956386292964,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 3.0,
+    "maxAcceleration": 3.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 119.99999999999999
+  },
+  "reversed": false,
+  "folder": "FROM_RIGHT",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -125.00000000000001
+  },
+  "useDefaultConstraints": true
+}

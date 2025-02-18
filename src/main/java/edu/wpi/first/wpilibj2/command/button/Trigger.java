@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import java.util.function.BooleanSupplier;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * This class provides an easy way to link commands to conditions.
@@ -371,6 +373,27 @@ public class Trigger implements BooleanSupplier {
                     public boolean getAsBoolean() {
                         return m_debouncer.calculate(m_condition.getAsBoolean());
                     }
+                });
+    }
+
+    static class Value {
+        @Getter @Setter boolean value;
+    }
+
+    public Trigger latchWithReset(BooleanSupplier resetCondition) {
+        var value = new Value();
+        return new Trigger(
+                m_loop,
+                () -> {
+                    if (m_condition.getAsBoolean()) {
+                        value.setValue(true);
+                    }
+
+                    if (resetCondition.getAsBoolean()) {
+                        value.setValue(false);
+                    }
+
+                    return value.isValue();
                 });
     }
 }

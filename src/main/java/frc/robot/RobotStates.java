@@ -1,11 +1,12 @@
 package frc.robot;
 
+import static frc.robot.auton.Auton.*;
+
 import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.algaeWheel.AlgaeWheel;
-import frc.robot.auton.Auton;
 import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
 import frc.robot.elevator.Elevator;
@@ -20,8 +21,6 @@ public class RobotStates {
     private static final Elevator elevator = Robot.getElevator();
     private static final AlgaeWheel algaeWheel = Robot.getAlgaeWheel();
     private static final Tusks tusks = Robot.getTusks();
-
-    private static final Auton auton = Robot.getAuton();
 
     public static final Trigger isSwerveTesting = new Trigger(swerve::isTesting);
 
@@ -39,10 +38,16 @@ public class RobotStates {
     public static final Trigger isTusksTesting =
             new Trigger(tusks::isTesting).and(isElevatorTesting.not(), isSwerveTesting.not());
 
-    public static final Trigger GoToL1 = codriver.GoToL1_A.or(auton.autonL1);
-    public static final Trigger GoToL2 = codriver.GoToL2_B.or(auton.autonL2);
-    public static final Trigger GoToL3 = codriver.GoToL3_X.or(auton.autonL3);
-    public static final Trigger GoToL4 = codriver.GoToL4_Y.or(auton.autonL4);
+    public static final Trigger HoldingCoral = new Trigger(() -> tusks.getState().isHoldingCoral());
+
+    public static final Trigger GoToL1 =
+            codriver.GoToL1_A.or(isLevel(1).latchWithReset(HoldingCoral.not()));
+    public static final Trigger GoToL2 =
+            codriver.GoToL2_B.or(isLevel(2).latchWithReset(HoldingCoral.not()));
+    public static final Trigger GoToL3 =
+            codriver.GoToL3_X.or(isLevel(3).latchWithReset(HoldingCoral.not()));
+    public static final Trigger GoToL4 =
+            codriver.GoToL4_Y.or(isLevel(4).latchWithReset(HoldingCoral.not()));
 
     public static final Trigger ElevatorVoltageUp = codriver.VoltageUp_UDP.and(isElevatorTesting);
     public static final Trigger ElevatorVoltageDown =
@@ -73,11 +78,11 @@ public class RobotStates {
     public static final Trigger GrabAlgae = codriver.GrabAlgae_RT.and(HoldAlgae.not());
 
     public static final Trigger PickupCoralLeft =
-            codriver.PickupCoralLeft_LT.or(auton.autonPickupLeft);
+            codriver.PickupCoralLeft_LT.or(
+                    isTusksSide(Tusks.Side.Left).latchWithReset(HoldingCoral));
     public static final Trigger PickupCoralRight =
-            codriver.PickupCoralRight_RT.or(auton.autonPickupRight);
-
-    public static final Trigger HoldingCoral = new Trigger(() -> tusks.getState().isHoldingCoral());
+            codriver.PickupCoralRight_RT.or(
+                    isTusksSide(Tusks.Side.Right).latchWithReset(HoldingCoral));
 
     public static final Trigger ElevatorReadyToDeploy =
             new Trigger(() -> elevator.getState().isReadyToDeploy());
@@ -94,8 +99,8 @@ public class RobotStates {
 
     public static void setupStates() {
         NamedCommands.registerCommand(
-                "waitUntilCoralDeployed", new WaitUntilCommand(HoldingCoral.not()));
-        NamedCommands.registerCommand("waitUntilCoralPickedUp", new WaitUntilCommand(HoldingCoral));
+                "WaitUntilCoralDeployed", new WaitUntilCommand(HoldingCoral.not()));
+        NamedCommands.registerCommand("WaitUntilCoralPickedUp", new WaitUntilCommand(HoldingCoral));
     }
 
     private RobotStates() {

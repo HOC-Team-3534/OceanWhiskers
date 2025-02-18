@@ -73,6 +73,8 @@ public class Robot extends HocRobot {
 
         try {
 
+            SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
+
             SmartDashboard.putString(
                     "Rio Serial Number", isReal() ? RobotController.getSerialNumber() : "");
 

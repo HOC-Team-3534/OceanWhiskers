@@ -1,6 +1,7 @@
 package frc.hocLib;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +24,10 @@ public abstract class HocSubsystem extends SubsystemBase {
     public abstract void setupBindings();
 
     public abstract void setupDefaultCommand();
+
+    public Trigger isCurrentCommand(String name) {
+        return new Trigger(() -> this.getCurrentCommand().getName().equals(name));
+    }
 
     public static class Config {
         @Getter @Setter private String name;

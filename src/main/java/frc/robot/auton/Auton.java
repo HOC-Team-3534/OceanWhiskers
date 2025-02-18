@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static frc.reefscape.FieldAndTags2025.*;
+import static frc.robot.auton.AutonChoosers.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
@@ -20,44 +21,51 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.reefscape.FieldAndTags2025.ReefSide;
 import frc.reefscape.FieldAndTags2025.SideOfField;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
 import frc.robot.tusks.Tusks;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
 public class Auton {
-    static final EventTrigger autonDeploy1 = new EventTrigger("Deploy1");
-    static final EventTrigger autonDeploy2 = new EventTrigger("Deploy2");
-    static final EventTrigger autonDeploy3 = new EventTrigger("Deploy3");
-
-    static final EventTrigger autonPickup2 = new EventTrigger("Pickup2");
-    static final EventTrigger autonPickup3 = new EventTrigger("Pickup3");
-
-    public Trigger autonL4 = Trigger.kFalse;
-    public Trigger autonL3 = Trigger.kFalse;
-    public Trigger autonL2 = Trigger.kFalse;
-    public Trigger autonL1 = Trigger.kFalse;
-
-    public Trigger autonPickupLeft = Trigger.kFalse;
-    public Trigger autonPickupRight = Trigger.kFalse;
-
     private static final Swerve swerve = Robot.getSwerve();
+    private static final Tusks tusks = Robot.getTusks();
+
+    static final EventTrigger autonDeploy = new EventTrigger("Deploy");
+    static final EventTrigger autonPickup = new EventTrigger("Pickup");
+
+    @Getter @Setter static Optional<AutonStep> currentStep = Optional.empty();
+
+    public static Trigger isLevel(int level) {
+        return new Trigger(() -> getCurrentStep().map(step -> step.isLevel(1)).orElse(false));
+    }
+
+    public static Trigger isTusksSide(Tusks.Side side) {
+        return new Trigger(
+                () -> getCurrentStep().map(step -> step.isTusksSide(side)).orElse(false));
+    }
+
+    static {
+        AutonChoosers.init();
+    }
 
     @Getter
     @Setter
     @Accessors(chain = true)
     public static class AutonConfig {
-
         PathConstraints pathConstraints =
                 new PathConstraints(
                         MetersPerSecond.of(3.0),
@@ -72,58 +80,91 @@ public class Auton {
 
     private Command m_autonomousCommand;
 
-    private final SendableChooser<Command> autonChooser;
-    private final SendableChooser<Integer> deploy1Level, deploy2Level, deploy3Level;
-    private final SendableChooser<Tusks.Side> pickup2Side, pickup3Side;
-
     private AutonConfig config;
 
     // TODO: create auton paths in pathplanner gui
 
     public Auton(AutonConfig config) {
         this.config = config;
-
-        // TODO: switch to multiple autonchoosers, combining them into one sequential command
-        autonChooser = AutoBuilder.buildAutoChooser();
-
-        SmartDashboard.putData("Auton/Auton", autonChooser);
-
-        deploy1Level = buildLevelChooser();
-        deploy2Level = buildLevelChooser();
-        deploy3Level = buildLevelChooser();
-
-        SmartDashboard.putData("Auton/Deploy 1 Level", deploy1Level);
-        SmartDashboard.putData("Auton/Deploy 2 Level", deploy2Level);
-        SmartDashboard.putData("Auton/Deploy 3 Level", deploy3Level);
-
-        pickup2Side = buildPickupSideChooser();
-        pickup3Side = buildPickupSideChooser();
-
-        SmartDashboard.putData("Auton/Pickup 2 Side", pickup2Side);
-        SmartDashboard.putData("Auton/Pickup 3 Side", pickup3Side);
     }
 
     // TODO: add visualizer for selected autonomous
     // TODO: add visualizer for dtm
 
-    private SendableChooser<Integer> buildLevelChooser() {
-        var chooser = new SendableChooser<Integer>();
+    enum ReefBranch {
+        // spotless:off
+        A, B, C, D, E, F, G, H, I, J, K, L;
+        //spotless:on
 
-        chooser.setDefaultOption("4", 4);
-        chooser.addOption("3", 3);
-        chooser.addOption("2", 2);
-        chooser.addOption("1", 1);
+        ReefSide reefSide;
 
-        return chooser;
+        @Getter
+        Tusks.Side tusksSide = name().charAt(0) % 2 == 0 ? Tusks.Side.Right : Tusks.Side.Left;
+
+        ReefSide getReefSide() {
+            if (reefSide == null) {
+                reefSide =
+                        Arrays.stream(ReefSide.values())
+                                .filter(rs -> rs.name().contains(this.name()))
+                                .findFirst()
+                                .orElse(null);
+            }
+            return reefSide;
+        }
+
+        void addToChooser(SendableChooser<ReefBranch> chooser, SideOfField sideOfField) {
+            var reefSideOfField = getReefSide().getSideOfField();
+            if (reefSideOfField.isEmpty() || reefSideOfField.get().equals(sideOfField)) {
+                chooser.addOption(name(), this);
+            }
+        }
     }
 
-    private SendableChooser<Tusks.Side> buildPickupSideChooser() {
-        var chooser = new SendableChooser<Tusks.Side>();
+    enum ReefSide {
+        // spotless:off
+        AB, CD, EF, GH, IJ, KL;
+        // spotless:on
 
-        chooser.setDefaultOption("Left", Tusks.Side.Left);
-        chooser.addOption("Right", Tusks.Side.Right);
+        @Getter
+        final PathPlannerPath fromStartLeft, fromStartRight, fromLeft, fromRight, toLeft, toRight;
 
-        return chooser;
+        ReefSide() {
+            fromStartLeft = loadPath("_FROM_START_LEFT", "_FROM_START");
+            fromStartRight = loadPath("_FROM_START_RIGHT", "_FROM_START");
+            toLeft = loadPath("_TO_LEFT");
+            fromLeft = loadPath("_FROM_LEFT");
+            toRight = loadPath("_TO_RIGHT");
+            fromRight = loadPath("_FROM_RIGHT");
+        }
+
+        PathPlannerPath loadPath(String postFix, String backupPostFix) {
+            PathPlannerPath path = loadPath(postFix);
+
+            if (path != null) return path;
+
+            return loadPath(backupPostFix);
+        }
+
+        PathPlannerPath loadPath(String postfix) {
+            try {
+                return PathPlannerPath.fromPathFile(name() + postfix);
+            } catch (Exception e) {
+            }
+
+            return null;
+        }
+
+        Optional<SideOfField> getSideOfField() {
+            switch (this) {
+                case AB, GH:
+                    return Optional.empty();
+                case CD, EF:
+                    return Optional.of(SideOfField.Right);
+                case IJ, KL:
+                    return Optional.of(SideOfField.Left);
+            }
+            throw new RuntimeException();
+        }
     }
 
     public void init() {
@@ -134,74 +175,156 @@ public class Auton {
         }
     }
 
-    void updateDeployLevel(int level, Trigger trigger) {
-        switch (level) {
-            case 1:
-                autonL1 = autonL1.or(trigger);
-                break;
-            case 2:
-                autonL2 = autonL2.or(trigger);
-                break;
-            case 3:
-                autonL3 = autonL3.or(trigger);
-                break;
-            case 4:
-                autonL4 = autonL4.or(trigger);
-                break;
+    @NoArgsConstructor
+    public abstract class AutonStep {
+        public abstract PathPlannerPath getPath();
+
+        public Command followPath() {
+            return AutoBuilder.followPath(getPath());
+        }
+
+        public Pose2d getGoalPose() {
+            var poses = getPath().getPathPoses();
+            return poses.get(poses.size() - 1);
+        }
+
+        public Command alignWithGoalPose() {
+            return swerve.preciseAlignment(getGoalPose());
+        }
+
+        public abstract boolean isStepComplete();
+
+        public Command completeStep() {
+            return Commands.deadline(
+                    followPath()
+                            .andThen(alignWithGoalPose())
+                            .andThen(new WaitUntilCommand(this::isStepComplete)),
+                    Commands.startEnd(
+                            () -> setCurrentStep(Optional.of(this)),
+                            () -> setCurrentStep(Optional.empty())));
+        }
+
+        public boolean isLevel(int level) {
+            if (this instanceof DeployStep) {
+                return ((DeployStep) this).getLevel() == level;
+            }
+            return false;
+        }
+
+        public boolean isTusksSide(Tusks.Side side) {
+            if (this instanceof PickupStep) {
+                return ((PickupStep) this).getTusksSide().equals(side);
+            }
+            return false;
+        }
+
+        public static Command stepsToCommand(List<AutonStep> steps) {
+            return Commands.parallel(
+                    (Command[]) steps.stream().map(AutonStep::completeStep).toArray());
         }
     }
 
-    void updateTusksPickupSide(Tusks.Side side, Trigger trigger) {
-        switch (side) {
-            case Left:
-                autonPickupLeft = autonPickupLeft.or(trigger);
-                break;
-            case Right:
-                autonPickupRight = autonPickupRight.or(trigger);
-                break;
+    @RequiredArgsConstructor
+    @Getter
+    public class DeployStep extends AutonStep {
+        final boolean start;
+        final int level;
+        final ReefBranch branch;
+
+        @Override
+        public PathPlannerPath getPath() {
+            var reefSide = branch.getReefSide();
+            if (isLeftSideOfFieldSelected()) {
+                if (start) return reefSide.getFromStartLeft();
+                else return reefSide.getFromLeft();
+            } else {
+                if (start) return reefSide.getFromStartRight();
+                else return reefSide.getFromRight();
+            }
+        }
+
+        @Override
+        public boolean isStepComplete() {
+            return !tusks.getState().isHoldingCoral();
         }
     }
 
-    void updateAutonTriggers() {
-        autonL1 = Trigger.kFalse;
-        autonL2 = Trigger.kFalse;
-        autonL3 = Trigger.kFalse;
-        autonL4 = Trigger.kFalse;
+    @RequiredArgsConstructor
+    public class PickupStep extends AutonStep {
+        final ReefBranch prevBranch, branch;
 
-        autonPickupLeft = Trigger.kFalse;
-        autonPickupRight = Trigger.kFalse;
+        @Override
+        public PathPlannerPath getPath() {
+            var reefSide = prevBranch.getReefSide();
+            if (isLeftSideOfFieldSelected()) return reefSide.getToLeft();
+            else return reefSide.getToRight();
+        }
 
-        updateDeployLevel(deploy1Level.getSelected(), autonDeploy1);
-        updateDeployLevel(deploy2Level.getSelected(), autonDeploy2);
-        updateDeployLevel(deploy3Level.getSelected(), autonDeploy3);
+        @Override
+        public boolean isStepComplete() {
+            return tusks.getState().isHoldingCoral();
+        }
 
-        updateTusksPickupSide(pickup2Side.getSelected(), autonPickup2);
-        updateTusksPickupSide(pickup3Side.getSelected(), autonPickup3);
+        public Tusks.Side getTusksSide() {
+            return branch.getTusksSide();
+        }
     }
 
     Command getAutonomousCommand() {
-        updateAutonTriggers();
-        return autonChooser.getSelected();
+        lockChoosers();
+
+        List<AutonStep> steps = new ArrayList<>();
+
+        var firstBranch = getFirstBranch();
+
+        if (firstBranch != null) {
+
+            steps.add(new DeployStep(true, getFirstBranchLevel(), firstBranch));
+
+            var secondBranch = getSecondBranch();
+
+            if (secondBranch != null) {
+
+                steps.add(new PickupStep(firstBranch, secondBranch));
+                steps.add(new DeployStep(false, getSecondBranchLevel(), secondBranch));
+
+                var thirdBranch = getThirdBranch();
+
+                if (thirdBranch != null) {
+                    steps.add(new PickupStep(secondBranch, thirdBranch));
+                    steps.add(new DeployStep(false, getThirdBranchLevel(), thirdBranch));
+                }
+            }
+        }
+
+        unlockChoosers();
+
+        if (steps.size() == 0) return driveForward(config.getDriveForwardDistance());
+
+        return AutonStep.stepsToCommand(steps);
     }
 
     // Drive forward
     public Command driveForward(Distance distance) {
 
         return Commands.deferredProxy(
-                () -> {
-                    var goalPose = calculatePoseXDistanceAhead(distance);
+                        () -> {
+                            var goalPose = calculatePoseXDistanceAhead(distance);
 
-                    var path =
-                            new PathPlannerPath(
-                                    PathPlannerPath.waypointsFromPoses(getPose(), goalPose),
-                                    config.pathConstraints,
-                                    null,
-                                    new GoalEndState(0.0, goalPose.getRotation()));
+                            var path =
+                                    new PathPlannerPath(
+                                            PathPlannerPath.waypointsFromPoses(getPose(), goalPose),
+                                            config.pathConstraints,
+                                            null,
+                                            new GoalEndState(0.0, goalPose.getRotation()));
 
-                    path.preventFlipping = true;
+                            path.preventFlipping = true;
 
-                    return AutoBuilder.followPath(path);
-                });
+                            return AutoBuilder.followPath(path)
+                                    .withName(
+                                            "Auton.Drive Forward");
+                        })
+                .withName("Auton.Drive Forward Proxy");
     }
 
     public static Pose2d calculatePoseXDistanceAhead(Distance x) {

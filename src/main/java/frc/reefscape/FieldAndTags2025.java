@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 
 public final class FieldAndTags2025 {
     public static final AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT =
-            AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+            AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
     public static final Distance FIELD_LENGTH = Meters.of(APRIL_TAG_FIELD_LAYOUT.getFieldLength());
 
