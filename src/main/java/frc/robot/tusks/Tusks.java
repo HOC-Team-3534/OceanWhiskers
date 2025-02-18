@@ -44,6 +44,7 @@ public class Tusks extends TalonSRXMechanism {
         ArmFeedforward ff_noCoral =
                 new ArmFeedforward(0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.002752);
 
+        // TODO: tune ff with coral using sysid
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
 
         // profile in rotations while ff in radians
@@ -218,8 +219,17 @@ public class Tusks extends TalonSRXMechanism {
             return Radians.of(pid.getGoal().position);
         }
 
+        private ArmFeedforward prev_ff = config.getFf_withCoral();
+
         ArmFeedforward getCurrentFF() {
-            return (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
+            var ff = (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
+            if(prev_ff != ff) {
+                var goal = profile.getGoal();
+                profile.reset();
+                profile.setGoal(goal);
+                prev_ff = ff;
+            }
+            return ff;
         }
 
         Voltage getFF() {
