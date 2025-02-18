@@ -246,6 +246,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     public Command preciseAlignment(Pose2d targetPose) {
+        // TODO: consider alternative preciseAlignment based on driving straight forward into the
+        // wall and aligning left and right of the april tag
         var command =
                 new Command() {
                     private HolonomicDriveController holonomicDriveController;

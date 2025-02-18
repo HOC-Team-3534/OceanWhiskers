@@ -225,6 +225,7 @@ public class Tusks extends TalonSRXMechanism {
         Voltage getFF() {
             var position = pid.getSetpoint().position;
             var velocity = pid.getSetpoint().velocity;
+            // TODO: try JNI now that infinite loop should be fixed in wpilib 2025.3.1
             return Volts.of(
                     getCurrentFF()
                             .calculate(
