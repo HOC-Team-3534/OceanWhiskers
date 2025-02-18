@@ -320,9 +320,7 @@ public class Auton {
 
                             path.preventFlipping = true;
 
-                            return AutoBuilder.followPath(path)
-                                    .withName(
-                                            "Auton.Drive Forward");
+                            return AutoBuilder.followPath(path).withName("Auton.Drive Forward");
                         })
                 .withName("Auton.Drive Forward Proxy");
     }
