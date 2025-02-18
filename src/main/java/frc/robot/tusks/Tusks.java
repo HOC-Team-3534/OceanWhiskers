@@ -97,7 +97,7 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        // TODO: Fix logic - not accurately detecting when coral on
+        // TODO: Make sure logic fix for coral detection works
         if (!state.isHoldingCoral() // has no coral
                 && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
                 && getError().gt(Degrees.of(5))) { // tusks are far below target angle
@@ -151,8 +151,7 @@ public class Tusks extends TalonSRXMechanism {
 
     Angle getError() {
         if (!isAttached()) return Rotations.zero();
-        return positionInSensorTicksToPosition(
-                motor.getClosedLoopTarget() - motor.getSelectedSensorPosition());
+        return profile.getGoal().minus(getPosition());
     }
 
     Command goToAngle(Angle angle) {
@@ -213,6 +212,10 @@ public class Tusks extends TalonSRXMechanism {
 
         void setGoal(Angle angle) {
             pid.setGoal(angle.in(Radians));
+        }
+
+        Angle getGoal() {
+            return Radians.of(pid.getGoal().position);
         }
 
         ArmFeedforward getCurrentFF() {
