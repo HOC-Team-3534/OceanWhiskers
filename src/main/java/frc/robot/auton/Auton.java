@@ -82,8 +82,6 @@ public class Auton {
 
     private AutonConfig config;
 
-    // TODO: create auton paths in pathplanner gui
-
     public Auton(AutonConfig config) {
         this.config = config;
     }

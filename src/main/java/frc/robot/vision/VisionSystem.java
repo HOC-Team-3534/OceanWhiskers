@@ -112,6 +112,8 @@ public class VisionSystem extends HocSubsystem {
         }
     }
 
+    // TODO: add get offset lef tor right from center using center camera
+
     private static Transform3d calcRobotToCam(Translation2d xy, Distance height, Rotation3d rot) {
         return new Transform3d(new Translation3d(xy.getX(), xy.getY(), height.in(Meters)), rot);
     }
