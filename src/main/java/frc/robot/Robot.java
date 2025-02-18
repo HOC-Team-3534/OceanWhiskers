@@ -116,9 +116,9 @@ public class Robot extends HocRobot {
             Timer.delay(canInitDelay);
             algaeWheel = new AlgaeWheel(config.algaeWheel);
             Timer.delay(canInitDelay);
-            auton = new Auton(config.auton);
             visionSystem = new VisionSystem(config.vision);
             lights = new Lights(config.lights);
+            auton = new Auton(config.auton);
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();

@@ -6,6 +6,9 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import com.ctre.phoenix6.hardware.CANcoder;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain;
@@ -16,6 +19,7 @@ import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+
 import edu.wpi.first.math.controller.HolonomicDriveController;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -36,8 +40,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.characterization.FeedForwardCharacterizer;
 import frc.hocLib.swerve.CustomSwerveRequest;
 import frc.hocLib.swerve.Telemetry;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -246,8 +248,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     public Command preciseAlignment(Pose2d targetPose) {
-        // TODO: consider alternative preciseAlignment based on driving straight forward into the
-        // wall and aligning left and right of the april tag
+        // TODO: for push against wall and adjust right and left, just calculate the target pose
+        // do until error left and right good and bottom of tag at certain height on center camera screen within tolerance
         var command =
                 new Command() {
                     private HolonomicDriveController holonomicDriveController;
