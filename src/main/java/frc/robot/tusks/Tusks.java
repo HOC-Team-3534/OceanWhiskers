@@ -45,7 +45,10 @@ public class Tusks extends TalonSRXMechanism {
                 new ArmFeedforward(0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.002752);
 
         // TODO: tune ff with coral using sysid
-        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.0, 0.0, 0);
+        @Getter @Setter
+        ArmFeedforward ff_withCoral =
+                // new ArmFeedforward(0.4753, 0.596, 4.6933 / (Math.PI * 2), 0.01236);
+                new ArmFeedforward(0.0, 0.0, 0.0);
 
         // profile in rotations while ff in radians
         @Getter @Setter
@@ -57,9 +60,9 @@ public class Tusks extends TalonSRXMechanism {
 
             // setAttached(false);
 
-            // testing();
+            testing();
 
-            enableMotionProfiling();
+            // enableMotionProfiling();
         }
 
         public TusksConfig enableMotionProfiling() {
@@ -176,7 +179,7 @@ public class Tusks extends TalonSRXMechanism {
     @Override
     protected void setVoltageOut(Voltage voltage) {
         if (getPosition().gt(Degrees.of(85))) voltage = Volts.of(Math.min(voltage.in(Volts), 0.0));
-        if (getPosition().lt(Degrees.of(-50))) voltage = Volts.of(Math.max(voltage.in(Volts), 0.0));
+        if (getPosition().lt(Degrees.of(-10))) voltage = Volts.of(Math.max(voltage.in(Volts), 0.0));
         super.setVoltageOut(voltage);
     }
 

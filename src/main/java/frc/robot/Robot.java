@@ -159,7 +159,8 @@ public class Robot extends HocRobot {
     @Override
     public void robotPeriodic() {
         try {
-            SmartDashboard.putNumber("Driver Left Stick Fwd", getDriver().getDriveLeftPositive());
+            SmartDashboard.putBoolean(
+                    "Tusks Holding Coral", RobotStates.HoldingCoral.getAsBoolean());
             SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
 
             CommandScheduler.getInstance().run();
