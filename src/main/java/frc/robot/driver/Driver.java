@@ -28,22 +28,22 @@ public class Driver extends Gamepad {
         public DriverConfig() {
             super("Driver", 0);
 
-            setLeftStickDeadzone(0.1);
+            setLeftStickDeadzone(0.35);
             setLeftStickExp(2.0);
-            // setLeftStickScalor(1);
+            setLeftStickScalor(1);
 
-            setRightStickDeadzone(0.1);
+            setRightStickDeadzone(0.2);
             setRightStickExp(2.0);
-            // setRightStickScalor(1);
+            setRightStickScalor(1);
 
             setTriggersDeadzone(0.25);
-            // setTriggersExp(1);
-            // setTriggersScalor(1);
+            setTriggersExp(1);
+            setTriggersScalor(1);
         }
     }
 
     private Trigger CreepMode =
-            (rightBumper.or(() -> Robot.getElevator().getHeight().gt(Inches.of(25)))).and(teleop);
+            (rightBumper.or(() -> Robot.getElevator().getHeight().gt(Inches.of(25))));
 
     @Getter @Setter
     private boolean isTurboMode = false; // TODO: change slow and turbo to RobotStates
@@ -56,21 +56,21 @@ public class Driver extends Gamepad {
     // Positive is forward, up on the left stick is positive
     // Applies Exponential Curve, Deadzone, and Slow Mode toggle
     public double getDriveFwdPositive() {
-        double fwdPositive = leftStickCurve.calculate(-1 * getLeftY());
+        double fwdPositive = leftStickCurve.calculate(getLeftY());
         if (CreepMode.getAsBoolean()) {
             fwdPositive *= Math.abs(config.getCreepModeScalor());
         }
-        return fwdPositive;
+        return -fwdPositive;
     }
 
     // Positive is left, left on the left stick is positive
     // Applies Exponential Curve, Deadzone, and Slow Mode toggle
     public double getDriveLeftPositive() {
-        double leftPositive = -1 * leftStickCurve.calculate(getLeftX());
+        double leftPositive = leftStickCurve.calculate(getLeftX());
         if (CreepMode.getAsBoolean()) {
             leftPositive *= Math.abs(config.getCreepModeScalor());
         }
-        return leftPositive;
+        return -leftPositive;
     }
 
     // Positive is counter-clockwise, left Trigger is positive
@@ -84,7 +84,7 @@ public class Driver extends Gamepad {
         } else {
             ccwPositive *= Math.abs(config.getDefaultTurnScalor());
         }
-        return -1 * ccwPositive; // invert the value
+        return -ccwPositive; // invert the value
     }
 
     @Override

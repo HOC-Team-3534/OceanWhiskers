@@ -223,7 +223,7 @@ public class Tusks extends TalonSRXMechanism {
 
         ArmFeedforward getCurrentFF() {
             var ff = (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
-            if(prev_ff != ff) {
+            if (prev_ff != ff) {
                 var goal = profile.getGoal();
                 profile.reset();
                 profile.setGoal(goal);

@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.hocLib.HocRobot;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
-import frc.hocLib.util.Util;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
@@ -160,10 +159,8 @@ public class Robot extends HocRobot {
     @Override
     public void robotPeriodic() {
         try {
-            SmartDashboard.putBoolean("Pickup Coral Right", getCodriver().RawRT.getAsBoolean());
-            SmartDashboard.putBoolean("Codriver No Fn", getCodriver().noFn.getAsBoolean());
-            SmartDashboard.putBoolean("Teleop Trigger", Util.teleop.getAsBoolean());
-            SmartDashboard.putBoolean("Codriver Configured", getCodriver().isConfigured());
+            SmartDashboard.putNumber("Driver Left Stick Fwd", getDriver().getDriveLeftPositive());
+            SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

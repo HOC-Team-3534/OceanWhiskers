@@ -179,6 +179,8 @@ public class SwerveConfig extends HocSubsystem.Config {
     public SwerveConfig() {
         super("Swerve");
         updateConfig();
+
+        testing();
     }
 
     public SwerveModuleConstants<?, ?, ?>[] getSwerveModuleConstants() {

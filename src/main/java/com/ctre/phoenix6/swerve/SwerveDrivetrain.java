@@ -314,12 +314,14 @@ public abstract class SwerveDrivetrain<
      * @param modules Constants for each specific module
      */
     public SwerveDrivetrain(
+            HocSubsystem.Config config,
             DeviceConstructor<DriveMotorT> driveMotorConstructor,
             DeviceConstructor<SteerMotorT> steerMotorConstructor,
             DeviceConstructor<EncoderT> encoderConstructor,
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
         this(
+                config,
                 () -> {
                     long nativeDriveConstants = drivetrainConstants.createNativeInstance();
                     long nativeModuleConstants =
@@ -355,6 +357,7 @@ public abstract class SwerveDrivetrain<
      * @param modules Constants for each specific module
      */
     public SwerveDrivetrain(
+            HocSubsystem.Config config,
             DeviceConstructor<DriveMotorT> driveMotorConstructor,
             DeviceConstructor<SteerMotorT> steerMotorConstructor,
             DeviceConstructor<EncoderT> encoderConstructor,
@@ -362,6 +365,7 @@ public abstract class SwerveDrivetrain<
             double odometryUpdateFrequency,
             SwerveModuleConstants<?, ?, ?>... modules) {
         this(
+                config,
                 () -> {
                     long nativeDriveConstants = drivetrainConstants.createNativeInstance();
                     long nativeModuleConstants =
@@ -404,6 +408,7 @@ public abstract class SwerveDrivetrain<
      * @param modules Constants for each specific module
      */
     public SwerveDrivetrain(
+            HocSubsystem.Config config,
             DeviceConstructor<DriveMotorT> driveMotorConstructor,
             DeviceConstructor<SteerMotorT> steerMotorConstructor,
             DeviceConstructor<EncoderT> encoderConstructor,
@@ -413,6 +418,7 @@ public abstract class SwerveDrivetrain<
             Matrix<N3, N1> visionStandardDeviation,
             SwerveModuleConstants<?, ?, ?>... modules) {
         this(
+                config,
                 () -> {
                     long nativeDriveConstants = drivetrainConstants.createNativeInstance();
                     long nativeModuleConstants =
@@ -439,13 +445,14 @@ public abstract class SwerveDrivetrain<
     }
 
     private SwerveDrivetrain(
+            HocSubsystem.Config config,
             IntSupplier createNativeInst,
             DeviceConstructor<DriveMotorT> driveMotorConstructor,
             DeviceConstructor<SteerMotorT> steerMotorConstructor,
             DeviceConstructor<EncoderT> encoderConstructor,
             SwerveDrivetrainConstants drivetrainConstants,
             SwerveModuleConstants<?, ?, ?>... modules) {
-        super(new Config("Swerve"));
+        super(config);
         m_drivetrainId = createNativeInst.getAsInt();
 
         m_cachedState.ModuleStates = new SwerveModuleState[modules.length];
