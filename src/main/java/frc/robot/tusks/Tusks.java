@@ -4,8 +4,10 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
+import static edu.wpi.first.units.Units.RadiansPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
@@ -40,20 +42,22 @@ public class Tusks extends TalonSRXMechanism {
         @Getter private double kI = 0.0;
         @Getter private double kD = 0.0;
 
-        @Getter @Setter
-        ArmFeedforward ff_noCoral =
-                new ArmFeedforward(0.6425, 0.14478, 5.4109 / (Math.PI * 2), 0.002752);
+        // spotless:off
+        //https://www.reca.lc/arm?armMass=%7B%22s%22%3A2%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A6%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=85&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22BAG%22%7D&ratio=%7B%22magnitude%22%3A100%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A0%2C%22u%22%3A%22deg%22%7D
+        //spotless:on
 
-        // TODO: tune ff with coral using sysid
-        @Getter @Setter
-        ArmFeedforward ff_withCoral =
-                // new ArmFeedforward(0.4753, 0.596, 4.6933 / (Math.PI * 2), 0.01236);
-                new ArmFeedforward(0.0, 0.0, 0.0);
+        // TODO: tune ff with coral without sysid, just manual kg and ks then recalc for kV and kA
+
+        @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.6425, 0.14478, 0.87, 0.0);
+
+        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.6425, 0.32, 0.87, 0.01);
 
         // profile in rotations while ff in radians
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
-                new TrapezoidProfile.Constraints(0.5 * Math.PI * 2, 1.0 * Math.PI * 2);
+                new TrapezoidProfile.Constraints(
+                        RotationsPerSecond.of(0.5).in(RadiansPerSecond),
+                        RotationsPerSecondPerSecond.one().in(RadiansPerSecondPerSecond));
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -104,7 +108,7 @@ public class Tusks extends TalonSRXMechanism {
         // TODO: Make sure logic fix for coral detection works
         if (!state.isHoldingCoral() // has no coral
                 && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
-                && getError().gt(Degrees.of(5))) { // tusks are far below target angle
+                && getError().gt(Degrees.of(2))) { // tusks are far below target angle
             state.setHoldingCoral(true); //
         }
 
@@ -163,13 +167,13 @@ public class Tusks extends TalonSRXMechanism {
 
         if (!config.isMotionProfilingEnabled()) return run(this::zero);
 
-        return voltageOut(() -> profile.calculate())
-                .alongWith(
-                        new InstantCommand(
-                                () -> {
-                                    profile.reset();
-                                    profile.setGoal(angle);
-                                }));
+        return new InstantCommand(
+                        () -> {
+                            profile.reset();
+                            profile.setGoal(angle);
+                        })
+                .alongWith(voltageOut(() -> profile.calculate()))
+                .withName("Tusks.Go To " + angle.in(Degrees) + "°");
     }
 
     protected void zero() {

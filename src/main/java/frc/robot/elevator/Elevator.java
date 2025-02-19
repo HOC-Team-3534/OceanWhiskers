@@ -51,16 +51,22 @@ public class Elevator extends TalonFXMechanism {
             slot0Configs.kI = 0;
             slot0Configs.kD = 0;
 
+            // spotless:off
+            //https://www.reca.lc/linear?angle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=83&limitAcceleration=0&limitDeceleration=0&limitVelocity=0&limitedAcceleration=%7B%22s%22%3A400%2C%22u%22%3A%22in%2Fs2%22%7D&limitedDeceleration=%7B%22s%22%3A50%2C%22u%22%3A%22in%2Fs2%22%7D&limitedVelocity=%7B%22s%22%3A10%2C%22u%22%3A%22in%2Fs%22%7D&load=%7B%22s%22%3A18%2C%22u%22%3A%22lbs%22%7D&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22Falcon%20500%22%7D&ratio=%7B%22magnitude%22%3A5%2C%22ratioType%22%3A%22Reduction%22%7D&spoolDiameter=%7B%22s%22%3A3.66%2C%22u%22%3A%22in%22%7D&travelDistance=%7B%22s%22%3A54%2C%22u%22%3A%22in%22%7D
+            //spotless:on
+
             slot0Configs.kG = 0.805;
             slot0Configs.kS = 0.0559;
             slot0Configs.kV = 0.11793;
-            slot0Configs.kA = 0.0048;
+            slot0Configs.kA = 0.0048; // recalc says 0.007 V * s^2 / rot
 
             setSlot0Configs(slot0Configs);
 
             setMMConfigs(
                     new MotionMagicConfigs()
+                            // theoretical max of 66.5 rot of motor per second
                             .withMotionMagicCruiseVelocity(RotationsPerSecond.of(37.0))
+                            // recalc says acceleration can be 99 rot per s^2
                             .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80.0))
                             .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(2000)));
 
