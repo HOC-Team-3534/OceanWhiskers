@@ -347,7 +347,7 @@ public class Auton {
 
     // Path Planning Helpers
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
-        // TODO: add precise alignment after main path follow just like autonomous
+        // TODO: test dtm, making sure precise alignment works
         return Commands.deferredProxy(
                         () -> {
                             return tagIdSupplier

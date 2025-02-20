@@ -177,6 +177,8 @@ public class Robot extends HocRobot {
                             .orElse(Meters.zero())
                             .in(Inches));
 
+            SmartDashboard.putBoolean("Swerve Aligned", RobotStates.SwerveAligned.getAsBoolean());
+
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
             // intercept error and log it
