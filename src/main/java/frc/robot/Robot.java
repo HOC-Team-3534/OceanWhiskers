@@ -4,6 +4,9 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -166,6 +169,13 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Tusks Holding Coral", RobotStates.HoldingCoral.getAsBoolean());
             SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
+
+            SmartDashboard.putNumber(
+                    "Vision Distance to Align Left Positive (In.)",
+                    getVisionSystem()
+                            .getDistanceToAlignLeftPositive()
+                            .orElse(Meters.zero())
+                            .in(Inches));
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

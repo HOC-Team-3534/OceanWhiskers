@@ -349,34 +349,41 @@ public class Auton {
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
         // TODO: add precise alignment after main path follow just like autonomous
         return Commands.deferredProxy(
-                () -> {
-                    return tagIdSupplier
-                            .get()
-                            .flatMap(this::findGoalPoseInFrontOfTag)
-                            .map(
-                                    goalPose -> {
-                                        var startPose =
-                                                new Pose2d(
-                                                        getPose().getTranslation(),
-                                                        calculateDirectionToStartDrivingIn(
-                                                                goalPose));
-                                        var path =
-                                                new PathPlannerPath(
-                                                        PathPlannerPath.waypointsFromPoses(
-                                                                startPose, goalPose),
-                                                        config.pathConstraints,
-                                                        null,
-                                                        new GoalEndState(
-                                                                0.0, goalPose.getRotation()));
+                        () -> {
+                            return tagIdSupplier
+                                    .get()
+                                    .flatMap(this::findGoalPoseInFrontOfTag)
+                                    .map(
+                                            goalPose -> {
+                                                var startPose =
+                                                        new Pose2d(
+                                                                getPose().getTranslation(),
+                                                                calculateDirectionToStartDrivingIn(
+                                                                        goalPose));
+                                                var path =
+                                                        new PathPlannerPath(
+                                                                PathPlannerPath.waypointsFromPoses(
+                                                                        startPose, goalPose),
+                                                                config.pathConstraints,
+                                                                null,
+                                                                new GoalEndState(
+                                                                        0.0,
+                                                                        goalPose.getRotation()));
 
-                                        path.preventFlipping = true;
+                                                path.preventFlipping = true;
 
-                                        return (Command)
-                                                AutoBuilder.followPath(path)
-                                                        .andThen(swerve.preciseAlignment(goalPose));
-                                    })
-                            .orElse(Commands.none());
-                });
+                                                return (Command)
+                                                        AutoBuilder.followPath(path)
+                                                                .andThen(
+                                                                        swerve.preciseAlignment(
+                                                                                goalPose));
+                                            })
+                                    .orElse(Commands.none());
+                        })
+                .andThen(
+                        swerve.alignLeftRightOnWall(
+                                () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
+                                Inches.of(1)));
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {

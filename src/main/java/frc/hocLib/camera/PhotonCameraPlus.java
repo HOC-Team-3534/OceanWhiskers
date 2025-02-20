@@ -8,9 +8,12 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.units.measure.Distance;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
 import java.util.HashSet;
+import java.util.Optional;
+import lombok.Getter;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
@@ -20,6 +23,8 @@ public class PhotonCameraPlus {
 
     final PhotonCamera camera;
     final PhotonPoseEstimator poseEstimator;
+
+    @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
 
     // The field from AprilTagFields will be different depending on the game.
     static AprilTagFieldLayout aprilTagFieldLayout =
@@ -89,6 +94,16 @@ public class PhotonCameraPlus {
                                 estmt.estimatedPose.toPose2d(),
                                 Utils.fpgaToCurrentTime(estmt.timestampSeconds),
                                 visionMeasurementStdDevs);
+
+                        var targetPose =
+                                aprilTagFieldLayout.getTagPose(estmt.targetsUsed.get(0).fiducialId);
+
+                        latestLeftPostiveToTag =
+                                targetPose.map(
+                                        tp ->
+                                                tp.toPose2d()
+                                                        .minus(estmt.estimatedPose.toPose2d())
+                                                        .getMeasureY());
                     });
         }
     }

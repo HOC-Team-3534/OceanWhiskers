@@ -24,10 +24,12 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -61,6 +63,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             new CustomSwerveRequest.CharacterizeDriveMotors();
 
     private final SwerveConfig config;
+
+    private Pose2d alignedPose = null;
 
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -105,6 +109,22 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         registerTelemetry(logger::telemeterize);
     }
 
+    @Override
+    public void periodic() {
+        keepOperatorPerspectiveUpdated();
+        if (!warmedUp) {
+            var warmup = FollowPathCommand.warmupCommand().withName("Follow Path Warmup");
+            warmup.schedule();
+            warmedUp = true;
+        }
+        if (alignedPose != null
+                && (alignedPose.getTranslation().minus(getPose().getTranslation()).getNorm() > 0.05
+                        || alignedPose.getRotation().minus(getPose().getRotation()).getDegrees()
+                                > 5)) {
+            alignedPose = null;
+        }
+    }
+
     Optional<RobotConfig> loadRobotConfig() {
         try {
             return Optional.of(RobotConfig.fromGUISettings());
@@ -137,16 +157,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 .voltage(fl_drive.getMotorVoltage().getValue())
                 .linearVelocity(MetersPerSecond.of(fl.getCurrentState().speedMetersPerSecond))
                 .linearPosition(Meters.of(fl.getPosition(true).distanceMeters));
-    }
-
-    @Override
-    public void periodic() {
-        keepOperatorPerspectiveUpdated();
-        if (!warmedUp) {
-            var warmup = FollowPathCommand.warmupCommand().withName("Follow Path Warmup");
-            warmup.schedule();
-            warmedUp = true;
-        }
     }
 
     public Optional<Rotation2d> getRobotDriveDirection() {
@@ -246,6 +256,55 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 this);
     }
 
+    public boolean isAligned() {
+        return alignedPose != null;
+    }
+
+    public Command alignLeftRightOnWall(
+            Supplier<Optional<Distance>> leftPositiveError, Distance errorTolerance) {
+        var command =
+                new Command() {
+                    private PIDController leftRightPID;
+                    private Timer timer = new Timer();
+
+                    @Override
+                    public void initialize() {
+                        leftRightPID = new PIDController(3.0, 0.0, 0.0);
+                        leftRightPID.setTolerance(errorTolerance.in(Meters));
+                        timer.restart();
+                    }
+
+                    @Override
+                    public void execute() {
+                        var vyError = leftPositiveError.get();
+                        var vyOutput =
+                                vyError.isPresent()
+                                        ? leftRightPID.calculate(0.0, vyError.get().in(Meters))
+                                        : 0.0;
+                        driveWithSpeeds(new ChassisSpeeds(0.15, vyOutput, 0.0));
+                    }
+
+                    @Override
+                    public void end(boolean interrupted) {
+                        driveWithSpeeds(new ChassisSpeeds());
+                        if (!interrupted) {
+                            alignedPose = getPose();
+                        }
+                    }
+
+                    @Override
+                    public boolean isFinished() {
+                        return timer.hasElapsed(0.1)
+                                && leftPositiveError.get().isPresent()
+                                && leftRightPID.atSetpoint();
+                    }
+                };
+
+        command.addRequirements(this);
+
+        return command;
+    }
+
     public Command preciseAlignment(Pose2d targetPose) {
         // TODO: for push against wall and adjust right and left, just calculate the target pose
         // do until error left and right good and bottom of tag at certain height on center camera
@@ -284,6 +343,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     @Override
                     public void end(boolean interrupted) {
                         driveWithSpeeds(new ChassisSpeeds());
+                        if (!interrupted) {
+                            alignedPose = getPose();
+                        }
                     }
 
                     @Override

@@ -14,6 +14,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
+import frc.hocLib.util.CachedValue;
 import frc.robot.swerve.SwerveConfig;
 import java.util.Optional;
 import lombok.Getter;
@@ -114,6 +115,23 @@ public class VisionSystem extends HocSubsystem {
                         cc.update();
                     });
         }
+    }
+
+    private CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive =
+            new CachedValue<>(this::updateDistanceToAlignLeftPositive);
+
+    public Optional<Distance> getDistanceToAlignLeftPositive() {
+        return cachedDistanceToAlignLeftPositive.get();
+    }
+
+    private Optional<Distance> updateDistanceToAlignLeftPositive() {
+        var fromLeft = fl_camera.getLatestLeftPostiveToTag();
+        var fromRight = fr_camera.getLatestLeftPostiveToTag();
+
+        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
+        if (fromLeft.isEmpty()) return fromRight;
+        if (fromRight.isEmpty()) return fromLeft;
+        return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }
 
     // TODO: add get offset lef tor right from center using center camera
