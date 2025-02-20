@@ -29,14 +29,14 @@ public class Elevator extends TalonFXMechanism {
 
     public static class ElevatorConfig extends Config {
         // TODO: tune heights for each level and pickup height
-        @Getter private Distance L1 = Inches.of(10);
-        @Getter private Distance L1Pre = Inches.of(5.0);
-        @Getter private Distance L2 = Inches.of(20);
-        @Getter private Distance L2Pre = Inches.of(15.0);
-        @Getter private Distance L3 = Inches.of(30);
-        @Getter private Distance L3Pre = Inches.of(25);
-        @Getter private Distance L4 = Inches.of(40);
-        @Getter private Distance L4Pre = Inches.of(35);
+        @Getter private Distance L1 = Inches.of(0);
+        @Getter private Distance L1Pre = Inches.of(0);
+        @Getter private Distance L2 = Inches.of(14.5);
+        @Getter private Distance L2Pre = Inches.of(9.5);
+        @Getter private Distance L3 = Inches.of(30.5);
+        @Getter private Distance L3Pre = Inches.of(25.5);
+        @Getter private Distance L4 = Inches.of(54);
+        @Getter private Distance L4Pre = Inches.of(38);
         @Getter private Distance PickUp = Inches.of(15);
 
         @Getter private boolean motionMagicEnabled;

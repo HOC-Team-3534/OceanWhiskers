@@ -48,6 +48,8 @@ public class VisionSystem extends HocSubsystem {
 
     private final Rotation3d fl_rot = new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45));
 
+    // TODO: change transformation positions for front left and front right cameras when they become
+    // angled inward
     private final Transform3d fl_robotToCamera =
             calcRobotToCam(fl_xy, CAMERA_HEIGHT_OFF_GROUND, fl_rot);
     private final Transform3d fr_robotToCamera =
