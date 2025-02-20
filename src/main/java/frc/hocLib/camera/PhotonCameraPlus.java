@@ -98,6 +98,7 @@ public class PhotonCameraPlus {
                         var targetPose =
                                 aprilTagFieldLayout.getTagPose(estmt.targetsUsed.get(0).fiducialId);
 
+                        // TODO: validate offset calculation correct
                         latestLeftPostiveToTag =
                                 targetPose.map(
                                         tp ->

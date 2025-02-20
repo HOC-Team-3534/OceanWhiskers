@@ -88,11 +88,12 @@ public class RobotStates {
     public static final Trigger TusksReadyToDeploy =
             new Trigger(() -> tusks.getState().isReadyToDeploy());
 
-        public static final Trigger SwerveAligned = new Trigger(swerve::isAligned);
+    public static final Trigger SwerveAligned = new Trigger(swerve::isAligned);
 
     // TODO: add in check on position for auto deploy
     public static final Trigger Deploy =
-            (ElevatorReadyToDeploy.and(TusksReadyToDeploy)).and(codriver.Deploy_LS.or(SwerveAligned));
+            (ElevatorReadyToDeploy.and(TusksReadyToDeploy))
+                    .and(codriver.Deploy_LS.or(SwerveAligned));
 
     public static final Trigger FollowingPath =
             new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();
