@@ -18,7 +18,9 @@ public class TusksStates {
         GoToL1.or(GoToL2, GoToL3, GoToL4)
                 .and(ElevatorReadyToDeploy.and(Deploy.not()))
                 .whileTrue(tusks.preDeploy());
-        Deploy.onTrue(tusks.deploy());
+        Deploy.and(GoToL1).onTrue(tusks.deployl1());
+        Deploy.and(GoToL2.or(GoToL3)).onTrue(tusks.deployl2l3());
+        Deploy.and(GoToL4).onTrue(tusks.deployl4());
 
         TusksVoltageUp.whileTrue(tusks.voltageOut(() -> Volts.of(0.75)));
         TusksVoltageDown.whileTrue(tusks.voltageOut(() -> Volts.of(-0.75)));

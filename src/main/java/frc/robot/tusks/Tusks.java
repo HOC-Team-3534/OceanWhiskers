@@ -36,7 +36,9 @@ public class Tusks extends TalonSRXMechanism {
         @Getter private Angle up = Degrees.of(95);
         @Getter private Angle pickup = Degrees.of(30);
         @Getter private Angle preDeploy = Degrees.of(50);
-        @Getter private Angle deploy = Degrees.of(-45);
+        @Getter private Angle l4Deploy = Degrees.of(-45);
+        @Getter private Angle l2l3Deploy = Degrees.of(-15);
+        @Getter private Angle l1Deploy = Degrees.of(-15);
 
         @Getter private double kP = 0.5;
 
@@ -152,11 +154,12 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     // TODO: separate deploy and deploy angle for different levels
-    public Command deploy() {
+    public Command deployl4() {
         return Commands.deadline(
-                        Commands.waitUntil(() -> getPosition().isNear(config.deploy, Degrees.one()))
+                        Commands.waitUntil(
+                                        () -> getPosition().isNear(config.l4Deploy, Degrees.one()))
                                 .andThen(Commands.waitSeconds(0.5)),
-                        goToAngle(config.deploy))
+                        goToAngle(config.l4Deploy))
                 .andThen(
                         Commands.deadline(
                                 goToAngle(Degrees.of(15))
@@ -167,6 +170,22 @@ public class Tusks extends TalonSRXMechanism {
                                                                         Degrees.of(15),
                                                                         Degrees.one())),
                                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false))));
+    }
+
+    public Command deployl2l3() {
+        return Commands.deadline(
+                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.one()))
+                        .andThen(Commands.waitSeconds(0.25)),
+                goToAngle(config.l2l3Deploy),
+                Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
+    }
+
+    public Command deployl1() {
+        return Commands.deadline(
+                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.one()))
+                        .andThen(Commands.waitSeconds(0.25)),
+                goToAngle(config.l1Deploy),
+                Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }
 
     Command voltageOut(Supplier<Voltage> voltsSupplier) {
