@@ -191,6 +191,11 @@ public class Elevator extends TalonFXMechanism {
                 .withName("Elevator.Go To " + level.name());
     }
 
+    // TODO: add climb command and climb level for pre climb, then lockout go to height once
+    // climbing occurs
+    // Don't let climbing occur unless the current go to height is already pre climb, or has been
+    // pre climb within the last say 5 seconds
+
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         switch (direction) {
             case kForward:
