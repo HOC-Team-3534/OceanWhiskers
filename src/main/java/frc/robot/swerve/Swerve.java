@@ -267,21 +267,36 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     public Command alignLeftRightOnWall(
-            Supplier<Optional<Distance>> leftPositiveError, Distance errorTolerance) {
+            Supplier<Optional<Distance>> fwdError,
+            Distance fwdErrorTolerance,
+            Supplier<Optional<Distance>> leftPositiveError,
+            Distance errorTolerance) {
         var command =
                 new Command() {
-                    private PIDController leftRightPID;
+                    private PIDController leftRightPID, fwdPID;
                     private Timer timer = new Timer();
 
                     @Override
                     public void initialize() {
                         leftRightPID = new PIDController(6.0, 0.00, 0.0);
+                        fwdPID = new PIDController(6.0, 0.0, 0.0);
                         leftRightPID.setTolerance(errorTolerance.in(Meters));
+                        fwdPID.setTolerance(fwdErrorTolerance.in(Meters));
                         timer.restart();
                     }
 
                     @Override
                     public void execute() {
+                        var vxError = fwdError.get();
+                        var vxOutput = 0.0;
+                        if (vxError.isPresent()) {
+                            fwdPID.setSetpoint(vxError.get().in(Meters));
+                            vxOutput = fwdPID.calculate(0.0);
+                            if (fwdPID.atSetpoint()) {
+                                vxOutput = 0.0;
+                            }
+                        }
+
                         var vyError = leftPositiveError.get();
                         var vyOutput = 0.0;
                         if (vyError.isPresent()) {
@@ -291,25 +306,21 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                 vyOutput = 0.0;
                             }
                         }
-                        driveWithSpeeds(new ChassisSpeeds(0.22, vyOutput, 0.0));
+                        driveWithSpeeds(new ChassisSpeeds(vxOutput, vyOutput, 0.0));
                     }
 
                     @Override
                     public void end(boolean interrupted) {
                         driveWithSpeeds(new ChassisSpeeds());
-                        if (timer.hasElapsed(0.3)
-                                && leftPositiveError.get().isPresent()
-                                && leftRightPID.atSetpoint()
-                                && getState().Speeds.vxMetersPerSecond < 0.1)
-                            alignedPose = getPose();
+                        if (!interrupted) alignedPose = getPose();
                     }
 
                     @Override
                     public boolean isFinished() {
-                        return timer.hasElapsed(0.3)
+                        return fwdError.get().isPresent()
+                                && fwdPID.atSetpoint()
                                 && leftPositiveError.get().isPresent()
-                                && leftRightPID.atSetpoint()
-                                && getState().Speeds.vxMetersPerSecond < 0.1;
+                                && leftRightPID.atSetpoint();
                     }
                 };
 

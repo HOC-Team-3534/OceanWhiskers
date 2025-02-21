@@ -31,6 +31,7 @@ public class PhotonCameraPlus {
     final PhotonPoseEstimator poseEstimator;
 
     @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
+    @Getter private Optional<Distance> latestFwdToTag = Optional.empty();
 
     // The field from AprilTagFields will be different depending on the game.
     static AprilTagFieldLayout aprilTagFieldLayout =
@@ -117,6 +118,15 @@ public class PhotonCameraPlus {
                                                         .toPose2d()
                                                         .minus(tp.toPose2d())
                                                         .getMeasureY());
+
+                        latestFwdToTag =
+                                targetPose.map(
+                                        tp ->
+                                                estmt.estimatedPose
+                                                        .toPose2d()
+                                                        .minus(tp.toPose2d())
+                                                        .getMeasureX()
+                                                        .unaryMinus());
                     });
         }
     }

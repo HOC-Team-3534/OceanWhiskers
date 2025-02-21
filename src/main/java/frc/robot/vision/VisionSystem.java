@@ -4,8 +4,6 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
-import java.util.Optional;
-
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -15,6 +13,7 @@ import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.util.CachedValue;
+import java.util.Optional;
 import lombok.Setter;
 
 public class VisionSystem extends HocSubsystem {
@@ -94,6 +93,9 @@ public class VisionSystem extends HocSubsystem {
     private CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive =
             new CachedValue<>(this::updateDistanceToAlignLeftPositive);
 
+    private CachedValue<Optional<Distance>> cachedDistanceToAlignFwd =
+            new CachedValue<>(this::updateDistanceToAlignFwd);
+
     public Optional<Distance> getDistanceToAlignLeftPositive() {
         return cachedDistanceToAlignLeftPositive.get();
     }
@@ -108,7 +110,19 @@ public class VisionSystem extends HocSubsystem {
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }
 
-    // TODO: add get offset lef tor right from center using center camera
+    public Optional<Distance> getDistanceToAlignFwd() {
+        return cachedDistanceToAlignFwd.get();
+    }
+
+    private Optional<Distance> updateDistanceToAlignFwd() {
+        var fromLeft = fl_camera.getLatestFwdToTag();
+        var fromRight = fr_camera.getLatestFwdToTag();
+
+        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
+        if (fromLeft.isEmpty()) return fromRight;
+        if (fromRight.isEmpty()) return fromLeft;
+        return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
+    }
 
     private static Transform3d calcRobotToCam(Translation2d xy, Distance height, Rotation3d rot) {
         return new Transform3d(new Translation3d(xy.getX(), xy.getY(), height.in(Meters)), rot);

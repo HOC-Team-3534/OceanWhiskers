@@ -1,5 +1,6 @@
 package frc.robot.auton;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
@@ -19,6 +20,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -76,6 +78,15 @@ public class Auton {
         Distance driveForwardDistance = Feet.of(2);
 
         Distance offsetFromWallToCenter = Inches.of(17.0);
+
+        //TODO: tune skip and alignment values
+        Distance skipPathForDTMTolerance = Inches.of(15.0);
+        Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
+
+        Distance offsetFromWallToCenterDTM = Inches.of(17.0);
+
+        Distance alignFwdTolerance = Inches.of(0.5);
+        Distance alignLeftRightTolerance = Inches.of(0.6);
     }
 
     private Command m_autonomousCommand;
@@ -247,6 +258,11 @@ public class Auton {
         public boolean isStepComplete() {
             return !tusks.getState().isHoldingCoral();
         }
+
+        @Override
+        public Command alignWithGoalPose() {
+            return alignLeftRightOnWall();
+        }
     }
 
     @RequiredArgsConstructor
@@ -267,6 +283,11 @@ public class Auton {
 
         public Tusks.Side getTusksSide() {
             return branch.getTusksSide();
+        }
+
+        @Override
+        public Command alignWithGoalPose() {
+            return driveForward(Inches.of(5.0));
         }
     }
 
@@ -338,51 +359,83 @@ public class Auton {
     }
     // DTM
     public Command dtmToHumanPlayerStation() {
-        return followPathToAprilTagID(Auton::findClosestHumanPlayerStationID);
+        return followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
+                .andThen(driveForward(Inches.of(5.0)).asProxy());
     }
 
     public Command dtmToReef() {
-        return followPathToAprilTagID(Auton::findClosestReefID);
+        return followPathToAprilTagID(Auton::findClosestReefID)
+                .andThen(alignLeftRightOnWall().asProxy());
     }
 
     // Path Planning Helpers
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
         // TODO: test dtm, making sure precise alignment works
         return Commands.deferredProxy(
-                        () -> {
-                            return tagIdSupplier
-                                    .get()
-                                    .flatMap(this::findGoalPoseInFrontOfTag)
-                                    .map(
-                                            goalPose -> {
-                                                var startPose =
-                                                        new Pose2d(
-                                                                getPose().getTranslation(),
-                                                                calculateDirectionToStartDrivingIn(
-                                                                        goalPose));
-                                                var path =
-                                                        new PathPlannerPath(
-                                                                PathPlannerPath.waypointsFromPoses(
-                                                                        startPose, goalPose),
-                                                                config.pathConstraints,
-                                                                null,
-                                                                new GoalEndState(
-                                                                        0.0,
-                                                                        goalPose.getRotation()));
+                () -> {
+                    return tagIdSupplier
+                            .get()
+                            .flatMap(this::findGoalPoseInFrontOfTag)
+                            .map(
+                                    goalPose -> {
+                                        var startPose =
+                                                new Pose2d(
+                                                        getPose().getTranslation(),
+                                                        calculateDirectionToStartDrivingIn(
+                                                                goalPose));
 
-                                                path.preventFlipping = true;
+                                        if (startPose
+                                                                .getTranslation()
+                                                                .minus(goalPose.getTranslation())
+                                                                .getNorm()
+                                                        < config.getSkipPathForDTMTolerance()
+                                                                .in(Meters)
+                                                && startPose
+                                                        .getRotation()
+                                                        .minus(goalPose.getRotation())
+                                                        .getMeasure()
+                                                        .isNear(
+                                                                Degrees.zero(),
+                                                                config
+                                                                        .getSkipPathFromDTMAngleTolerance())) {
+                                            return Commands.none();
+                                        }
 
-                                                return (Command) AutoBuilder.followPath(path);
-                                            })
-                                    .orElse(Commands.none());
-                        })
-                .andThen(
-                        swerve.alignLeftRightOnWall(
-                                        () ->
-                                                Robot.getVisionSystem()
-                                                        .getDistanceToAlignLeftPositive(),
-                                        Inches.of(0.6))
-                                .asProxy());
+                                        var path =
+                                                new PathPlannerPath(
+                                                        PathPlannerPath.waypointsFromPoses(
+                                                                startPose, goalPose),
+                                                        config.pathConstraints,
+                                                        null,
+                                                        new GoalEndState(
+                                                                0.0, goalPose.getRotation()));
+
+                                        path.preventFlipping = true;
+
+                                        return AutoBuilder.followPath(path);
+                                    })
+                            .orElse(Commands.none());
+                });
+    }
+
+    private Command alignLeftRightOnWall() {
+        return swerve.alignLeftRightOnWall(
+                () ->
+                        Robot.getVisionSystem()
+                                .getDistanceToAlignFwd()
+                                .map(
+                                        distance -> {
+                                            var fwdError =
+                                                    distance.minus(
+                                                            config.getOffsetFromWallToCenterDTM());
+
+                                            if (fwdError.lt(Inches.zero())) return Inches.zero();
+
+                                            return fwdError;
+                                        }),
+                config.getAlignFwdTolerance(),
+                () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
+                config.getAlignLeftRightTolerance());
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {
