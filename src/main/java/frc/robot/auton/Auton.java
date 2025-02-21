@@ -372,18 +372,17 @@ public class Auton {
 
                                                 path.preventFlipping = true;
 
-                                                return (Command)
-                                                        AutoBuilder.followPath(path)
-                                                                .andThen(
-                                                                        swerve.preciseAlignment(
-                                                                                goalPose));
+                                                return (Command) AutoBuilder.followPath(path);
                                             })
                                     .orElse(Commands.none());
                         })
                 .andThen(
                         swerve.alignLeftRightOnWall(
-                                () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
-                                Inches.of(1)));
+                                        () ->
+                                                Robot.getVisionSystem()
+                                                        .getDistanceToAlignLeftPositive(),
+                                        Inches.of(0.6))
+                                .asProxy());
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {

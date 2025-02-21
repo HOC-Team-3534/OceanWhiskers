@@ -1,5 +1,6 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -118,7 +119,12 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             warmedUp = true;
         }
         if (alignedPose != null
-                && (alignedPose.getTranslation().minus(getPose().getTranslation()).getNorm() > 0.05
+                && (Meters.of(
+                                        alignedPose
+                                                .getTranslation()
+                                                .minus(getPose().getTranslation())
+                                                .getNorm())
+                                .gt(Inches.of(2))
                         || alignedPose.getRotation().minus(getPose().getRotation()).getDegrees()
                                 > 5)) {
             alignedPose = null;
@@ -269,7 +275,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public void initialize() {
-                        leftRightPID = new PIDController(3.0, 0.0, 0.0);
+                        leftRightPID = new PIDController(6.0, 0.00, 0.0);
                         leftRightPID.setTolerance(errorTolerance.in(Meters));
                         timer.restart();
                     }
@@ -277,26 +283,33 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     @Override
                     public void execute() {
                         var vyError = leftPositiveError.get();
-                        var vyOutput =
-                                vyError.isPresent()
-                                        ? leftRightPID.calculate(0.0, vyError.get().in(Meters))
-                                        : 0.0;
-                        driveWithSpeeds(new ChassisSpeeds(0.15, vyOutput, 0.0));
+                        var vyOutput = 0.0;
+                        if (vyError.isPresent()) {
+                            leftRightPID.setSetpoint(vyError.get().in(Meters));
+                            vyOutput = leftRightPID.calculate(0.0);
+                            if (leftRightPID.atSetpoint()) {
+                                vyOutput = 0.0;
+                            }
+                        }
+                        driveWithSpeeds(new ChassisSpeeds(0.22, vyOutput, 0.0));
                     }
 
                     @Override
                     public void end(boolean interrupted) {
                         driveWithSpeeds(new ChassisSpeeds());
-                        if (!interrupted) {
+                        if (timer.hasElapsed(0.3)
+                                && leftPositiveError.get().isPresent()
+                                && leftRightPID.atSetpoint()
+                                && getState().Speeds.vxMetersPerSecond < 0.1)
                             alignedPose = getPose();
-                        }
                     }
 
                     @Override
                     public boolean isFinished() {
-                        return timer.hasElapsed(0.1)
+                        return timer.hasElapsed(0.3)
                                 && leftPositiveError.get().isPresent()
-                                && leftRightPID.atSetpoint();
+                                && leftRightPID.atSetpoint()
+                                && getState().Speeds.vxMetersPerSecond < 0.1;
                     }
                 };
 

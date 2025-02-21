@@ -52,13 +52,32 @@ public class VisionSystem extends HocSubsystem {
     // TODO: change transformation positions for front left and front right cameras when they become
     // angled inward
     private final Transform3d fl_robotToCamera =
-            calcRobotToCam(fl_xy, CAMERA_HEIGHT_OFF_GROUND, fl_rot);
+            calcRobotToCam(
+                    new Translation2d(Inches.of(20.5 / 2.0), Inches.of(20 / 2.0)),
+                    CAMERA_HEIGHT_OFF_GROUND,
+                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(-45)));
+    // private final Transform3d fr_robotToCamera =
+    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(-90)));
+    // private final Transform3d rl_robotToCamera =
+    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(90)));
+    // private final Transform3d rr_robotToCamera =
+    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(180)));
+
     private final Transform3d fr_robotToCamera =
-            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(-90)));
+            calcRobotToCam(
+                    new Translation2d(Inches.of(20.5 / 2.0), Inches.of(-20 / 2.0)),
+                    CAMERA_HEIGHT_OFF_GROUND,
+                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45)));
     private final Transform3d rl_robotToCamera =
-            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(90)));
+            calcRobotToCam(
+                    new Translation2d(Inches.of(-20.5 / 2.0), Inches.of(20.5 / 2.0)),
+                    CAMERA_HEIGHT_OFF_GROUND,
+                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(135)));
     private final Transform3d rr_robotToCamera =
-            rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(180)));
+            calcRobotToCam(
+                    new Translation2d(Inches.of(-20.5 / 2.0), Inches.of(-20.5 / 2.0)),
+                    CAMERA_HEIGHT_OFF_GROUND,
+                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(-135)));
 
     PhotonCameraPlus fl_camera = new PhotonCameraPlus("fl_camera", fl_robotToCamera);
     PhotonCameraPlus fr_camera = new PhotonCameraPlus("fr_camera", fr_robotToCamera);

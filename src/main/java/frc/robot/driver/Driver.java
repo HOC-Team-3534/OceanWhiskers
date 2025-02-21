@@ -20,6 +20,9 @@ public class Driver extends Gamepad {
     public final Trigger SwerveDynamicForward_UDP = upDpad.and(fn, teleop);
     public final Trigger SwerveDynamicBackward_DDP = downDpad.and(fn, teleop);
 
+    public final Trigger DTMToReef_A = A.and(noFn, teleop);
+    public final Trigger DTMToHumanPlayerStation_B = B.and(noFn, teleop);
+
     public static class DriverConfig extends Config {
         @Getter @Setter private double creepModeScalor = 0.45;
         @Getter @Setter private double defaultTurnScalor = 0.75;

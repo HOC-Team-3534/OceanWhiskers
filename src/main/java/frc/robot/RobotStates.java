@@ -5,6 +5,7 @@ import static frc.robot.auton.Auton.*;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.algaeWheel.AlgaeWheel;
+import frc.robot.auton.Auton;
 import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
 import frc.robot.elevator.Elevator;
@@ -19,6 +20,8 @@ public class RobotStates {
     private static final Elevator elevator = Robot.getElevator();
     private static final AlgaeWheel algaeWheel = Robot.getAlgaeWheel();
     private static final Tusks tusks = Robot.getTusks();
+
+    private static final Auton auton = Robot.getAuton();
 
     public static final Trigger isSwerveTesting = new Trigger(swerve::isTesting);
 
@@ -98,7 +101,10 @@ public class RobotStates {
     public static final Trigger FollowingPath =
             new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();
 
-    public static void setupStates() {}
+    public static void setupStates() {
+        driver.DTMToReef_A.whileTrue(auton.dtmToReef());
+        driver.DTMToHumanPlayerStation_B.whileTrue(auton.dtmToHumanPlayerStation());
+    }
 
     private RobotStates() {
         throw new IllegalStateException("Utility class");

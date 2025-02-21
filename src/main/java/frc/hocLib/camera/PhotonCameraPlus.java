@@ -1,6 +1,7 @@
 package frc.hocLib.camera;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.Utils;
@@ -9,6 +10,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
 import java.util.HashSet;
@@ -58,6 +60,26 @@ public class PhotonCameraPlus {
         for (var result : results) {
             var estimate = poseEstimator.update(result);
 
+            var bestTarget = result.getBestTarget();
+
+            if (bestTarget != null) {
+                var position = bestTarget.bestCameraToTarget.getTranslation();
+                var rotation = bestTarget.bestCameraToTarget.getRotation();
+
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target X", position.getMeasureX().in(Inches));
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target Y", position.getMeasureY().in(Inches));
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target Z", position.getMeasureZ().in(Inches));
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target Roll", rotation.getMeasureX().in(Degrees));
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target Pitch", rotation.getMeasureY().in(Degrees));
+                SmartDashboard.putNumber(
+                        "Test Tag Camera To Target Yaw", rotation.getMeasureZ().in(Degrees));
+            }
+
             estimate.ifPresent(
                     estmt -> {
                         var poseDifference =
@@ -102,9 +124,12 @@ public class PhotonCameraPlus {
                         latestLeftPostiveToTag =
                                 targetPose.map(
                                         tp ->
-                                                tp.toPose2d()
-                                                        .minus(estmt.estimatedPose.toPose2d())
+                                                estmt.estimatedPose
+                                                        .toPose2d()
+                                                        .minus(tp.toPose2d())
                                                         .getMeasureY());
+
+                        SmartDashboard.putNumber("Target ID", estmt.targetsUsed.get(0).fiducialId);
                     });
         }
     }
