@@ -5,6 +5,7 @@ import frc.robot.Robot.Config;
 public class CBOT_2025 extends Config {
 
     public CBOT_2025() {
+        super();
         this.algaeWheel.setAttached(false);
         this.elevator.setAttached(false);
         this.jaws.setAttached(false);

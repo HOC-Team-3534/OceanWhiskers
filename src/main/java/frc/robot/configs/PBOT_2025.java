@@ -4,6 +4,7 @@ import frc.robot.Robot.Config;
 
 public class PBOT_2025 extends Config {
     public PBOT_2025() {
+        super();
         swerve =
                 // TODO: run system identification on swerve
                 swerve.configDriveGains(0.17223, 2.3111, 0.12424)
