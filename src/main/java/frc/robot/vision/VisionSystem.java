@@ -4,87 +4,65 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
-import edu.wpi.first.math.geometry.Rotation2d;
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.util.CachedValue;
-import frc.robot.swerve.SwerveConfig;
-import java.util.Optional;
-import lombok.Getter;
+import lombok.Setter;
 
 public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
-        @Getter private boolean centerCameraAttached = false;
+        @Setter private Distance frontXOffset = Inches.of(20.5 / 2);
+        @Setter private Distance frontYOffset = Inches.of(20.0 / 2);
+        @Setter private Distance rearXOffset = Inches.of(20.5 / 2);
+        @Setter private Distance rearYOffset = Inches.of(20.5 / 2);
+
+        @Setter private Angle fl_yaw = Degrees.of(-45);
+        @Setter private Angle fr_yaw = Degrees.of(45);
+        @Setter private Angle rl_yaw = Degrees.of(135);
+        @Setter private Angle rr_yaw = Degrees.of(-135);
+
+        @Setter private Distance cameraHeightOffGround = Inches.of(10.75);
+        @Setter private Angle cameraPitch = Degrees.of(15.0);
 
         public VisionConfig() {
             super("Photon Vision");
             setAttached(false);
         }
 
-        public VisionConfig configCenterCameraAttached(boolean attached) {
-            centerCameraAttached = attached;
-            return this;
+        Transform3d calculateCameraOffset(Distance xOffset, Distance yOffset, Angle yawOffset) {
+            return calcRobotToCam(
+                    new Translation2d(xOffset, yOffset),
+                    cameraHeightOffGround,
+                    new Rotation3d(Degrees.zero(), cameraPitch, yawOffset));
+        }
+
+        public Transform3d getFLRobotToCamera() {
+            return calculateCameraOffset(frontXOffset, frontYOffset, fl_yaw);
+        }
+
+        public Transform3d getFRRobotToCamera() {
+            return calculateCameraOffset(frontXOffset, frontYOffset.unaryMinus(), fr_yaw);
+        }
+
+        public Transform3d getRLRobotToCamera() {
+            return calculateCameraOffset(rearXOffset.unaryMinus(), rearYOffset, rl_yaw);
+        }
+
+        public Transform3d getRRRobotToCamera() {
+            return calculateCameraOffset(
+                    rearXOffset.unaryMinus(), rearYOffset.unaryMinus(), rr_yaw);
         }
     }
 
-    private SwerveConfig defaultSwerve = new SwerveConfig();
-
-    private final Distance CAMERA_INSET_FROM_CANCODER = Inches.of(0.5);
-    private final Distance CAMERA_HEIGHT_OFF_GROUND = Inches.of(10.75);
-    private final Angle CAMERA_PITCH = Degrees.of(15.0);
-
-    private final Translation2d cameraOffset =
-            new Translation2d(CAMERA_INSET_FROM_CANCODER.in(Meters), Rotation2d.fromDegrees(45));
-
-    private final Translation2d fl_xy =
-            new Translation2d(defaultSwerve.getKFrontLeftXPos(), defaultSwerve.getKFrontLeftYPos())
-                    .minus(cameraOffset);
-
-    private final Rotation3d fl_rot = new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45));
-
-    // TODO: change transformation positions for front left and front right cameras when they become
-    // angled inward
-    private final Transform3d fl_robotToCamera =
-            calcRobotToCam(
-                    new Translation2d(Inches.of(20.5 / 2.0), Inches.of(20 / 2.0)),
-                    CAMERA_HEIGHT_OFF_GROUND,
-                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(-45)));
-    // private final Transform3d fr_robotToCamera =
-    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(-90)));
-    // private final Transform3d rl_robotToCamera =
-    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(90)));
-    // private final Transform3d rr_robotToCamera =
-    //         rotateAroundCenter(fl_robotToCamera, new Rotation3d(Rotation2d.fromDegrees(180)));
-
-    private final Transform3d fr_robotToCamera =
-            calcRobotToCam(
-                    new Translation2d(Inches.of(20.5 / 2.0), Inches.of(-20 / 2.0)),
-                    CAMERA_HEIGHT_OFF_GROUND,
-                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(45)));
-    private final Transform3d rl_robotToCamera =
-            calcRobotToCam(
-                    new Translation2d(Inches.of(-20.5 / 2.0), Inches.of(20.5 / 2.0)),
-                    CAMERA_HEIGHT_OFF_GROUND,
-                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(135)));
-    private final Transform3d rr_robotToCamera =
-            calcRobotToCam(
-                    new Translation2d(Inches.of(-20.5 / 2.0), Inches.of(-20.5 / 2.0)),
-                    CAMERA_HEIGHT_OFF_GROUND,
-                    new Rotation3d(Degrees.zero(), CAMERA_PITCH, Degrees.of(-135)));
-
-    PhotonCameraPlus fl_camera = new PhotonCameraPlus("fl_camera", fl_robotToCamera);
-    PhotonCameraPlus fr_camera = new PhotonCameraPlus("fr_camera", fr_robotToCamera);
-    PhotonCameraPlus rl_camera = new PhotonCameraPlus("rl_camera", rl_robotToCamera);
-    PhotonCameraPlus rr_camera = new PhotonCameraPlus("rr_camera", rr_robotToCamera);
-
-    Optional<PhotonCameraPlus> center_camera = Optional.empty();
+    final PhotonCameraPlus fl_camera, fr_camera, rl_camera, rr_camera;
 
     @SuppressWarnings("unused")
     private VisionConfig config;
@@ -93,28 +71,10 @@ public class VisionSystem extends HocSubsystem {
         super(config);
         this.config = config;
 
-        if (config.isCenterCameraAttached()) {
-            center_camera =
-                    Optional.of(
-                            new PhotonCameraPlus(
-                                    "center_camera",
-                                    /*
-                                     * NOTICE: I'm not sure which direction is which with respect to the robot,
-                                     * so I assumed that the front-back direction is 'x' value, the left-right direction is the 'y' value,
-                                     * and pitch is the direction in which the camera was tilted. -Nathaniel
-                                     */
-                                    new Transform3d(
-                                            Units.inchesToMeters(
-                                                    10.5), // This value is the offset of the camera
-                                            // from the center considered in relation
-                                            // to the front and back.
-                                            Units.inchesToMeters(
-                                                    3), // This value is the offset of the camera
-                                            // from the center considered in relation to
-                                            // the left and right.
-                                            Units.inchesToMeters(3.5),
-                                            new Rotation3d(0, Units.degreesToRadians(45), 0))));
-        }
+        fl_camera = new PhotonCameraPlus("fl_camera", config.getFLRobotToCamera());
+        fr_camera = new PhotonCameraPlus("fr_camera", config.getFRRobotToCamera());
+        rl_camera = new PhotonCameraPlus("rl_camera", config.getRLRobotToCamera());
+        rr_camera = new PhotonCameraPlus("rr_camera", config.getRRRobotToCamera());
     }
 
     @Override
@@ -128,11 +88,6 @@ public class VisionSystem extends HocSubsystem {
             rr_camera.update();
 
             // TODO: try latest photonvision release with new PNP solver from 6238
-
-            center_camera.ifPresent(
-                    cc -> {
-                        cc.update();
-                    });
         }
     }
 

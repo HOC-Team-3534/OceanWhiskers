@@ -16,14 +16,18 @@ import frc.robot.swerve.Swerve;
 import java.util.HashSet;
 import java.util.Optional;
 import lombok.Getter;
+import lombok.experimental.Delegate;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraPlus {
     private static final Swerve swerve = Robot.getSwerve();
 
-    final PhotonCamera camera;
+    final String subsystemName = "Vision";
+
+    @Delegate final PhotonCamera camera;
     final PhotonPoseEstimator poseEstimator;
 
     @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
@@ -57,28 +61,14 @@ public class PhotonCameraPlus {
     public void update() {
         var results = camera.getAllUnreadResults();
 
+        // TODO: validate isConnected is updating properly and catching issues that arise with
+        // camera connection
+        logConnected();
+
         for (var result : results) {
             var estimate = poseEstimator.update(result);
 
-            var bestTarget = result.getBestTarget();
-
-            if (bestTarget != null) {
-                var position = bestTarget.bestCameraToTarget.getTranslation();
-                var rotation = bestTarget.bestCameraToTarget.getRotation();
-
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target X", position.getMeasureX().in(Inches));
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target Y", position.getMeasureY().in(Inches));
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target Z", position.getMeasureZ().in(Inches));
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target Roll", rotation.getMeasureX().in(Degrees));
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target Pitch", rotation.getMeasureY().in(Degrees));
-                SmartDashboard.putNumber(
-                        "Test Tag Camera To Target Yaw", rotation.getMeasureZ().in(Degrees));
-            }
+            logTrackedTarget(result.getBestTarget());
 
             estimate.ifPresent(
                     estmt -> {
@@ -120,7 +110,6 @@ public class PhotonCameraPlus {
                         var targetPose =
                                 aprilTagFieldLayout.getTagPose(estmt.targetsUsed.get(0).fiducialId);
 
-                        // TODO: validate offset calculation correct
                         latestLeftPostiveToTag =
                                 targetPose.map(
                                         tp ->
@@ -128,9 +117,35 @@ public class PhotonCameraPlus {
                                                         .toPose2d()
                                                         .minus(tp.toPose2d())
                                                         .getMeasureY());
-
-                        SmartDashboard.putNumber("Target ID", estmt.targetsUsed.get(0).fiducialId);
                     });
         }
+    }
+
+    void logConnected() {
+        putBoolean("isConnected", isConnected());
+    }
+
+    void logTrackedTarget(PhotonTrackedTarget target) {
+        if (target == null) return;
+
+        var position = target.bestCameraToTarget.getTranslation();
+        var rotation = target.bestCameraToTarget.getRotation();
+
+        putNumber("Target ID", target.fiducialId);
+
+        putNumber("To Target X", position.getMeasureX().in(Inches));
+        putNumber("To Target Y", position.getMeasureY().in(Inches));
+        putNumber("To Target Z", position.getMeasureZ().in(Inches));
+        putNumber("To Target Roll", rotation.getMeasureX().in(Degrees));
+        putNumber("To Target Pitch", rotation.getMeasureY().in(Degrees));
+        putNumber("To Target Yaw", rotation.getMeasureZ().in(Degrees));
+    }
+
+    void putNumber(String key, double value) {
+        SmartDashboard.putNumber(subsystemName + "/" + getName() + "/" + key, value);
+    }
+
+    void putBoolean(String key, boolean value) {
+        SmartDashboard.putBoolean(subsystemName + "/" + getName() + "/" + key, value);
     }
 }
