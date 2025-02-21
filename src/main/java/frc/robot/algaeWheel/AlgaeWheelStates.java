@@ -13,8 +13,8 @@ public class AlgaeWheelStates {
     }
 
     public static void setupBindings() {
-        GrabAlgae.whileTrue(algaeWheel.grab());
-        HoldAlgae.whileTrue(algaeWheel.hold());
-        ReleaseAlgae.whileTrue(algaeWheel.release());
+        RequestGrabAlgae.and(JawsRelated.Closed).whileTrue(algaeWheel.grab());
+        HoldAlgae.and(JawsRelated.Closed).whileTrue(algaeWheel.hold());
+        RequestReleaseAlgae.and(JawsRelated.Closed).whileTrue(algaeWheel.release());
     }
 }

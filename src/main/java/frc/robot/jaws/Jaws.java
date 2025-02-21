@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import lombok.Getter;
+import lombok.Setter;
 
 public class Jaws extends TalonSRXMechanism {
     public static class JawsConfig extends TalonSRXMechanism.Config {
@@ -23,6 +24,8 @@ public class Jaws extends TalonSRXMechanism {
     }
 
     private JawsConfig config;
+
+    @Getter private State state;
 
     public Jaws(JawsConfig config) {
         super(config);
@@ -42,14 +45,43 @@ public class Jaws extends TalonSRXMechanism {
         return run(() -> setVoltageOut(Volts.zero()));
     }
 
+    // TODO: validate open and close happen when theya re supposed to and not when elevator is not
+    // raised
+
     protected Command open() {
-        return run(() -> setVoltageOut(config.getOpenAndCloseVoltage().unaryMinus()))
-                .until(this::isPowerSpikeExceeded);
+        return startRun(
+                        () -> state.setPosition(Position.InBetween),
+                        () -> setVoltageOut(config.getOpenAndCloseVoltage().unaryMinus()))
+                .until(this::isPowerSpikeExceeded)
+                .andThen(runOnce(() -> state.setPosition(Position.Opened)));
     }
 
     protected Command close() {
-        return run(() -> setVoltageOut(config.getOpenAndCloseVoltage()))
-                .until(this::isPowerSpikeExceeded);
+        return startRun(
+                        () -> state.setPosition(Position.InBetween),
+                        () -> setVoltageOut(config.getOpenAndCloseVoltage()))
+                .until(this::isPowerSpikeExceeded)
+                .andThen(runOnce(() -> state.setPosition(Position.Closed)));
+    }
+
+    public enum Position {
+        Opened,
+        Closed,
+        InBetween
+    }
+
+    @Getter
+    @Setter
+    public class State {
+        Position position = Position.Opened;
+
+        public boolean isClosed() {
+            return position.equals(Position.Closed);
+        }
+
+        public boolean isOpened() {
+            return position.equals(Position.Opened);
+        }
     }
 
     @Override

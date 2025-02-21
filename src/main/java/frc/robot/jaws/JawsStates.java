@@ -1,6 +1,7 @@
 package frc.robot.jaws;
 
 import static frc.robot.RobotStates.*;
+import static frc.robot.RobotStates.JawsRelated.*;
 
 import frc.robot.Robot;
 
@@ -13,6 +14,7 @@ public class JawsStates {
     }
 
     public static void setupBindings() {
-        GrabAlgae.or(HoldAlgae, ReleaseAlgae).onTrue(jaws.close()).onFalse(jaws.open());
+        RequestJawsClosed.and(CanMove, Closed.not()).onTrue(jaws.close());
+        RequestJawsClosed.not().and(CanMove, Opened.not()).onTrue(jaws.open());
     }
 }

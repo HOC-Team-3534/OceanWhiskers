@@ -1,7 +1,9 @@
 package frc.robot.elevator;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.RobotStates.*;
+import static frc.robot.RobotStates.ElevatorRelated.*;
 
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -18,27 +20,36 @@ public class ElevatorStates {
     }
 
     public static void setupBindings() {
-        GoToL1.and(Deploy.not()).whileTrue(goToLevel(Level.L1Pre));
-        GoToL1.and(Deploy).whileTrue(goToLevel(Level.L1));
+        GoToL1Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L1Pre));
+        GoToL1Coral.and(Deploy).whileTrue(goToLevel(Level.L1));
 
-        GoToL2.and(Deploy.not()).whileTrue(goToLevel(Level.L2Pre));
-        GoToL2.and(Deploy).whileTrue(goToLevel(Level.L2));
+        GoToL2Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L2Pre));
+        GoToL2Coral.and(Deploy).whileTrue(goToLevel(Level.L2));
 
-        GoToL3.and(Deploy.not()).whileTrue(goToLevel(Level.L3Pre));
-        GoToL3.and(Deploy).whileTrue(goToLevel(Level.L3));
+        GoToL3Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L3Pre));
+        GoToL3Coral.and(Deploy).whileTrue(goToLevel(Level.L3));
 
-        GoToL4.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
-        GoToL4.and(Deploy).whileTrue(goToLevel(Level.L4));
+        GoToL4Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
+        GoToL4Coral.and(Deploy).whileTrue(goToLevel(Level.L4));
 
         PickupCoralLeft.or(PickupCoralRight).whileTrue(goToLevel(Level.PickUp));
 
-        ElevatorVoltageUp.whileTrue(voltageOut(() -> Volts.of(1.5)));
-        ElevatorVoltageDown.whileTrue(voltageOut(() -> Volts.of(0.2)));
+        RequestJawsClosed.not()
+                .and(JawsRelated.Opened.not())
+                // No other command is setting the target height above 0
+                .and(
+                        () ->
+                                elevator.getTargetHeight().isEquivalent(Inches.zero())
+                                        && !elevator.getState().isClimbing())
+                .onTrue(goToLevel(Level.Jaws).until(JawsRelated.Opened));
 
-        ElevatorQuasiasticUp.whileTrue(elevator.sysIdQuasistatic(Direction.kForward));
-        ElevatorQuasiasticDown.whileTrue(elevator.sysIdQuasistatic(Direction.kReverse));
-        ElevatorDynamicUp.whileTrue(elevator.sysIdDynamic(Direction.kForward));
-        ElevatorDynamicDown.whileTrue(elevator.sysIdDynamic(Direction.kReverse));
+        VoltageUp.whileTrue(voltageOut(() -> Volts.of(1.5)));
+        VoltageDown.whileTrue(voltageOut(() -> Volts.of(0.2)));
+
+        QuasiasticUp.whileTrue(elevator.sysIdQuasistatic(Direction.kForward));
+        QuasiasticDown.whileTrue(elevator.sysIdQuasistatic(Direction.kReverse));
+        DynamicUp.whileTrue(elevator.sysIdDynamic(Direction.kForward));
+        DynamicDown.whileTrue(elevator.sysIdDynamic(Direction.kReverse));
 
         // TODO: add elevator climb and climbing logic to keep the elevator from breaking
     }

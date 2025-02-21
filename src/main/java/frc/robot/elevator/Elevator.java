@@ -38,6 +38,7 @@ public class Elevator extends TalonFXMechanism {
         @Getter private Distance L4 = Inches.of(54);
         @Getter private Distance L4Pre = Inches.of(38);
         @Getter private Distance PickUp = Inches.of(15);
+        @Getter private Distance Jaws = Inches.of(6.0);
 
         @Getter private boolean motionMagicEnabled;
 
@@ -196,6 +197,9 @@ public class Elevator extends TalonFXMechanism {
     // Don't let climbing occur unless the current go to height is already pre climb, or has been
     // pre climb within the last say 5 seconds
 
+    // TODO: add heights for coral deploy, make codriver fn switch between coral and algae height
+    // TODO: add lift height and require lift before retraction or extension of jaws
+
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         switch (direction) {
             case kForward:
@@ -228,6 +232,10 @@ public class Elevator extends TalonFXMechanism {
         return state;
     }
 
+    public Distance getTargetHeight() {
+        return getState().getTargetLevel().getHeight(config);
+    }
+
     public enum Level {
         Bottom,
         L1Pre,
@@ -238,9 +246,10 @@ public class Elevator extends TalonFXMechanism {
         L3,
         L4Pre,
         L4,
-        PickUp;
+        PickUp,
+        Jaws;
 
-        Distance getHeight(ElevatorConfig config) {
+        public Distance getHeight(ElevatorConfig config) {
             switch (this) {
                 case L1:
                     return config.getL1();
@@ -260,6 +269,8 @@ public class Elevator extends TalonFXMechanism {
                     return config.getL3Pre();
                 case L4Pre:
                     return config.getL4Pre();
+                case Jaws:
+                    return config.getJaws();
                 default:
                     return Inches.of(0);
             }

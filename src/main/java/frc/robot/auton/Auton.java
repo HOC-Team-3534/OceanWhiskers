@@ -79,7 +79,7 @@ public class Auton {
 
         Distance offsetFromWallToCenter = Inches.of(17.0);
 
-        //TODO: tune skip and alignment values
+        // TODO: tune skip and alignment values
         Distance skipPathForDTMTolerance = Inches.of(15.0);
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
