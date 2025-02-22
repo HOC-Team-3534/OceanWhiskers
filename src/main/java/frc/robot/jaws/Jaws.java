@@ -25,7 +25,7 @@ public class Jaws extends TalonSRXMechanism {
 
     private JawsConfig config;
 
-    @Getter private State state;
+    @Getter private State state = new State();
 
     public Jaws(JawsConfig config) {
         super(config);

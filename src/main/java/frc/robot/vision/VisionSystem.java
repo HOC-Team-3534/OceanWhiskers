@@ -66,6 +66,9 @@ public class VisionSystem extends HocSubsystem {
     @SuppressWarnings("unused")
     private VisionConfig config;
 
+    private final CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive,
+            cachedDistanceToAlignFwd;
+
     public VisionSystem(VisionConfig config) {
         super(config);
         this.config = config;
@@ -74,6 +77,11 @@ public class VisionSystem extends HocSubsystem {
         fr_camera = new PhotonCameraPlus("fr_camera", config.getFRRobotToCamera());
         rl_camera = new PhotonCameraPlus("rl_camera", config.getRLRobotToCamera());
         rr_camera = new PhotonCameraPlus("rr_camera", config.getRRRobotToCamera());
+
+        cachedDistanceToAlignLeftPositive =
+                new CachedValue<>(this::updateDistanceToAlignLeftPositive);
+
+        cachedDistanceToAlignFwd = new CachedValue<>(this::updateDistanceToAlignFwd);
     }
 
     @Override
@@ -89,12 +97,6 @@ public class VisionSystem extends HocSubsystem {
             // TODO: try latest photonvision release with new PNP solver from 6238
         }
     }
-
-    private CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive =
-            new CachedValue<>(this::updateDistanceToAlignLeftPositive);
-
-    private CachedValue<Optional<Distance>> cachedDistanceToAlignFwd =
-            new CachedValue<>(this::updateDistanceToAlignFwd);
 
     public Optional<Distance> getDistanceToAlignLeftPositive() {
         return cachedDistanceToAlignLeftPositive.get();
