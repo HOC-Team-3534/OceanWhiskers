@@ -124,7 +124,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                                 .getTranslation()
                                                 .minus(getPose().getTranslation())
                                                 .getNorm())
-                                .gt(Inches.of(2))
+                                .gt(Inches.of(5))
                         || alignedPose.getRotation().minus(getPose().getRotation()).getDegrees()
                                 > 5)) {
             alignedPose = null;
@@ -278,6 +278,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public void initialize() {
+                        alignedPose = null;
                         leftRightPID = new PIDController(6.0, 0.00, 0.0);
                         fwdPID = new PIDController(6.0, 0.0, 0.0);
                         leftRightPID.setTolerance(errorTolerance.in(Meters));
@@ -305,6 +306,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                             if (leftRightPID.atSetpoint()) {
                                 vyOutput = 0.0;
                             }
+                            if (Math.abs(vyOutput) > 0.2) {
+                                vyOutput = 0.2 * Math.signum(vyOutput);
+                            }
                         }
                         driveWithSpeeds(new ChassisSpeeds(vxOutput, vyOutput, 0.0));
                     }
@@ -320,7 +324,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                         return fwdError.get().isPresent()
                                 && fwdPID.atSetpoint()
                                 && leftPositiveError.get().isPresent()
-                                && leftRightPID.atSetpoint();
+                                && leftRightPID.atSetpoint()
+                                && Math.abs(getState().Speeds.vxMetersPerSecond) < 0.0025
+                                && Math.abs(getState().Speeds.vyMetersPerSecond) < 0.0025;
                     }
                 };
 

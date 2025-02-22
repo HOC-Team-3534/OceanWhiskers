@@ -77,16 +77,16 @@ public class Auton {
 
         Distance driveForwardDistance = Feet.of(2);
 
-        Distance offsetFromWallToCenter = Inches.of(17.0);
+        Distance offsetFromWallToCenter = Inches.of(16);
 
         // TODO: tune skip and alignment values
-        Distance skipPathForDTMTolerance = Inches.of(15.0);
+        Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
-        Distance offsetFromWallToCenterDTM = Inches.of(17.0);
+        Distance offsetFromWallToCenterDTM = Inches.of(13.3);
 
-        Distance alignFwdTolerance = Inches.of(0.5);
-        Distance alignLeftRightTolerance = Inches.of(0.6);
+        Distance alignFwdTolerance = Inches.of(0.2);
+        Distance alignLeftRightTolerance = Inches.of(0.65);
     }
 
     private Command m_autonomousCommand;
@@ -410,6 +410,9 @@ public class Auton {
                                                         new GoalEndState(
                                                                 0.0, goalPose.getRotation()));
 
+                                        if (path.getAllPathPoints().size() < 5)
+                                            return Commands.none();
+
                                         path.preventFlipping = true;
 
                                         return AutoBuilder.followPath(path);
@@ -418,21 +421,22 @@ public class Auton {
                 });
     }
 
+    public Optional<Distance> getDistanceToAlignFwd() {
+        return Robot.getVisionSystem()
+                .getDistanceToAlignFwd()
+                .map(
+                        distance -> {
+                            var fwdError = distance.minus(config.getOffsetFromWallToCenterDTM());
+
+                            if (fwdError.lt(Inches.zero())) return Inches.zero();
+
+                            return fwdError;
+                        });
+    }
+
     private Command alignLeftRightOnWall() {
         return swerve.alignLeftRightOnWall(
-                () ->
-                        Robot.getVisionSystem()
-                                .getDistanceToAlignFwd()
-                                .map(
-                                        distance -> {
-                                            var fwdError =
-                                                    distance.minus(
-                                                            config.getOffsetFromWallToCenterDTM());
-
-                                            if (fwdError.lt(Inches.zero())) return Inches.zero();
-
-                                            return fwdError;
-                                        }),
+                this::getDistanceToAlignFwd,
                 config.getAlignFwdTolerance(),
                 () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
                 config.getAlignLeftRightTolerance());

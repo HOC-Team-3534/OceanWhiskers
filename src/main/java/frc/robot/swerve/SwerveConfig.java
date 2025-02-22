@@ -93,7 +93,11 @@ public class SwerveConfig extends HocSubsystem.Config {
 
     // Initial configs for the drive and steer motors and the azimuth encoder; these cannot be null.
     // Some configs will be overwritten; check the `with*InitialConfigs()` API documentation.
-    @Getter private TalonFXConfiguration driveInitialConfigs = new TalonFXConfiguration();
+    @Getter
+    private TalonFXConfiguration driveInitialConfigs =
+            new TalonFXConfiguration()
+                    .withCurrentLimits(
+                            new CurrentLimitsConfigs().withStatorCurrentLimit(Amps.of(80)));
 
     @Getter
     private TalonFXConfiguration steerInitialConfigs =

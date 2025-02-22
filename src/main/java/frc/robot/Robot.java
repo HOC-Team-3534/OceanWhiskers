@@ -179,6 +179,10 @@ public class Robot extends HocRobot {
                             .orElse(Meters.zero())
                             .in(Inches));
 
+            SmartDashboard.putNumber(
+                    "Auton / Align Distance to Fwd (In.)",
+                    getAuton().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
+
             SmartDashboard.putBoolean(
                     "Swerve Aligned", RobotStates.SwerveRelated.Aligned.getAsBoolean());
 

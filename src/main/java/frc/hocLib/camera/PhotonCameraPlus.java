@@ -125,8 +125,7 @@ public class PhotonCameraPlus {
                                                 estmt.estimatedPose
                                                         .toPose2d()
                                                         .minus(tp.toPose2d())
-                                                        .getMeasureX()
-                                                        .unaryMinus());
+                                                        .getMeasureX());
                     });
         }
     }
