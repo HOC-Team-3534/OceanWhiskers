@@ -92,7 +92,7 @@
     "edu.wpi.first.math.**.struct.*",
   ],
   "java.format.comments.enabled": false,
-  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=6 -XX:InitiatingHeapOccupancyPercent=30 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx8G -Xms300m -Xlog:disable",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=6 -XX:InitiatingHeapOccupancyPercent=30 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx16G -Xms300m -Xlog:disable",
   "[java]": {
     "spotlessGradle.format.enable": true,
     //"spotlessGradle.diagnostics.enable": true,
