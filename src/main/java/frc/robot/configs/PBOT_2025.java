@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
+import edu.wpi.first.math.controller.ArmFeedforward;
 import frc.robot.Robot.Config;
 
 public class PBOT_2025 extends Config {
@@ -36,6 +37,10 @@ public class PBOT_2025 extends Config {
         elevator.configMaxPosition(Rotations.of(23.713));
 
         elevator.enableMotionMagic();
+
+        tusks.setFf_noCoral(new ArmFeedforward(0.6425, 0.14478, 0.87, 0.002));
+
+        tusks.setFf_withCoral(new ArmFeedforward(0.365, 0.705, 0.87, 0.01));
 
         tusks.enableMotionProfiling();
 

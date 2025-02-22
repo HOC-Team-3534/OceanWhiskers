@@ -66,16 +66,17 @@ public class RobotStates {
     // TUSKS
     private static final Tusks tusks = Robot.getTusks();
 
-    public static final Trigger isTesting =
+    public static final Trigger TusksIsTesting =
             new Trigger(tusks::isTesting).and(SwerveIsTesting.not(), ElevatorIsTesting.not());
 
-    public static final Trigger TusksQuasiasticUp = codriver.QuasiasticUp_UDP.and(isTesting);
-    public static final Trigger TusksQuasiasticDown = codriver.QuasiasticDown_DDP.and(isTesting);
-    public static final Trigger TusksDynamicUp = codriver.DynamicUp_UDP.and(isTesting);
-    public static final Trigger TusksDynamicDown = codriver.DynamicDown_DDP.and(isTesting);
+    public static final Trigger TusksQuasiasticUp = codriver.QuasiasticUp_UDP.and(TusksIsTesting);
+    public static final Trigger TusksQuasiasticDown =
+            codriver.QuasiasticDown_DDP.and(TusksIsTesting);
+    public static final Trigger TusksDynamicUp = codriver.DynamicUp_UDP.and(TusksIsTesting);
+    public static final Trigger TusksDynamicDown = codriver.DynamicDown_DDP.and(TusksIsTesting);
 
-    public static final Trigger TusksVoltageUp = codriver.VoltageUp_UDP.and(isTesting);
-    public static final Trigger TusksVoltageDown = codriver.VoltageDown_DDP.and(isTesting);
+    public static final Trigger TusksVoltageUp = codriver.VoltageUp_UDP.and(TusksIsTesting);
+    public static final Trigger TusksVoltageDown = codriver.VoltageDown_DDP.and(TusksIsTesting);
 
     public static final Trigger TusksHoldingCoral =
             new Trigger(() -> tusks.getState().isHoldingCoral());

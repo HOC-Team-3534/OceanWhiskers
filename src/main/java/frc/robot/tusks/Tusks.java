@@ -51,10 +51,9 @@ public class Tusks extends TalonSRXMechanism {
 
         // TODO: tune ff with coral without sysid, just manual kg and ks then recalc for kV and kA
 
-        @Getter @Setter
-        ArmFeedforward ff_noCoral = new ArmFeedforward(0.6425, 0.14478, 0.87, 0.002);
+        @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.74, 0.16, 0.87, 0.002);
 
-        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.365, 0.705, 0.87, 0.01);
+        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.44, 0.91, 0.87, 0.01);
 
         // profile in rotations while ff in radians
         @Getter @Setter
@@ -197,7 +196,7 @@ public class Tusks extends TalonSRXMechanism {
     Command goToAngle(Angle angle) {
         if (!isAttached()) return run(() -> {});
 
-        if (!config.isMotionProfilingEnabled()) return run(this::zero);
+        if (!config.isMotionProfilingEnabled()) return run(() -> setVoltageOut(Volts.of(0.5)));
 
         return new InstantCommand(
                         () -> {

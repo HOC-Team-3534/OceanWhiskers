@@ -167,7 +167,7 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Tusks Ready for Deploy", RobotStates.TusksReadyToDeploy.getAsBoolean());
             SmartDashboard.putBoolean(
-                    "Tusks Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
+                    "Tusks Voltage Up Trigger", RobotStates.TusksVoltageUp.getAsBoolean());
             SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
 
             SmartDashboard.putNumber(
