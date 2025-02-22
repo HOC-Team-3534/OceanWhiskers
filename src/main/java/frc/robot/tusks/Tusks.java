@@ -65,12 +65,6 @@ public class Tusks extends TalonSRXMechanism {
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
-
-            // setAttached(false);
-
-            // testing();
-
-            enableMotionProfiling();
         }
 
         public TusksConfig enableMotionProfiling() {
@@ -105,6 +99,9 @@ public class Tusks extends TalonSRXMechanism {
 
             motor.setSelectedSensorPosition(positionToPositionInSensorTicks(Degrees.of(90)));
         }
+
+        SmartDashboard.putNumber("Tusks/Voltage Up Command", 0.75);
+        SmartDashboard.putNumber("Tusks/Voltage Down Command", -0.75);
     }
 
     @Override

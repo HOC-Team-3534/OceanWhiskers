@@ -163,13 +163,11 @@ public class Robot extends HocRobot {
     public void robotPeriodic() {
         try {
             SmartDashboard.putBoolean(
-                    "Elevator Ready for Deploy",
-                    RobotStates.ElevatorRelated.ReadyToDeploy.getAsBoolean());
+                    "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
             SmartDashboard.putBoolean(
-                    "Tusks Ready for Deploy",
-                    RobotStates.TusksRelated.ReadyToDeploy.getAsBoolean());
+                    "Tusks Ready for Deploy", RobotStates.TusksReadyToDeploy.getAsBoolean());
             SmartDashboard.putBoolean(
-                    "Tusks Holding Coral", RobotStates.HoldingCoral.getAsBoolean());
+                    "Tusks Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
             SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
 
             SmartDashboard.putNumber(
@@ -184,7 +182,9 @@ public class Robot extends HocRobot {
                     getAuton().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
 
             SmartDashboard.putBoolean(
-                    "Swerve Aligned", RobotStates.SwerveRelated.Aligned.getAsBoolean());
+                    "Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
+
+            SmartDashboard.putBoolean("Swerve Aligned", RobotStates.SwerveAligned.getAsBoolean());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

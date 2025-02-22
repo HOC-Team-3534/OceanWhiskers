@@ -1,7 +1,6 @@
 package frc.robot.jaws;
 
 import static frc.robot.RobotStates.*;
-import static frc.robot.RobotStates.JawsRelated.*;
 
 import frc.robot.Robot;
 
@@ -14,7 +13,7 @@ public class JawsStates {
     }
 
     public static void setupBindings() {
-        RequestJawsClosed.and(CanMove, Closed.not()).onTrue(jaws.close());
-        RequestJawsClosed.not().and(CanMove, Opened.not()).onTrue(jaws.open());
+        RequestJawsClosed.and(JawsCanMove, JawsClosed.not()).onTrue(jaws.close());
+        RequestJawsClosed.not().and(JawsCanMove, JawsOpened.not()).onTrue(jaws.open());
     }
 }

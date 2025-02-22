@@ -56,8 +56,8 @@ public class Elevator extends TalonFXMechanism {
             //https://www.reca.lc/linear?angle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=83&limitAcceleration=0&limitDeceleration=0&limitVelocity=0&limitedAcceleration=%7B%22s%22%3A400%2C%22u%22%3A%22in%2Fs2%22%7D&limitedDeceleration=%7B%22s%22%3A50%2C%22u%22%3A%22in%2Fs2%22%7D&limitedVelocity=%7B%22s%22%3A10%2C%22u%22%3A%22in%2Fs%22%7D&load=%7B%22s%22%3A18%2C%22u%22%3A%22lbs%22%7D&motor=%7B%22quantity%22%3A2%2C%22name%22%3A%22Falcon%20500%22%7D&ratio=%7B%22magnitude%22%3A5%2C%22ratioType%22%3A%22Reduction%22%7D&spoolDiameter=%7B%22s%22%3A3.66%2C%22u%22%3A%22in%22%7D&travelDistance=%7B%22s%22%3A54%2C%22u%22%3A%22in%22%7D
             //spotless:on
 
-            slot0Configs.kG = 0.805;
-            slot0Configs.kS = 0.0559;
+            slot0Configs.kG = 0.975;
+            slot0Configs.kS = 0.425;
             slot0Configs.kV = 0.11793;
             slot0Configs.kA = 0.0048; // recalc says 0.007 V * s^2 / rot
 
@@ -80,7 +80,6 @@ public class Elevator extends TalonFXMechanism {
             // TODO: set elevator in brake mode, hoping it causes the elevator not to fall when
             // disabled, important between autonomous and teleop
 
-            enableMotionMagic();
         }
 
         public ElevatorConfig enableMotionMagic() {
@@ -112,6 +111,9 @@ public class Elevator extends TalonFXMechanism {
         if (isAttached()) {
             motor.setPosition(0);
         }
+
+        SmartDashboard.putNumber("Elevator/Voltage Up Command", 1.55);
+        SmartDashboard.putNumber("Elevator/Voltage Down Command", 0.35);
     }
 
     @Override
@@ -161,7 +163,8 @@ public class Elevator extends TalonFXMechanism {
                             if (state.isNearTargetHeight()) {
                                 setVoltageOut(Volts.zero());
                             } else {
-                                setVoltageOut(Volts.of(0.35));
+                                // setVoltageOut(Volts.of(0.35));
+                                setVoltageOut(Volts.of(0.6));
                             }
                         })
                 .withName("Elevator.Safely Lower to Bottom");

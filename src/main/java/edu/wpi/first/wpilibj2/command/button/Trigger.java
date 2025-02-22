@@ -284,6 +284,7 @@ public class Trigger implements BooleanSupplier {
      * @return A trigger which is active when both component triggers are active.
      */
     public Trigger and(BooleanSupplier trigger) {
+        if (trigger == null) throw new RuntimeException();
         return new Trigger(m_loop, () -> m_condition.getAsBoolean() && trigger.getAsBoolean());
     }
 
@@ -296,6 +297,7 @@ public class Trigger implements BooleanSupplier {
     public Trigger and(BooleanSupplier... triggers) {
         Trigger trig = this;
         for (BooleanSupplier t : triggers) {
+            if (t == null) throw new RuntimeException();
             trig = trig.and(t);
         }
         return trig;
@@ -310,6 +312,7 @@ public class Trigger implements BooleanSupplier {
     public Trigger or(BooleanSupplier... triggers) {
         Trigger trig = this;
         for (BooleanSupplier t : triggers) {
+            if (t == null) throw new RuntimeException();
             trig = trig.or(t);
         }
         return trig;
@@ -322,6 +325,7 @@ public class Trigger implements BooleanSupplier {
      * @return A trigger which is active when either component trigger is active.
      */
     public Trigger or(BooleanSupplier trigger) {
+        if (trigger == null) throw new RuntimeException();
         return new Trigger(m_loop, () -> m_condition.getAsBoolean() || trigger.getAsBoolean());
     }
 

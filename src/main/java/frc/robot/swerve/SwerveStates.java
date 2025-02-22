@@ -1,6 +1,6 @@
 package frc.robot.swerve;
 
-import static frc.robot.RobotStates.SwerveRelated.*;
+import static frc.robot.RobotStates.*;
 
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Robot;
@@ -19,9 +19,9 @@ public class SwerveStates {
     }
 
     public static void setupBindings() {
-        QuasiasticForward.whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
-        QuasiasticBackward.whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
-        DynamicForward.whileTrue(swerve.sysIdDynamic(Direction.kForward));
-        DynamicBackward.whileTrue(swerve.sysIdDynamic(Direction.kReverse));
+        SwerveQuasiasticForward.whileTrue(swerve.sysIdQuasistatic(Direction.kForward));
+        SwerveQuasiasticBackward.whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
+        SwerveDynamicForward.whileTrue(swerve.sysIdDynamic(Direction.kForward));
+        SwerveDynamicBackward.whileTrue(swerve.sysIdDynamic(Direction.kReverse));
     }
 }
