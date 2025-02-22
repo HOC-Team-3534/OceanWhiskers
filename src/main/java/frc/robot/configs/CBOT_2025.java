@@ -22,7 +22,7 @@ public class CBOT_2025 extends Config {
         this.lights.setAttached(false);
         this.tusks.setAttached(true);
 
-        this.vision.setAttached(false);
+        this.vision.setAttached(true);
         this.swerve.setAttached(true);
 
         this.driver.setAttached(true);

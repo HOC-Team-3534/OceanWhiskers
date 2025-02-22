@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.hocLib.HocRobot;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
+import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
@@ -161,6 +162,7 @@ public class Robot extends HocRobot {
 
     @Override
     public void robotPeriodic() {
+        FieldAndTags2025.updateMasking();
         try {
             SmartDashboard.putBoolean(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
@@ -184,7 +186,8 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
 
-            SmartDashboard.putBoolean("Swerve Aligned", RobotStates.SwerveAligned.getAsBoolean());
+            SmartDashboard.putBoolean(
+                    "Aligned With Reef", RobotStates.AlignedWithReef.getAsBoolean());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

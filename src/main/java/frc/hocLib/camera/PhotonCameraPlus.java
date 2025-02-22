@@ -11,6 +11,7 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
 import java.util.HashSet;
@@ -37,15 +38,16 @@ public class PhotonCameraPlus {
     static AprilTagFieldLayout aprilTagFieldLayout =
             AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
 
+    final Transform3d robotToCamera;
+
     static HashSet<Integer> HIGH_TAGS = new HashSet<>();
 
     public PhotonCameraPlus(String name, Transform3d robotToCamera) {
         camera = new PhotonCamera(name);
-        poseEstimator =
-                new PhotonPoseEstimator(
-                        aprilTagFieldLayout,
-                        PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
-                        robotToCamera);
+
+        this.robotToCamera = robotToCamera;
+
+        poseEstimator = createPoseEstimator();
         poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
 
         HIGH_TAGS.add(4);
@@ -57,6 +59,15 @@ public class PhotonCameraPlus {
         HIGH_TAGS.add(2);
         HIGH_TAGS.add(12);
         HIGH_TAGS.add(13);
+    }
+
+    private PhotonPoseEstimator createPoseEstimator() {
+        return new PhotonPoseEstimator(
+                aprilTagFieldLayout,
+                !FieldAndTags2025.AT_HOME
+                        ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+                        : PoseStrategy.LOWEST_AMBIGUITY,
+                robotToCamera);
     }
 
     public void update() {

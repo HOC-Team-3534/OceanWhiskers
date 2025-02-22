@@ -16,8 +16,10 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 public final class FieldAndTags2025 {
+    public static final AprilTagFields APRIL_TAG_FIELD = AprilTagFields.k2025ReefscapeWelded;
+
     public static final AprilTagFieldLayout APRIL_TAG_FIELD_LAYOUT =
-            AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
+            AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
 
     public static final Distance FIELD_LENGTH = Meters.of(APRIL_TAG_FIELD_LAYOUT.getFieldLength());
 
@@ -29,6 +31,42 @@ public final class FieldAndTags2025 {
     public static final List<AprilTag> BLUE_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(16, 22);
 
     public static final List<AprilTag> RED_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(5, 11);
+
+    public static boolean masked;
+
+    public static final boolean AT_HOME = true;
+
+    static {
+        updateMasking();
+    }
+
+    public static void updateMasking() {
+        if (AT_HOME && !masked) {
+            var defaultField = AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
+
+            System.out.println("April Tags Mapped");
+
+            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
+            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
+            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
+            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
+
+            masked = true;
+        }
+    }
+
+    static void maskAprilTag(
+            AprilTagFieldLayout defaultLayout,
+            AprilTagFieldLayout maskedLayout,
+            int realId,
+            int fakeId) {
+        var tag = maskedLayout.getTags().stream().filter(t -> t.ID == realId).findFirst();
+        var newPose = defaultLayout.getTagPose(fakeId);
+
+        if (tag.isEmpty() || newPose.isEmpty()) return;
+
+        tag.get().pose = newPose.get();
+    }
 
     public enum ReefSide {
         Front(7, 18),

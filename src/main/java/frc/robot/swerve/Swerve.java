@@ -1,6 +1,5 @@
 package frc.robot.swerve;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -65,8 +64,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     private final SwerveConfig config;
 
-    private Pose2d alignedPose = null;
-
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      *
@@ -117,17 +114,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             var warmup = FollowPathCommand.warmupCommand().withName("Follow Path Warmup");
             warmup.schedule();
             warmedUp = true;
-        }
-        if (alignedPose != null
-                && (Meters.of(
-                                        alignedPose
-                                                .getTranslation()
-                                                .minus(getPose().getTranslation())
-                                                .getNorm())
-                                .gt(Inches.of(5))
-                        || alignedPose.getRotation().minus(getPose().getRotation()).getDegrees()
-                                > 5)) {
-            alignedPose = null;
         }
     }
 
@@ -262,10 +248,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 this);
     }
 
-    public boolean isAligned() {
-        return alignedPose != null;
-    }
-
     public Command alignLeftRightOnWall(
             Supplier<Optional<Distance>> fwdError,
             Distance fwdErrorTolerance,
@@ -278,7 +260,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public void initialize() {
-                        alignedPose = null;
                         leftRightPID = new PIDController(6.0, 0.00, 0.0);
                         fwdPID = new PIDController(6.0, 0.0, 0.0);
                         leftRightPID.setTolerance(errorTolerance.in(Meters));
@@ -316,7 +297,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     @Override
                     public void end(boolean interrupted) {
                         driveWithSpeeds(new ChassisSpeeds());
-                        if (!interrupted) alignedPose = getPose();
                     }
 
                     @Override
@@ -373,9 +353,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     @Override
                     public void end(boolean interrupted) {
                         driveWithSpeeds(new ChassisSpeeds());
-                        if (!interrupted) {
-                            alignedPose = getPose();
-                        }
                     }
 
                     @Override

@@ -34,7 +34,20 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
-    public static final Trigger SwerveAligned = new Trigger(swerve::isAligned);
+    public static final Trigger AlignedWithReef =
+            new Trigger(
+                    () ->
+                            Robot.getVisionSystem()
+                                            .getDistanceToAlignFwd()
+                                            .map(dist -> dist.lt(Inches.of(0.2)))
+                                            .orElse(false)
+                                    && Robot.getVisionSystem()
+                                            .getDistanceToAlignLeftPositive()
+                                            .map(
+                                                    dist ->
+                                                            dist.isNear(
+                                                                    Inches.zero(), Inches.of(0.65)))
+                                            .orElse(false));
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
@@ -117,7 +130,7 @@ public class RobotStates {
 
     public static final Trigger Deploy =
             (ElevatorReadyToDeploy.and(TusksReadyToDeploy))
-                    .and(codriver.Deploy_LS.or(SwerveAligned));
+                    .and(codriver.Deploy_LS.or(AlignedWithReef));
 
     public static final Trigger GoToL3Algae = Trigger.kFalse;
     public static final Trigger GoToL2Algae = Trigger.kFalse;
