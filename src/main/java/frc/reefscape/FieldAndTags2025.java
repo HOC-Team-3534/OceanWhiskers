@@ -34,24 +34,31 @@ public final class FieldAndTags2025 {
 
     public static boolean masked;
 
-    public static final boolean AT_HOME = true;
-
     static {
         updateMasking();
     }
 
+    public static boolean needsMaskingUpdate(){
+        return (masked && DriverStation.isFMSAttached()) || (!masked && !DriverStation.isFMSAttached());
+    }
+
     public static void updateMasking() {
-        if (AT_HOME && !masked) {
+        if(needsMaskingUpdate()){
             var defaultField = AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
+            if (!DriverStation.isFMSAttached()) {
+                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
+                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
+                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
+                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
 
-            System.out.println("April Tags Mapped");
+                masked = true;
+            }else{
+                APRIL_TAG_FIELD_LAYOUT.getTags().stream().forEach(tag -> {
+                    tag.pose = defaultField.getTagPose(tag.ID).orElse(tag.pose);
+                });
 
-            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
-            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
-            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
-            maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
-
-            masked = true;
+                masked = false;
+            }
         }
     }
 

@@ -10,8 +10,8 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
 import java.util.HashSet;
@@ -61,16 +61,22 @@ public class PhotonCameraPlus {
         HIGH_TAGS.add(13);
     }
 
+    private PoseStrategy calculateCurrentPoseStrategy(){
+        return DriverStation.isFMSAttached() ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR : PoseStrategy.LOWEST_AMBIGUITY;
+    }
+
     private PhotonPoseEstimator createPoseEstimator() {
         return new PhotonPoseEstimator(
                 aprilTagFieldLayout,
-                !FieldAndTags2025.AT_HOME
-                        ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
-                        : PoseStrategy.LOWEST_AMBIGUITY,
+                calculateCurrentPoseStrategy(),
                 robotToCamera);
     }
 
     public void update() {
+        if(!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())){
+                poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
+        }
+
         var results = camera.getAllUnreadResults();
 
         // TODO: validate isConnected is updating properly and catching issues that arise with
