@@ -49,7 +49,9 @@ public class Tusks extends TalonSRXMechanism {
         //https://www.reca.lc/arm?armMass=%7B%22s%22%3A2%2C%22u%22%3A%22lbs%22%7D&comLength=%7B%22s%22%3A6%2C%22u%22%3A%22in%22%7D&currentLimit=%7B%22s%22%3A40%2C%22u%22%3A%22A%22%7D&efficiency=85&endAngle=%7B%22s%22%3A90%2C%22u%22%3A%22deg%22%7D&iterationLimit=10000&motor=%7B%22quantity%22%3A1%2C%22name%22%3A%22BAG%22%7D&ratio=%7B%22magnitude%22%3A100%2C%22ratioType%22%3A%22Reduction%22%7D&startAngle=%7B%22s%22%3A0%2C%22u%22%3A%22deg%22%7D
         //spotless:on
 
-        // TODO: tune ff with coral without sysid, just manual kg and ks then recalc for kV and kA
+        //tuned ff with coral without sysid, just manual kg and ks then recalc for kV and kA
+        // kg = (voltageToMoveUp + voltageToMoveDown) / 2
+        // ks = (voltageToMoveUp - voltageToMoveDown) / 2
 
         @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.74, 0.16, 0.87, 0.002);
 
@@ -105,7 +107,7 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        // TODO: Make sure logic fix for coral detection works
+        // TODO: !!! Coral Detection: Logic has false positives and negatives!!!
         if (!state.isHoldingCoral() // has no coral
                 && getPosition().lt(Degrees.of(80))
                 && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
@@ -149,7 +151,6 @@ public class Tusks extends TalonSRXMechanism {
         return goToAngle(config.preDeploy);
     }
 
-    // TODO: separate deploy and deploy angle for different levels
     public Command deployl4() {
         return Commands.deadline(
                         Commands.waitUntil(

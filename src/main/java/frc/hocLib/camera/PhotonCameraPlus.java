@@ -79,8 +79,7 @@ public class PhotonCameraPlus {
 
         var results = camera.getAllUnreadResults();
 
-        // TODO: validate isConnected is updating properly and catching issues that arise with
-        // camera connection
+        // TODO: validate isConnected is updating properly and catching connection issues
         logConnected();
 
         for (var result : results) {

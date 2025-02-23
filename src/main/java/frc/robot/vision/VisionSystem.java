@@ -93,8 +93,6 @@ public class VisionSystem extends HocSubsystem {
             fr_camera.update();
             rl_camera.update();
             rr_camera.update();
-
-            // TODO: try latest photonvision release with new PNP solver from 6238
         }
     }
 
@@ -126,28 +124,6 @@ public class VisionSystem extends HocSubsystem {
 
     private static Transform3d calcRobotToCam(Translation2d xy, Distance height, Rotation3d rot) {
         return new Transform3d(new Translation3d(xy.getX(), xy.getY(), height.in(Meters)), rot);
-    }
-
-    private static Transform3d rotateAroundCenter(Transform3d vec, Rotation3d rot) {
-        return rotateAroundPoint(vec, new Translation3d(), rot);
-    }
-
-    private static Transform3d rotateAroundPoint(
-            Transform3d vec, Translation3d point, Rotation3d rot) {
-        // 1. Translate the camera's position relative to the point of rotation.
-        Translation3d translatedPosition = vec.getTranslation().minus(point);
-
-        // 2. Apply the rotation to the translated position.
-        Translation3d rotatedPosition = translatedPosition.rotateBy(rot);
-
-        // 3. Translate the rotated position back by adding the point of rotation.
-        rotatedPosition = rotatedPosition.plus(point);
-
-        // 4. Apply the same rotation to the camera's rotation (orientation).
-        Rotation3d rotatedRotation = rot.rotateBy(vec.getRotation());
-
-        // 5. Return the transformed camera position and rotation.
-        return new Transform3d(rotatedPosition, rotatedRotation);
     }
 
     @Override
