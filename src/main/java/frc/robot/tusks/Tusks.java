@@ -105,19 +105,21 @@ public class Tusks extends TalonSRXMechanism {
         SmartDashboard.putNumber("Tusks/Voltage Down Command", -0.75);
     }
 
+    private Timer stillTimer = new Timer();
+
     @Override
     public void periodic() {
-        // TODO: !!! Coral Detection: Logic has false positives and negatives!!!
-        if (!state.isHoldingCoral() // has no coral
-                && getPosition().lt(Degrees.of(80))
-                && getVelocity().lt(DegreesPerSecond.zero()) // tusks are moving down
-                && getError().gt(Degrees.of(3.0))) { // tusks are far below target angle
-            state.setHoldingCoral(true); //
+        if(profile.getGoal().gt(Degrees.of(80)) && getVelocity().lt(DegreesPerSecond.of(0.5))){
+            if(stillTimer.hasElapsed(0.25)){
+                if(getPosition().lt(Degrees.of(85.0))){
+                    state.setHoldingCoral(true);
+                }else{
+                    state.setHoldingCoral(false);
+                }
+            }
+        }else{
+            stillTimer.restart();
         }
-
-        // if (getPosition().lt(config.deploy.plus(Degrees.of(5)))) {
-        //     state.setHoldingCoral(false);
-        // }
 
         SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
@@ -144,7 +146,11 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command pickup() {
-        return goToAngle(config.pickup);
+        return goToAngle(config.pickup).alongWith(run(()-> {
+            if(getPosition().isNear(config.pickup, Degrees.of(2))){
+                state.setHoldingCoral(true);
+            }
+        }));
     }
 
     public Command preDeploy() {
