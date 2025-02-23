@@ -38,12 +38,13 @@ public final class FieldAndTags2025 {
         updateMasking();
     }
 
-    public static boolean needsMaskingUpdate(){
-        return (masked && DriverStation.isFMSAttached()) || (!masked && !DriverStation.isFMSAttached());
+    public static boolean needsMaskingUpdate() {
+        return (masked && DriverStation.isFMSAttached())
+                || (!masked && !DriverStation.isFMSAttached());
     }
 
     public static void updateMasking() {
-        if(needsMaskingUpdate()){
+        if (needsMaskingUpdate()) {
             var defaultField = AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
             if (!DriverStation.isFMSAttached()) {
                 maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
@@ -52,10 +53,12 @@ public final class FieldAndTags2025 {
                 maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
 
                 masked = true;
-            }else{
-                APRIL_TAG_FIELD_LAYOUT.getTags().stream().forEach(tag -> {
-                    tag.pose = defaultField.getTagPose(tag.ID).orElse(tag.pose);
-                });
+            } else {
+                APRIL_TAG_FIELD_LAYOUT.getTags().stream()
+                        .forEach(
+                                tag -> {
+                                    tag.pose = defaultField.getTagPose(tag.ID).orElse(tag.pose);
+                                });
 
                 masked = false;
             }

@@ -61,20 +61,20 @@ public class PhotonCameraPlus {
         HIGH_TAGS.add(13);
     }
 
-    private PoseStrategy calculateCurrentPoseStrategy(){
-        return DriverStation.isFMSAttached() ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR : PoseStrategy.LOWEST_AMBIGUITY;
+    private PoseStrategy calculateCurrentPoseStrategy() {
+        return DriverStation.isFMSAttached()
+                ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+                : PoseStrategy.LOWEST_AMBIGUITY;
     }
 
     private PhotonPoseEstimator createPoseEstimator() {
         return new PhotonPoseEstimator(
-                aprilTagFieldLayout,
-                calculateCurrentPoseStrategy(),
-                robotToCamera);
+                aprilTagFieldLayout, calculateCurrentPoseStrategy(), robotToCamera);
     }
 
     public void update() {
-        if(!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())){
-                poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
+        if (!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())) {
+            poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
         }
 
         var results = camera.getAllUnreadResults();
