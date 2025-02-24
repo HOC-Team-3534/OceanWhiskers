@@ -44,10 +44,7 @@ public class RobotStates {
                                             .orElse(false)
                                     && Robot.getVisionSystem()
                                             .getDistanceToAlignLeftPositive()
-                                            .map(
-                                                    dist ->
-                                                            dist.isNear(
-                                                                    Inches.zero(), Inches.of(0.65)))
+                                            .map(dist -> dist.isNear(Inches.zero(), Inches.of(1.0)))
                                             .orElse(false));
 
     // ELEVATOR

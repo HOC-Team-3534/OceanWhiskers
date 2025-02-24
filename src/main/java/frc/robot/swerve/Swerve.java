@@ -103,8 +103,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                 this::getRobotRelativeSpeeds,
                                 this::driveWithSpeeds,
                                 new PPHolonomicDriveController(
-                                        new PIDConstants(8.0, 0.0, 0.0),
-                                        new PIDConstants(3.0, 0.0, 0.0)),
+                                        new PIDConstants(10.0, 0.0, 0.0),
+                                        new PIDConstants(10.0, 0.0, 0.0)),
                                 cfg,
                                 () -> Util.isRedAlliance(),
                                 this));
@@ -274,8 +274,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     public void initialize() {
                         holonomicDriveController =
                                 new HolonomicDriveController(
-                                        new PIDController(10.0, 0.0, 0.0),
-                                        new PIDController(10.0, 0.0, 0.0),
+                                        new PIDController(7.0, 0.0, 0.0),
+                                        new PIDController(7.0, 0.0, 0.0),
                                         new ProfiledPIDController(
                                                 3.0,
                                                 0.0,
@@ -323,7 +323,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                                                                         * Math
                                                                                                 .signum(
                                                                                                         error
-                                                                                                                .baseUnitMagnitude())))
+                                                                                                                .in(
+                                                                                                                        Inches))))
                                         .orElse(Meters.zero());
                         var vxError =
                                 fwdError.get()
@@ -341,7 +342,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                                                                         * Math
                                                                                                 .signum(
                                                                                                         error
-                                                                                                                .baseUnitMagnitude()))
+                                                                                                                .in(
+                                                                                                                        Inches)))
                                                                 : Meters.zero())
                                         .orElse(Meters.zero());
 
