@@ -6,157 +6,36 @@
       "name": "Teleoperated",
       "grid_layout": {
         "layouts": [],
-        "containers": []
-      }
-    },
-    {
-      "name": "Autonomous",
-      "grid_layout": {
-        "layouts": [],
-        "containers": []
-      }
-    },
-    {
-      "name": "Elevator",
-      "grid_layout": {
-        "layouts": [],
         "containers": [
           {
-            "title": "Raw Voltage Out",
-            "x": 256.0,
-            "y": 128.0,
-            "width": 128.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/Raw Voltage Out",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": true
-            }
-          },
-          {
-            "title": "Raw Voltage Out",
-            "x": 384.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Number Slider",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/Raw Voltage Out",
-              "period": 0.06,
-              "data_type": "double",
-              "min_value": 0.0,
-              "max_value": 5.0,
-              "divisions": 6,
-              "update_continuously": false
-            }
-          },
-          {
-            "title": "Apply Voltage Out",
-            "x": 0.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/Apply Voltage Out",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "l1",
-            "x": 0.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/l1",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "l2",
-            "x": 0.0,
-            "y": 384.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/l2",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "l3",
-            "x": 256.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/l3",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "l4",
-            "x": 256.0,
-            "y": 384.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/l4",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "PickUp",
-            "x": 0.0,
-            "y": 512.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Commands/PickUp",
-              "period": 0.06,
-              "show_type": false
-            }
-          },
-          {
-            "title": "Height (In.)",
-            "x": 1024.0,
+            "title": "Field",
+            "x": 512.0,
             "y": 0.0,
-            "width": 128.0,
-            "height": 384.0,
-            "type": "Number Bar",
+            "width": 640.0,
+            "height": 512.0,
+            "type": "Field",
             "properties": {
-              "topic": "/SmartDashboard/Elevator/Stats/Height (In.)",
+              "topic": "/SmartDashboard/Field",
               "period": 0.06,
-              "data_type": "double",
-              "min_value": 0.0,
-              "max_value": 54.625,
-              "divisions": 5,
-              "inverted": false,
-              "orientation": "vertical"
+              "field_game": "Reefscape",
+              "robot_width": 0.85,
+              "robot_length": 0.85,
+              "show_other_objects": true,
+              "show_trajectories": true,
+              "field_rotation": 0.0,
+              "robot_color": 4294198070,
+              "trajectory_color": 4294967295
             }
           },
           {
-            "title": "Near Target Height",
-            "x": 384.0,
-            "y": 0.0,
+            "title": "FL Has Target",
+            "x": 128.0,
+            "y": 128.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Boolean Box",
             "properties": {
-              "topic": "/SmartDashboard/Elevator/Stats/Near Target Height",
+              "topic": "/photonvision/fl_camera/hasTarget",
               "period": 0.06,
               "data_type": "boolean",
               "true_color": 4283215696,
@@ -166,207 +45,307 @@
             }
           },
           {
-            "title": "Voltage Output",
-            "x": 512.0,
+            "title": "Aligned With Reef",
+            "x": 256.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/SmartDashboard/Aligned With Reef",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "FR Has Target",
+            "x": 128.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/photonvision/fr_camera/hasTarget",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": " Align Distance to Fwd (In.)",
+            "x": 0.0,
             "y": 0.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Elevator/Stats/Voltage Output",
+              "topic": "/SmartDashboard/Auton / Align Distance to Fwd (In.)",
               "period": 0.06,
               "data_type": "double",
               "show_submit_button": false
             }
           },
           {
-            "title": "Velocity (RPS)",
-            "x": 640.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 256.0,
-            "type": "Graph",
-            "properties": {
-              "topic": "/SmartDashboard/Elevator/Stats/Velocity (RPS)",
-              "period": 0.033,
-              "data_type": "double",
-              "time_displayed": 10.0,
-              "color": 4278238420,
-              "line_width": 2.0
-            }
-          },
-          {
-            "title": "Velocity (RPS)",
-            "x": 896.0,
-            "y": 0.0,
+            "title": "Vision Distance to Align Left Positive (In.)",
+            "x": 0.0,
+            "y": 128.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Elevator/Stats/Velocity (RPS)",
-              "period": 0.033,
+              "topic": "/SmartDashboard/Vision Distance to Align Left Positive (In.)",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Closest Reef Tag ID",
+            "x": 0.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Closest Reef Tag ID",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Vision Angle to Align (Deg.)",
+            "x": 0.0,
+            "y": 384.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision Angle to Align (Deg.)",
+              "period": 0.06,
               "data_type": "double",
               "show_submit_button": false
             }
           },
           {
             "title": "CommandScheduler",
-            "x": 640.0,
-            "y": 256.0,
+            "x": 256.0,
+            "y": 128.0,
             "width": 256.0,
-            "height": 384.0,
+            "height": 512.0,
             "type": "Scheduler",
             "properties": {
               "topic": "/SmartDashboard/CommandScheduler",
-              "period": 0.2
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "Tusks",
-      "grid_layout": {
-        "layouts": [],
-        "containers": [
-          {
-            "title": "Tusks",
-            "x": 128.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Subsystem",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Tusks",
               "period": 0.06
             }
           },
           {
-            "title": "Apply Voltage Out",
-            "x": 384.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Commands/Apply Voltage Out",
-              "period": 0.06,
-              "show_type": true
-            }
-          },
-          {
-            "title": "Deploy",
-            "x": 128.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Commands/Deploy",
-              "period": 0.06,
-              "show_type": true
-            }
-          },
-          {
-            "title": "Pickup",
-            "x": 384.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Command",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Commands/Pickup",
-              "period": 0.06,
-              "show_type": true
-            }
-          },
-          {
-            "title": "Raw Voltage Out",
-            "x": 128.0,
-            "y": 128.0,
-            "width": 256.0,
-            "height": 128.0,
-            "type": "Text Display",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Commands/Raw Voltage Out",
-              "period": 0.06,
-              "data_type": "double",
-              "show_submit_button": true
-            }
-          },
-          {
-            "title": "Angle (Deg.)",
-            "x": 640.0,
-            "y": 256.0,
-            "width": 256.0,
-            "height": 256.0,
-            "type": "Radial Gauge",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Stats/Angle (Deg.)",
-              "period": 0.06,
-              "data_type": "double",
-              "start_angle": -180.0,
-              "end_angle": 0.0,
-              "min_value": -90.0,
-              "max_value": 90.0,
-              "number_of_labels": 8,
-              "wrap_value": false,
-              "show_pointer": true,
-              "show_ticks": true
-            }
-          },
-          {
-            "title": "Output Voltage",
-            "x": 640.0,
-            "y": 0.0,
+            "title": "Largest Tag Area",
+            "x": 512.0,
+            "y": 512.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Tusks/Stats/Output Voltage",
+              "topic": "/SmartDashboard/Largest Tag Area",
               "period": 0.06,
               "data_type": "double",
               "show_submit_button": false
             }
           },
           {
-            "title": "Velocity (RPS) of Motor",
+            "title": "Target ID",
             "x": 768.0,
-            "y": 0.0,
-            "width": 256.0,
-            "height": 256.0,
-            "type": "Graph",
-            "properties": {
-              "topic": "/SmartDashboard/Tusks/Stats/Velocity (RPS) of Motor",
-              "period": 0.033,
-              "data_type": "double",
-              "time_displayed": 5.0,
-              "color": 4278238420,
-              "line_width": 2.0
-            }
-          },
-          {
-            "title": "Velocity (RPS) of Motor",
-            "x": 1024.0,
-            "y": 0.0,
+            "y": 512.0,
             "width": 128.0,
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Tusks/Stats/Velocity (RPS) of Motor",
-              "period": 0.033,
+              "topic": "/SmartDashboard/Vision/fl_camera/Target ID",
+              "period": 0.06,
               "data_type": "double",
               "show_submit_button": false
+            }
+          },
+          {
+            "title": "Target ID",
+            "x": 896.0,
+            "y": 512.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision/fr_camera/Target ID",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Closest Reef Tag ID",
+            "x": 128.0,
+            "y": 512.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Closest Reef Tag ID",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "Vision Align Tag ID",
+            "x": 0.0,
+            "y": 512.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Text Display",
+            "properties": {
+              "topic": "/SmartDashboard/Vision Align Tag ID",
+              "period": 0.06,
+              "data_type": "double",
+              "show_submit_button": false
+            }
+          },
+          {
+            "title": "IsRedAlliance",
+            "x": 128.0,
+            "y": 256.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Boolean Box",
+            "properties": {
+              "topic": "/FMSInfo/IsRedAlliance",
+              "period": 0.06,
+              "data_type": "boolean",
+              "true_color": 4283215696,
+              "false_color": 4294198070,
+              "true_icon": "None",
+              "false_icon": "None"
+            }
+          },
+          {
+            "title": "Tusks Has Coral Override",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "Toggle Switch",
+            "properties": {
+              "topic": "/SmartDashboard/Tusks Has Coral Override",
+              "period": 0.06,
+              "data_type": "boolean"
             }
           }
         ]
       }
     },
     {
-      "name": "Testing",
+      "name": "Autonomous",
       "grid_layout": {
         "layouts": [],
-        "containers": []
+        "containers": [
+          {
+            "title": "First Branch",
+            "x": 512.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/First Branch",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Second Branch",
+            "x": 640.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/Second Branch",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Third Branch",
+            "x": 768.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/Third Branch",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Third Branch Level",
+            "x": 768.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/Third Branch Level",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Second Branch Level",
+            "x": 640.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/Second Branch Level",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "First Branch Level",
+            "x": 512.0,
+            "y": 128.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/First Branch Level",
+              "period": 0.06,
+              "sort_options": false
+            }
+          },
+          {
+            "title": "Side of Field",
+            "x": 384.0,
+            "y": 0.0,
+            "width": 128.0,
+            "height": 128.0,
+            "type": "ComboBox Chooser",
+            "properties": {
+              "topic": "/SmartDashboard/Auton/Side of Field",
+              "period": 0.06,
+              "sort_options": false
+            }
+          }
+        ]
       }
     }
   ]
