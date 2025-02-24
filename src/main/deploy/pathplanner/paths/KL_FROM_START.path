@@ -3,26 +3,10 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 8.0,
-        "y": 4.0
-      },
-      "prevControl": null,
-      "nextControl": {
-        "x": 7.360221661583471,
-        "y": 4.417705126290681
-      },
-      "isLocked": false,
-      "linkedName": "Start"
-    },
-    {
-      "anchor": {
         "x": 5.166729797979798,
         "y": 5.75290404040404
       },
-      "prevControl": {
-        "x": 5.609969110611194,
-        "y": 5.744257754394989
-      },
+      "prevControl": null,
       "nextControl": {
         "x": 4.756880695847528,
         "y": 5.760898982316007
@@ -50,7 +34,7 @@
   "eventMarkers": [
     {
       "name": "Deploy",
-      "waypointRelativePos": 1.1697819314641742,
+      "waypointRelativePos": 0.1697819314641742,
       "endWaypointRelativePos": null,
       "command": null
     }

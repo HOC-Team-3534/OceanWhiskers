@@ -25,6 +25,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.reefscape.FieldAndTags2025.SideOfField;
@@ -209,7 +210,8 @@ public class Auton {
         public Command completeStep() {
             return Commands.deadline(
                     followPath()
-                            .andThen(alignWithGoalPose())
+                            .asProxy()
+                            .andThen(alignWithGoalPose().asProxy())
                             .andThen(new WaitUntilCommand(this::isStepComplete)),
                     Commands.startEnd(
                             () -> setCurrentStep(Optional.of(this)),
@@ -231,8 +233,14 @@ public class Auton {
         }
 
         public static Command stepsToCommand(List<AutonStep> steps) {
-            return Commands.parallel(
-                    (Command[]) steps.stream().map(AutonStep::completeStep).toArray());
+            var command = Commands.runOnce(() -> Robot.getTusks().getState().setHoldingCoral(true));
+
+            for (var stepCommand :
+                    steps.stream().map(AutonStep::completeStep).map(ProxyCommand::new).toList()) {
+                command = command.andThen(stepCommand);
+            }
+
+            return command;
         }
     }
 
