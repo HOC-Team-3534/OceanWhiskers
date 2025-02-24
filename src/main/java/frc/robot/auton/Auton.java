@@ -383,14 +383,16 @@ public class Auton {
     public Command dtmToHumanPlayerStation() {
         var command =
                 followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
-                        .andThen(swerve.alignLeftRightOnWall(
-                            () -> Optional.of(Inches.of(4.0)),
-                            Inches.one(),
-                            () -> Optional.of(Inches.zero()),
-                            Inches.one(),
-                            () -> Optional.of(Degrees.zero()),
-                            Degrees.one()).asProxy()
-                    .withTimeout(0.5));
+                        .andThen(
+                                swerve.alignLeftRightOnWall(
+                                                () -> Optional.of(Inches.of(4.0)),
+                                                Inches.one(),
+                                                () -> Optional.of(Inches.zero()),
+                                                Inches.one(),
+                                                () -> Optional.of(Degrees.zero()),
+                                                Degrees.one())
+                                        .asProxy()
+                                        .withTimeout(0.5));
 
         command.setName("DTM TO PICKUP STATION");
 
