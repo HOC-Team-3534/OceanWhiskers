@@ -56,12 +56,13 @@ public class Auton {
     @Getter @Setter static Optional<AutonStep> currentStep = Optional.empty();
 
     public static Trigger isLevel(int level) {
-        return new Trigger(() -> getCurrentStep().map(step -> step.isLevel(level)).orElse(false));
+        return new Trigger(() -> getCurrentStep().map(step -> step.isLevel(level)).orElse(false))
+                .and(autonDeploy);
     }
 
     public static Trigger isTusksSide(Tusks.Side side) {
-        return new Trigger(
-                () -> getCurrentStep().map(step -> step.isTusksSide(side)).orElse(false));
+        return new Trigger(() -> getCurrentStep().map(step -> step.isTusksSide(side)).orElse(false))
+                .and(autonPickup);
     }
 
     static {
