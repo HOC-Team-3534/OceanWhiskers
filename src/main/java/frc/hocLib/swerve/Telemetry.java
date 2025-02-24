@@ -115,10 +115,15 @@ public class Telemetry {
                                         "Direction", 0.1, 0, 0, new Color8Bit(Color.kWhite))),
             };
 
+    private StructPublisher<Pose2d> posePublisher =
+            NetworkTableInstance.getDefault().getStructTopic("RobotPose", Pose2d.struct).publish();
+
     /* Accept the swerve drive state and telemeterize it to smartdashboard */
     public void telemeterize(SwerveDriveState state) {
         /* Telemeterize the pose */
         m_field.setRobotPose(state.Pose);
+
+        posePublisher.set(state.Pose);
 
         /* Telemeterize the robot's general speeds */
         double currentTime = Utils.getCurrentTimeSeconds();
