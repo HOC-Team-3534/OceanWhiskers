@@ -202,6 +202,8 @@ public class Robot extends HocRobot {
             SmartDashboard.putNumber(
                     "Vision Align Tag ID", Robot.getVisionSystem().getAlignTagId().orElse(0));
 
+            SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
+
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
             // intercept error and log it
