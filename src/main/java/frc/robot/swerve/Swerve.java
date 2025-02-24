@@ -31,6 +31,7 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -118,6 +119,11 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             warmup.schedule();
             warmedUp = true;
         }
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        updateSimState(0.020, RobotController.getBatteryVoltage());
     }
 
     Optional<RobotConfig> loadRobotConfig() {
