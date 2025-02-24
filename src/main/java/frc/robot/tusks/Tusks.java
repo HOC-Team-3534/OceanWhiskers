@@ -24,6 +24,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.hocLib.util.CachedValue;
+import frc.robot.Robot;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -103,6 +105,8 @@ public class Tusks extends TalonSRXMechanism {
 
         SmartDashboard.putNumber("Tusks/Voltage Up Command", 0.75);
         SmartDashboard.putNumber("Tusks/Voltage Down Command", -0.75);
+
+        SmartDashboard.putBoolean("Tusks Has Coral Override", false);
     }
 
     private Timer stillTimer = new Timer();
@@ -303,10 +307,18 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public class State {
-        @Getter @Setter private boolean holdingCoral;
+        @Setter private boolean holdingCoral;
+
+        private CachedValue<Boolean> cachedSimulationHoldingCoralOverride =
+                new CachedValue<>(
+                        () -> SmartDashboard.getBoolean("Tusks Has Coral Override", false));
 
         public boolean isReadyToDeploy() {
             return getPosition().minus(Degrees.of(6.0)).lt(config.getPreDeploy());
+        }
+
+        public boolean isHoldingCoral() {
+            return Robot.isReal() ? holdingCoral : cachedSimulationHoldingCoralOverride.get();
         }
     }
 
