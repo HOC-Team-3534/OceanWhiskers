@@ -47,10 +47,10 @@ public final class FieldAndTags2025 {
         if (needsMaskingUpdate()) {
             var defaultField = AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
             if (!DriverStation.isFMSAttached()) {
-                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
-                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
-                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
-                maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
+                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
+                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
+                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
+                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
 
                 masked = true;
             } else {

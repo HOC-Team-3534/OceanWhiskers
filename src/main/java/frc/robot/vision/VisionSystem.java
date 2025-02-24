@@ -69,6 +69,8 @@ public class VisionSystem extends HocSubsystem {
     private final CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive,
             cachedDistanceToAlignFwd;
 
+    private final CachedValue<Optional<Angle>> cachedAngleToAlign;
+
     public VisionSystem(VisionConfig config) {
         super(config);
         this.config = config;
@@ -82,6 +84,8 @@ public class VisionSystem extends HocSubsystem {
                 new CachedValue<>(this::updateDistanceToAlignLeftPositive);
 
         cachedDistanceToAlignFwd = new CachedValue<>(this::updateDistanceToAlignFwd);
+
+        cachedAngleToAlign = new CachedValue<>(this::updateAngleToAlign);
     }
 
     @Override
@@ -116,6 +120,19 @@ public class VisionSystem extends HocSubsystem {
     private Optional<Distance> updateDistanceToAlignFwd() {
         var fromLeft = fl_camera.getLatestFwdToTag();
         var fromRight = fr_camera.getLatestFwdToTag();
+
+        if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
+
+        return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
+    }
+
+    public Optional<Angle> getAngleToAlign() {
+        return cachedAngleToAlign.get();
+    }
+
+    private Optional<Angle> updateAngleToAlign() {
+        var fromLeft = fl_camera.getLatestAngleToTag();
+        var fromRight = fr_camera.getLatestAngleToTag();
 
         if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
 

@@ -80,13 +80,14 @@ public class Auton {
         Distance offsetFromWallToCenter = Inches.of(16);
 
         // TODO: tune skip and alignment values
-        Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
+        Distance skipPathForDTMTolerance = Inches.of(2.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
-        Distance offsetFromWallToCenterDTM = Inches.of(13.3);
+        Distance offsetFromWallToCenterDTM = Inches.of(15.2);
 
-        Distance alignFwdTolerance = Inches.of(0.2);
-        Distance alignLeftRightTolerance = Inches.of(0.65);
+        Distance alignFwdTolerance = Inches.of(0.15);
+        Distance alignLeftRightTolerance = Inches.of(0.6);
+        Angle alignAngleTolerance = Degrees.of(1.0);
     }
 
     private Command m_autonomousCommand;
@@ -368,6 +369,10 @@ public class Auton {
                 .andThen(alignLeftRightOnWall().asProxy());
     }
 
+    public Optional<Pose2d> getDTMToReefGoal() {
+        return findClosestReefID().flatMap(this::findGoalPoseInFrontOfTag);
+    }
+
     // Path Planning Helpers
     private Command followPathToAprilTagID(Supplier<Optional<Integer>> tagIdSupplier) {
         // TODO: test dtm, making sure precise alignment works
@@ -439,7 +444,9 @@ public class Auton {
                 this::getDistanceToAlignFwd,
                 config.getAlignFwdTolerance(),
                 () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
-                config.getAlignLeftRightTolerance());
+                config.getAlignLeftRightTolerance(),
+                () -> Robot.getVisionSystem().getAngleToAlign(),
+                config.getAlignAngleTolerance());
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {

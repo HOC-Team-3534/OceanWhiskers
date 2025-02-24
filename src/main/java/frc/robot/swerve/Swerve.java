@@ -1,5 +1,7 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -24,6 +26,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
@@ -93,7 +96,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                 this::getRobotRelativeSpeeds,
                                 this::driveWithSpeeds,
                                 new PPHolonomicDriveController(
-                                        new PIDConstants(3.0, 0.0, 0.0),
+                                        new PIDConstants(8.0, 0.0, 0.0),
                                         new PIDConstants(3.0, 0.0, 0.0)),
                                 cfg,
                                 () ->
@@ -252,45 +255,92 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             Supplier<Optional<Distance>> fwdError,
             Distance fwdErrorTolerance,
             Supplier<Optional<Distance>> leftPositiveError,
-            Distance errorTolerance) {
+            Distance errorTolerance,
+            Supplier<Optional<Angle>> ccwPositiveError,
+            Angle ccwErrorTolerance) {
         var command =
                 new Command() {
                     private PIDController leftRightPID, fwdPID;
+                    // private ProfiledPIDController omegaPID;
                     private Timer timer = new Timer();
+
+                    // private boolean omegaGood;
 
                     @Override
                     public void initialize() {
-                        leftRightPID = new PIDController(6.0, 0.00, 0.0);
+                        leftRightPID = new PIDController(6.5, 0.0, 0.0);
                         fwdPID = new PIDController(6.0, 0.0, 0.0);
+                        // omegaPID =
+                        //         new ProfiledPIDController(
+                        //                 6.0,
+                        //                 0.0,
+                        //                 0.0,
+                        //                 new TrapezoidProfile.Constraints(
+                        //                         0.75 * Math.PI * 2, 4 * Math.PI * 2));
+                        // omegaPID.setGoal(
+                        //         ccwPositiveError
+                        //                 .get()
+                        //                 .map(
+                        //                         error ->
+                        //                                 error.plus(
+                        //                                         getPose()
+                        //                                                 .getRotation()
+                        //                                                 .getMeasure()))
+                        //                 .orElse(getPose().getRotation().getMeasure())
+                        //                 .in(Radians));
                         leftRightPID.setTolerance(errorTolerance.in(Meters));
                         fwdPID.setTolerance(fwdErrorTolerance.in(Meters));
+                        // omegaPID.setTolerance(ccwErrorTolerance.in(Radians));
                         timer.restart();
+                        // omegaGood = false;
                     }
 
                     @Override
                     public void execute() {
-                        var vxError = fwdError.get();
-                        var vxOutput = 0.0;
-                        if (vxError.isPresent()) {
-                            fwdPID.setSetpoint(vxError.get().in(Meters));
-                            vxOutput = fwdPID.calculate(0.0);
-                            if (fwdPID.atSetpoint()) {
-                                vxOutput = 0.0;
-                            }
-                        }
+                        // var omegaError = ccwPositiveError.get();
+                        // var omegaOutput = 0.0;
+                        // if (omegaError.isPresent() && !omegaGood) {
+                        //     omegaOutput =
+                        //             omegaPID.calculate(
+                        //                     getPose().getRotation().getMeasure().in(Radians));
+                        //     if (omegaPID.atSetpoint()) {
+                        //         omegaOutput = 0.0;
+                        //         omegaGood = true;
+                        //     }
+                        // }
 
                         var vyError = leftPositiveError.get();
                         var vyOutput = 0.0;
                         if (vyError.isPresent()) {
                             leftRightPID.setSetpoint(vyError.get().in(Meters));
                             vyOutput = leftRightPID.calculate(0.0);
+
+                            if (Math.abs(vyOutput) > 0.25) {
+                                vyOutput = 0.25 * Math.signum(vyOutput);
+                            }
+                            if (vyError.get().isNear(Inches.zero(), Inches.of(2.0))) {
+                                vyOutput =
+                                        InchesPerSecond.of(3.5).in(MetersPerSecond)
+                                                * Math.signum(vyError.get().in(Inches));
+                            }
                             if (leftRightPID.atSetpoint()) {
                                 vyOutput = 0.0;
                             }
-                            if (Math.abs(vyOutput) > 0.2) {
-                                vyOutput = 0.2 * Math.signum(vyOutput);
+                        }
+
+                        var vxError = fwdError.get();
+                        var vxOutput = 0.0;
+                        if (vxError.isPresent() && Math.abs(vyOutput) < 0.04) {
+                            fwdPID.setSetpoint(vxError.get().in(Meters));
+                            vxOutput = fwdPID.calculate(0.0);
+                            if (fwdPID.atSetpoint()) {
+                                vxOutput = 0.0;
+                            }
+                            if (Math.abs(vxOutput) > 0.3) {
+                                vxOutput = 0.3 * Math.signum(vxOutput);
                             }
                         }
+
                         driveWithSpeeds(new ChassisSpeeds(vxOutput, vyOutput, 0.0));
                     }
 

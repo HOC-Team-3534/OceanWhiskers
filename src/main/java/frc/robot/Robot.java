@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
@@ -180,6 +181,10 @@ public class Robot extends HocRobot {
                             .in(Inches));
 
             SmartDashboard.putNumber(
+                    "Vision Angle to Align (Deg.)",
+                    getVisionSystem().getAngleToAlign().orElse(Degrees.zero()).in(Degrees));
+
+            SmartDashboard.putNumber(
                     "Auton / Align Distance to Fwd (In.)",
                     getAuton().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
 
@@ -188,6 +193,9 @@ public class Robot extends HocRobot {
 
             SmartDashboard.putBoolean(
                     "Aligned With Reef", RobotStates.AlignedWithReef.getAsBoolean());
+
+            SmartDashboard.putBoolean(
+                    "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

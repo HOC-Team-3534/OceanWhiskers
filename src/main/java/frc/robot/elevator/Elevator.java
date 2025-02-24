@@ -13,8 +13,10 @@ import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.InvertedValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,12 +34,12 @@ public class Elevator extends TalonFXMechanism {
         @Getter private Distance L1 = Inches.of(0);
         @Getter private Distance L1Pre = Inches.of(0);
         @Getter private Distance L2 = Inches.of(14.5);
-        @Getter private Distance L2Pre = Inches.of(14.5);
+        @Getter private Distance L2Pre = Inches.of(3.5);
         @Getter private Distance L3 = Inches.of(30.5);
-        @Getter private Distance L3Pre = Inches.of(30.5);
-        @Getter private Distance L4 = Inches.of(54);
-        @Getter private Distance L4Pre = Inches.of(38);
-        @Getter private Distance PickUp = Inches.of(0);
+        @Getter private Distance L3Pre = Inches.of(19.5);
+        @Getter private Distance L4 = Inches.of(54.5);
+        @Getter private Distance L4Pre = Inches.of(54.5);
+        @Getter private Distance PickUp = Inches.of(0.0);
         @Getter private Distance Jaws = Inches.of(6.0);
 
         @Getter private boolean motionMagicEnabled;
@@ -109,7 +111,12 @@ public class Elevator extends TalonFXMechanism {
         this.config = config;
 
         if (isAttached()) {
+            Timer.delay(0.100);
             motor.setPosition(0);
+            motor.setNeutralMode(NeutralModeValue.Brake);
+            for (var follower : followerMotors) {
+                follower.setNeutralMode(NeutralModeValue.Brake);
+            }
         }
 
         SmartDashboard.putNumber("Elevator/Voltage Up Command", 1.55);

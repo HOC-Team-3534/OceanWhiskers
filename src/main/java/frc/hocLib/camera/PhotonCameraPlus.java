@@ -9,8 +9,9 @@ import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
@@ -33,6 +34,8 @@ public class PhotonCameraPlus {
 
     @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
     @Getter private Optional<Distance> latestFwdToTag = Optional.empty();
+    @Getter private Optional<Angle> latestAngleToTag = Optional.empty();
+    private Timer latestTimer = new Timer();
 
     // The field from AprilTagFields will be different depending on the game.
     static AprilTagFieldLayout aprilTagFieldLayout =
@@ -62,9 +65,11 @@ public class PhotonCameraPlus {
     }
 
     private PoseStrategy calculateCurrentPoseStrategy() {
-        return DriverStation.isFMSAttached()
-                ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
-                : PoseStrategy.LOWEST_AMBIGUITY;
+        // return DriverStation.isFMSAttached()
+        //         ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
+        //         : PoseStrategy.LOWEST_AMBIGUITY;
+
+        return PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
     }
 
     private PhotonPoseEstimator createPoseEstimator() {
@@ -75,6 +80,14 @@ public class PhotonCameraPlus {
     public void update() {
         if (!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())) {
             poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
+        }
+
+        if (latestTimer.hasElapsed(0.250)) {
+            latestLeftPostiveToTag = Optional.empty();
+            latestFwdToTag = Optional.empty();
+            latestAngleToTag = Optional.empty();
+            latestTimer.reset();
+            latestTimer.stop();
         }
 
         var results = camera.getAllUnreadResults();
@@ -127,21 +140,37 @@ public class PhotonCameraPlus {
                         var targetPose =
                                 aprilTagFieldLayout.getTagPose(estmt.targetsUsed.get(0).fiducialId);
 
-                        latestLeftPostiveToTag =
-                                targetPose.map(
-                                        tp ->
-                                                estmt.estimatedPose
-                                                        .toPose2d()
-                                                        .minus(tp.toPose2d())
-                                                        .getMeasureY());
+                        if (estmt.targetsUsed.get(0).area > 0.3) {
 
-                        latestFwdToTag =
-                                targetPose.map(
-                                        tp ->
-                                                estmt.estimatedPose
-                                                        .toPose2d()
-                                                        .minus(tp.toPose2d())
-                                                        .getMeasureX());
+                            latestTimer.restart();
+
+                            latestLeftPostiveToTag =
+                                    targetPose.map(
+                                            tp ->
+                                                    estmt.estimatedPose
+                                                            .toPose2d()
+                                                            .minus(tp.toPose2d())
+                                                            .getMeasureY());
+
+                            latestFwdToTag =
+                                    targetPose.map(
+                                            tp ->
+                                                    estmt.estimatedPose
+                                                            .toPose2d()
+                                                            .minus(tp.toPose2d())
+                                                            .getMeasureX());
+
+                            latestAngleToTag =
+                                    targetPose.map(
+                                            tp ->
+                                                    tp.getRotation()
+                                                            .getMeasureZ()
+                                                            .plus(Degrees.of(180))
+                                                            .minus(
+                                                                    estmt.estimatedPose
+                                                                            .getRotation()
+                                                                            .getMeasureZ()));
+                        }
                     });
         }
     }

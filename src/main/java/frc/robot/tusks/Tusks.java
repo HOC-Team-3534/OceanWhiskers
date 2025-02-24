@@ -33,14 +33,14 @@ public class Tusks extends TalonSRXMechanism {
     public static class TusksConfig extends TalonSRXMechanism.Config {
         @Getter private boolean motionProfilingEnabled;
 
-        @Getter private Angle up = Degrees.of(95);
-        @Getter private Angle pickup = Degrees.of(45);
-        @Getter private Angle preDeploy = Degrees.of(50);
+        @Getter private Angle up = Degrees.of(91);
+        @Getter private Angle pickup = Degrees.of(40);
+        @Getter private Angle preDeploy = Degrees.of(40);
         @Getter private Angle l4Deploy = Degrees.of(-45);
-        @Getter private Angle l2l3Deploy = Degrees.of(-15);
-        @Getter private Angle l1Deploy = Degrees.of(-15);
+        @Getter private Angle l2l3Deploy = Degrees.of(-35);
+        @Getter private Angle l1Deploy = Degrees.of(-30);
 
-        @Getter private double kP = 0.5;
+        @Getter private double kP = 1.0;
 
         @Getter private double kI = 0.0;
         @Getter private double kD = 0.0;
@@ -55,7 +55,7 @@ public class Tusks extends TalonSRXMechanism {
 
         @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.74, 0.16, 0.87, 0.002);
 
-        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.44, 0.91, 0.87, 0.01);
+        @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.44, 0.75, 0.87, 0.01);
 
         // profile in rotations while ff in radians
         @Getter @Setter
@@ -109,15 +109,15 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        if(profile.getGoal().gt(Degrees.of(80)) && getVelocity().lt(DegreesPerSecond.of(0.5))){
-            if(stillTimer.hasElapsed(0.25)){
-                if(getPosition().lt(Degrees.of(85.0))){
+        if (profile.getGoal().gt(Degrees.of(80)) && getVelocity().lt(DegreesPerSecond.of(0.5))) {
+            if (stillTimer.hasElapsed(0.25)) {
+                if (getPosition().lt(Degrees.of(88.0))) {
                     state.setHoldingCoral(true);
-                }else{
+                } else {
                     state.setHoldingCoral(false);
                 }
             }
-        }else{
+        } else {
             stillTimer.restart();
         }
 
@@ -146,11 +146,15 @@ public class Tusks extends TalonSRXMechanism {
     }
 
     public Command pickup() {
-        return goToAngle(config.pickup).alongWith(run(()-> {
-            if(getPosition().isNear(config.pickup, Degrees.of(2))){
-                state.setHoldingCoral(true);
-            }
-        }));
+        return goToAngle(config.pickup)
+                .alongWith(
+                        Commands.run(
+                                () -> {
+                                    if (getVelocity().lt(DegreesPerSecond.zero())
+                                            && getError().gt(Degrees.of(3.0))) {
+                                        state.setHoldingCoral(true);
+                                    }
+                                }));
     }
 
     public Command preDeploy() {
@@ -159,33 +163,33 @@ public class Tusks extends TalonSRXMechanism {
 
     public Command deployl4() {
         return Commands.deadline(
-                        Commands.waitUntil(
-                                        () -> getPosition().isNear(config.l4Deploy, Degrees.one()))
-                                .andThen(Commands.waitSeconds(0.5)),
-                        goToAngle(config.l4Deploy))
-                .andThen(
-                        Commands.deadline(
-                                goToAngle(Degrees.of(15))
-                                        .until(
-                                                () ->
-                                                        getPosition()
-                                                                .isNear(
-                                                                        Degrees.of(15),
-                                                                        Degrees.one())),
-                                Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false))));
+                Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(5.0)))
+                        .andThen(Commands.waitSeconds(0.5)),
+                goToAngle(config.l4Deploy),
+                Commands.startEnd(
+                        () -> profile.setForceNoCoralFF(true),
+                        () -> {
+                            state.setHoldingCoral(false);
+                            profile.setForceNoCoralFF(false);
+                        }));
     }
 
     public Command deployl2l3() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.one()))
+                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(5.0)))
                         .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l2l3Deploy),
-                Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
+                Commands.startEnd(
+                        () -> profile.setForceNoCoralFF(true),
+                        () -> {
+                            state.setHoldingCoral(false);
+                            profile.setForceNoCoralFF(false);
+                        }));
     }
 
     public Command deployl1() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.one()))
+                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.of(5.0)))
                         .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l1Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
@@ -220,8 +224,8 @@ public class Tusks extends TalonSRXMechanism {
 
     @Override
     protected void setVoltageOut(Voltage voltage) {
-        if (getPosition().gt(Degrees.of(85))) voltage = Volts.of(Math.min(voltage.in(Volts), 0.0));
-        if (getPosition().lt(Degrees.of(-10))) voltage = Volts.of(Math.max(voltage.in(Volts), 0.0));
+        if (getPosition().gt(Degrees.of(90))) voltage = Volts.of(Math.min(voltage.in(Volts), 0.0));
+        if (getPosition().lt(Degrees.of(-75))) voltage = Volts.of(Math.max(voltage.in(Volts), 0.0));
         super.setVoltageOut(voltage);
     }
 
@@ -239,6 +243,7 @@ public class Tusks extends TalonSRXMechanism {
 
     public class MotionProfileCalculator {
         final ProfiledPIDController pid;
+        @Getter @Setter private boolean forceNoCoralFF;
 
         public MotionProfileCalculator() {
             pid =
@@ -267,7 +272,7 @@ public class Tusks extends TalonSRXMechanism {
         private ArmFeedforward prev_ff = config.getFf_withCoral();
 
         ArmFeedforward getCurrentFF() {
-            var ff = (state.isHoldingCoral()) ? config.getFf_withCoral() : config.getFf_noCoral();
+            var ff = (!state.isHoldingCoral()) ? config.getFf_noCoral() : config.getFf_withCoral();
             if (prev_ff != ff) {
                 var goal = profile.getGoal();
                 profile.reset();
@@ -291,7 +296,7 @@ public class Tusks extends TalonSRXMechanism {
 
         Voltage calculate() {
             var pidOutput =
-                    pid.calculate(getPosition().in(Radians)) * (state.isHoldingCoral() ? 2 : 1);
+                    pid.calculate(getPosition().in(Radians)) * (state.isHoldingCoral() ? 1 : 1);
             var ff = getFF();
             return ff.plus(Volts.of(pidOutput));
         }
@@ -301,7 +306,7 @@ public class Tusks extends TalonSRXMechanism {
         @Getter @Setter private boolean holdingCoral;
 
         public boolean isReadyToDeploy() {
-            return getPosition().minus(Degrees.of(3.0)).lt(config.getPreDeploy());
+            return getPosition().minus(Degrees.of(6.0)).lt(config.getPreDeploy());
         }
     }
 

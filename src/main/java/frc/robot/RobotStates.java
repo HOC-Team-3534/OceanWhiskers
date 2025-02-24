@@ -37,9 +37,9 @@ public class RobotStates {
     public static final Trigger AlignedWithReef =
             new Trigger(
                     () ->
-                            Robot.getVisionSystem()
+                            Robot.getAuton()
                                             .getDistanceToAlignFwd()
-                                            .map(dist -> dist.lt(Inches.of(0.2)))
+                                            .map(dist -> dist.lt(Inches.of(0.5)))
                                             .orElse(false)
                                     && Robot.getVisionSystem()
                                             .getDistanceToAlignLeftPositive()
@@ -129,8 +129,9 @@ public class RobotStates {
             codriver.PickupCoralRight_RT.or(isAutonTusksPickupSide(Tusks.Side.Right));
 
     public static final Trigger Deploy =
-            (ElevatorReadyToDeploy.and(TusksReadyToDeploy))
-                    .and(codriver.Deploy_LS.or(AlignedWithReef));
+            ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
+                            .and(codriver.Deploy_LS.or(AlignedWithReef)))
+                    .debounce(0.15);
 
     public static final Trigger GoToL3Algae = Trigger.kFalse;
     public static final Trigger GoToL2Algae = Trigger.kFalse;
