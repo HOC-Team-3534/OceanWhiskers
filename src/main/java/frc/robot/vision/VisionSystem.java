@@ -13,12 +13,15 @@ import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.util.CachedValue;
+import frc.reefscape.FieldAndTags2025;
+import frc.robot.Robot;
 import java.util.Optional;
 import lombok.Setter;
+import org.photonvision.simulation.VisionSystemSim;
 
 public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
-        @Setter private Distance frontXOffset = Inches.of(20.5 / 2);
+        @Setter private Distance frontXOffset = Inches.of((20.5 / 2));
         @Setter private Distance frontYOffset = Inches.of(20.0 / 2);
         @Setter private Distance rearXOffset = Inches.of(20.5 / 2);
         @Setter private Distance rearYOffset = Inches.of(20.5 / 2);
@@ -28,7 +31,7 @@ public class VisionSystem extends HocSubsystem {
         @Setter private Angle rl_yaw = Degrees.of(135);
         @Setter private Angle rr_yaw = Degrees.of(-135);
 
-        @Setter private Distance cameraHeightOffGround = Inches.of(10.75);
+        @Setter private Distance cameraHeightOffGround = Inches.of(Robot.isReal() ? 10.75 : 13.0);
         @Setter private Angle cameraPitch = Degrees.of(15.0);
 
         public VisionConfig() {
@@ -71,6 +74,8 @@ public class VisionSystem extends HocSubsystem {
 
     private final CachedValue<Optional<Angle>> cachedAngleToAlign;
 
+    private final VisionSystemSim visionSim = new VisionSystemSim("main");
+
     public VisionSystem(VisionConfig config) {
         super(config);
         this.config = config;
@@ -86,6 +91,13 @@ public class VisionSystem extends HocSubsystem {
         cachedDistanceToAlignFwd = new CachedValue<>(this::updateDistanceToAlignFwd);
 
         cachedAngleToAlign = new CachedValue<>(this::updateAngleToAlign);
+
+        visionSim.addAprilTags(FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT);
+
+        fl_camera.addToVisionSim(visionSim);
+        fr_camera.addToVisionSim(visionSim);
+        rl_camera.addToVisionSim(visionSim);
+        rr_camera.addToVisionSim(visionSim);
     }
 
     @Override
@@ -100,15 +112,49 @@ public class VisionSystem extends HocSubsystem {
         }
     }
 
+    @Override
+    public void simulationPeriodic() {
+        visionSim.update(Robot.getSwerve().getState().Pose);
+    }
+
     public Optional<Distance> getDistanceToAlignLeftPositive() {
         return cachedDistanceToAlignLeftPositive.get();
+    }
+
+    public Optional<Integer> getAlignTagId() {
+        var fromLeft = fl_camera.getLatestTagId();
+        var fromRight = fr_camera.getLatestTagId();
+
+        if (fromLeft == fromRight) return Optional.of(fromLeft);
+
+        if (fl_camera.getLatestFwdToTag().isPresent()) return Optional.of(fromLeft);
+
+        if (fr_camera.getLatestFwdToTag().isPresent()) return Optional.of(fromRight);
+
+        return Optional.empty();
     }
 
     private Optional<Distance> updateDistanceToAlignLeftPositive() {
         var fromLeft = fl_camera.getLatestLeftPostiveToTag();
         var fromRight = fr_camera.getLatestLeftPostiveToTag();
 
-        if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
+        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
+
+        if (fromLeft.isEmpty()) {
+            var dist = fromRight.get().in(Inches);
+            if (Math.abs(dist) > 3.0) {
+                dist = 3.0 * Math.signum(dist);
+            }
+            return Optional.of(Inches.of(dist));
+        }
+
+        if (fromRight.isEmpty()) {
+            var dist = fromLeft.get().in(Inches);
+            if (Math.abs(dist) > 3.0) {
+                dist = 3.0 * Math.signum(dist);
+            }
+            return Optional.of(Inches.of(dist));
+        }
 
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }
@@ -121,7 +167,23 @@ public class VisionSystem extends HocSubsystem {
         var fromLeft = fl_camera.getLatestFwdToTag();
         var fromRight = fr_camera.getLatestFwdToTag();
 
-        if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
+        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
+
+        if (fromLeft.isEmpty()) {
+            var dist = fromRight.get().in(Inches);
+            if (Math.abs(dist) > 3.0) {
+                dist = 3.0 * Math.signum(dist);
+            }
+            return Optional.of(Inches.of(dist));
+        }
+
+        if (fromRight.isEmpty()) {
+            var dist = fromLeft.get().in(Inches);
+            if (Math.abs(dist) > 3.0) {
+                dist = 3.0 * Math.signum(dist);
+            }
+            return Optional.of(Inches.of(dist));
+        }
 
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }
@@ -134,7 +196,23 @@ public class VisionSystem extends HocSubsystem {
         var fromLeft = fl_camera.getLatestAngleToTag();
         var fromRight = fr_camera.getLatestAngleToTag();
 
-        if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
+        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
+
+        if (fromLeft.isEmpty()) {
+            var angle = fromRight.get().in(Degrees);
+            if (Math.abs(angle) > 3.0) {
+                angle = 3.0 * Math.signum(angle);
+            }
+            return Optional.of(Degrees.of(angle));
+        }
+
+        if (fromRight.isEmpty()) {
+            var angle = fromLeft.get().in(Degrees);
+            if (Math.abs(angle) > 3.0) {
+                angle = 3.0 * Math.signum(angle);
+            }
+            return Optional.of(Degrees.of(angle));
+        }
 
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }

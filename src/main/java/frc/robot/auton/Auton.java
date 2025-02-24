@@ -20,6 +20,8 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -88,7 +90,7 @@ public class Auton {
 
         Distance alignFwdTolerance = Inches.of(0.15);
         Distance alignLeftRightTolerance = Inches.of(0.6);
-        Angle alignAngleTolerance = Degrees.of(1.0);
+        Angle alignAngleTolerance = Degrees.of(3);
     }
 
     private Command m_autonomousCommand;
@@ -296,7 +298,14 @@ public class Auton {
 
         @Override
         public Command alignWithGoalPose() {
-            return driveForward(Inches.of(5.0));
+            return swerve.alignLeftRightOnWall(
+                            () -> Optional.of(Inches.of(4.0)),
+                            Inches.one(),
+                            () -> Optional.of(Inches.zero()),
+                            Inches.one(),
+                            () -> Optional.of(Degrees.zero()),
+                            Degrees.one())
+                    .withTimeout(0.5);
         }
     }
 
@@ -348,6 +357,8 @@ public class Auton {
                                             null,
                                             new GoalEndState(0.0, goalPose.getRotation()));
 
+                            if (path.getAllPathPoints().size() < 5) return Commands.none();
+
                             path.preventFlipping = true;
 
                             return AutoBuilder.followPath(path).withName("Auton.Drive Forward");
@@ -368,13 +379,36 @@ public class Auton {
     }
     // DTM
     public Command dtmToHumanPlayerStation() {
-        return followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
-                .andThen(driveForward(Inches.of(5.0)).asProxy());
+        var command =
+                followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
+                        .andThen(driveForward(Inches.of(5.0)).asProxy());
+
+        command.setName("DTM TO PICKUP STATION");
+
+        return command;
     }
 
     public Command dtmToReef() {
-        return followPathToAprilTagID(Auton::findClosestReefID)
-                .andThen(alignLeftRightOnWall().asProxy());
+        var command =
+                followPathToAprilTagID(Auton::findClosestReefID)
+                        .andThen(
+                                alignLeftRightOnWall()
+                                        .asProxy()
+                                        .unless(
+                                                () -> {
+                                                    var closestID = Auton.findClosestReefID();
+                                                    var visionID =
+                                                            Robot.getVisionSystem().getAlignTagId();
+
+                                                    if (closestID.isEmpty() || visionID.isEmpty())
+                                                        return true;
+
+                                                    return !closestID.get().equals(visionID.get());
+                                                }));
+
+        command.setName("DTM TO REEF");
+
+        return command;
     }
 
     public Optional<Pose2d> getDTMToReefGoal() {
@@ -426,6 +460,20 @@ public class Auton {
                                         if (path.getAllPathPoints().size() < 5)
                                             return Commands.none();
 
+                                        var wpilibTrajectory =
+                                                TrajectoryGenerator.generateTrajectory(
+                                                        List.of(startPose, goalPose),
+                                                        new TrajectoryConfig(
+                                                                config.pathConstraints
+                                                                        .maxVelocity(),
+                                                                config.pathConstraints
+                                                                        .maxAcceleration()));
+
+                                        Robot.getSwerve()
+                                                .getField()
+                                                .getObject("DTM Path")
+                                                .setTrajectory(wpilibTrajectory);
+
                                         path.preventFlipping = true;
 
                                         return AutoBuilder.followPath(path);
@@ -465,14 +513,6 @@ public class Auton {
         return goalPose.getTranslation().minus(getPose().getTranslation()).getAngle();
     }
 
-    private static boolean isRobotOnOurSide() {
-        var values = getAllianceValues();
-        if (values.isEmpty()) return false;
-        return values.get()
-                .getDistanceFromAllianceWall(getPose())
-                .lte(FIELD_LENGTH.div(2).plus(Feet.of(1)));
-    }
-
     private static Pose2d getPose() {
         return swerve.getState().Pose;
     }
@@ -497,14 +537,15 @@ public class Auton {
     }
 
     private static Optional<Integer> findClosestHumanPlayerStationID() {
-        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1)) || !isRobotOnOurSide())
-            return Optional.empty();
+        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1))
+                || !isRobotOnOurSide(getPose())) return Optional.empty();
 
         return SideOfField.getCurrentSide(getPose()).flatMap(SideOfField::getPickUpID);
     }
 
-    private static Optional<Integer> findClosestReefID() {
-        if (!isRobotOnOurSide() || getAllianceReefTags().isEmpty()) return Optional.empty();
+    public static Optional<Integer> findClosestReefID() {
+        if (!isRobotOnOurSide(getPose()) || getAllianceReefTags().isEmpty())
+            return Optional.empty();
 
         return Optional.of(
                 getAllianceReefTags().stream()

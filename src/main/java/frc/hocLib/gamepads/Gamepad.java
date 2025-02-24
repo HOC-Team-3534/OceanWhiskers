@@ -3,8 +3,6 @@ package frc.hocLib.gamepads;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.Alert;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -266,7 +264,7 @@ public abstract class Gamepad extends HocSubsystem {
      */
     public double chooseCardinalDirections() {
         // hotfix
-        if (DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue) {
+        if (Util.isRedAlliance()) {
             return getRedAllianceStickCardinals();
         }
         return getBlueAllianceStickCardinals();

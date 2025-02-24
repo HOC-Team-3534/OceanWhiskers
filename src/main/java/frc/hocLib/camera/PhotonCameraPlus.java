@@ -1,17 +1,19 @@
 package frc.hocLib.camera;
 
 import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
 
 import com.ctre.phoenix6.Utils;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.swerve.Swerve;
@@ -22,6 +24,9 @@ import lombok.experimental.Delegate;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
+import org.photonvision.simulation.PhotonCameraSim;
+import org.photonvision.simulation.SimCameraProperties;
+import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraPlus {
@@ -35,7 +40,7 @@ public class PhotonCameraPlus {
     @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
     @Getter private Optional<Distance> latestFwdToTag = Optional.empty();
     @Getter private Optional<Angle> latestAngleToTag = Optional.empty();
-    private Timer latestTimer = new Timer();
+    @Getter private int latestTagId = 0;
 
     // The field from AprilTagFields will be different depending on the game.
     static AprilTagFieldLayout aprilTagFieldLayout =
@@ -45,8 +50,16 @@ public class PhotonCameraPlus {
 
     static HashSet<Integer> HIGH_TAGS = new HashSet<>();
 
+    private final SimCameraProperties cameraProp = new SimCameraProperties();
+    private final PhotonCameraSim cameraSim;
+
     public PhotonCameraPlus(String name, Transform3d robotToCamera) {
         camera = new PhotonCamera(name);
+
+        cameraProp.setFPS(90);
+        cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
+
+        cameraSim = new PhotonCameraSim(camera, cameraProp);
 
         this.robotToCamera = robotToCamera;
 
@@ -62,6 +75,10 @@ public class PhotonCameraPlus {
         HIGH_TAGS.add(2);
         HIGH_TAGS.add(12);
         HIGH_TAGS.add(13);
+    }
+
+    public void addToVisionSim(VisionSystemSim visionSim) {
+        visionSim.addCamera(cameraSim, robotToCamera);
     }
 
     private PoseStrategy calculateCurrentPoseStrategy() {
@@ -82,14 +99,6 @@ public class PhotonCameraPlus {
             poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
         }
 
-        if (latestTimer.hasElapsed(0.250)) {
-            latestLeftPostiveToTag = Optional.empty();
-            latestFwdToTag = Optional.empty();
-            latestAngleToTag = Optional.empty();
-            latestTimer.reset();
-            latestTimer.stop();
-        }
-
         var results = camera.getAllUnreadResults();
 
         // TODO: validate isConnected is updating properly and catching connection issues
@@ -97,8 +106,6 @@ public class PhotonCameraPlus {
 
         for (var result : results) {
             var estimate = poseEstimator.update(result);
-
-            logTrackedTarget(result.getBestTarget());
 
             estimate.ifPresent(
                     estmt -> {
@@ -137,40 +144,59 @@ public class PhotonCameraPlus {
                                 Utils.fpgaToCurrentTime(estmt.timestampSeconds),
                                 visionMeasurementStdDevs);
 
-                        var targetPose =
-                                aprilTagFieldLayout.getTagPose(estmt.targetsUsed.get(0).fiducialId);
+                        var largestTag =
+                                estmt.targetsUsed.stream()
+                                        .max((tag1, tag2) -> (int) (tag1.area - tag2.area * 1000));
 
-                        if (estmt.targetsUsed.get(0).area > 0.3) {
+                        SmartDashboard.putNumber(
+                                "Largest Tag Area", largestTag.map((tg) -> tg.area).orElse(0.0));
 
-                            latestTimer.restart();
+                        var closeUpAlignmentTarget =
+                                estmt.targetsUsed.stream()
+                                        .filter((tg) -> tg.area > 0.01)
+                                        .filter(
+                                                (tg) ->
+                                                        tg.bestCameraToTarget
+                                                                        .getTranslation()
+                                                                        .toTranslation2d()
+                                                                        .getNorm()
+                                                                < Feet.of(3.0).in(Meters))
+                                        .max(
+                                                (tag1, tag2) ->
+                                                        (int) ((tag1.area - tag2.area) * 1000));
 
-                            latestLeftPostiveToTag =
-                                    targetPose.map(
-                                            tp ->
-                                                    estmt.estimatedPose
-                                                            .toPose2d()
-                                                            .minus(tp.toPose2d())
-                                                            .getMeasureY());
+                        closeUpAlignmentTarget.ifPresent(target -> logTrackedTarget(target));
 
-                            latestFwdToTag =
-                                    targetPose.map(
-                                            tp ->
-                                                    estmt.estimatedPose
-                                                            .toPose2d()
-                                                            .minus(tp.toPose2d())
-                                                            .getMeasureX());
+                        latestTagId = closeUpAlignmentTarget.map(tag -> tag.fiducialId).orElse(0);
 
-                            latestAngleToTag =
-                                    targetPose.map(
-                                            tp ->
-                                                    tp.getRotation()
-                                                            .getMeasureZ()
-                                                            .plus(Degrees.of(180))
-                                                            .minus(
-                                                                    estmt.estimatedPose
-                                                                            .getRotation()
-                                                                            .getMeasureZ()));
-                        }
+                        var targetPose = aprilTagFieldLayout.getTagPose(latestTagId);
+
+                        latestLeftPostiveToTag =
+                                targetPose.map(
+                                        tp ->
+                                                estmt.estimatedPose
+                                                        .toPose2d()
+                                                        .minus(tp.toPose2d())
+                                                        .getMeasureY());
+
+                        latestFwdToTag =
+                                targetPose.map(
+                                        tp ->
+                                                estmt.estimatedPose
+                                                        .toPose2d()
+                                                        .minus(tp.toPose2d())
+                                                        .getMeasureX());
+
+                        latestAngleToTag =
+                                targetPose.map(
+                                        tp ->
+                                                tp.getRotation()
+                                                        .getMeasureZ()
+                                                        .plus(Degrees.of(180))
+                                                        .minus(
+                                                                estmt.estimatedPose
+                                                                        .getRotation()
+                                                                        .getMeasureZ()));
                     });
         }
     }

@@ -197,6 +197,11 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
+            SmartDashboard.putNumber("Closest Reef Tag ID", Auton.findClosestReefID().orElse(0));
+
+            SmartDashboard.putNumber(
+                    "Vision Align Tag ID", Robot.getVisionSystem().getAlignTagId().orElse(0));
+
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
             // intercept error and log it

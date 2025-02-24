@@ -1,6 +1,8 @@
 /** Special thanks to FRC team 3847 */
 package frc.hocLib.util;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import java.util.List;
@@ -79,4 +81,10 @@ public class Util {
     public static final Trigger testMode = new Trigger(DriverStation::isTestEnabled);
     public static final Trigger disabled = new Trigger(DriverStation::isDisabled);
     public static final Trigger dsAttached = new Trigger(DriverStation::isDSAttached);
+
+    static final NetworkTable fmsInfo = NetworkTableInstance.getDefault().getTable("FMSInfo");
+
+    public static boolean isRedAlliance() {
+        return fmsInfo.getEntry("IsRedAlliance").getBoolean(false);
+    }
 }

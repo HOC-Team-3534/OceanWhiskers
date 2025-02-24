@@ -5,6 +5,7 @@ import static edu.wpi.first.units.Units.Inches;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.util.Util;
+import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.auton.Auton;
 import frc.robot.codriver.Codriver;
@@ -149,8 +150,12 @@ public class RobotStates {
             new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();
 
     public static void setupStates() {
-        driver.DTMToReef_A.whileTrue(auton.dtmToReef());
-        driver.DTMToHumanPlayerStation_B.whileTrue(auton.dtmToHumanPlayerStation());
+        driver.DTMToReef_A.and(
+                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose))
+                .whileTrue(auton.dtmToReef());
+        driver.DTMToHumanPlayerStation_B.and(
+                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose))
+                .whileTrue(auton.dtmToHumanPlayerStation());
     }
 
     private RobotStates() {

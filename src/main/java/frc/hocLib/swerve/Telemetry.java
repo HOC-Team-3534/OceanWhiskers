@@ -9,7 +9,6 @@ import edu.wpi.first.networktables.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
-import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,9 +119,6 @@ public class Telemetry {
     public void telemeterize(SwerveDriveState state) {
         /* Telemeterize the pose */
         m_field.setRobotPose(state.Pose);
-
-        m_field.getObject("Goal Reef Pose")
-                .setPose(Robot.getAuton().getDTMToReefGoal().orElse(new Pose2d()));
 
         /* Telemeterize the robot's general speeds */
         double currentTime = Utils.getCurrentTimeSeconds();

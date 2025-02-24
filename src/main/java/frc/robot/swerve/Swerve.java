@@ -1,7 +1,6 @@
 package frc.robot.swerve;
 
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -23,6 +22,7 @@ import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
@@ -32,8 +32,6 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -42,8 +40,10 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.characterization.FeedForwardCharacterizer;
 import frc.hocLib.swerve.CustomSwerveRequest;
 import frc.hocLib.swerve.Telemetry;
+import frc.hocLib.util.Util;
 import java.util.Optional;
 import java.util.function.Supplier;
+import lombok.Getter;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -68,6 +68,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     private final SwerveConfig config;
 
+    @Getter private final RobotConfig pathPlannerRobotConfig;
+
     /**
      * Constructs a CTRE SwerveDrivetrain using the specified constants.
      *
@@ -89,6 +91,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
         var pathPlannerConfig = loadRobotConfig();
 
+        if (pathPlannerConfig.isEmpty())
+            throw new RuntimeException("Unable to load Robot Config from pathPlanner");
+
         pathPlannerConfig.ifPresent(
                 cfg ->
                         AutoBuilder.configure(
@@ -100,11 +105,10 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                         new PIDConstants(8.0, 0.0, 0.0),
                                         new PIDConstants(3.0, 0.0, 0.0)),
                                 cfg,
-                                () ->
-                                        DriverStation.getAlliance()
-                                                .map(alliance -> alliance.equals(Alliance.Red))
-                                                .orElse(false),
+                                () -> Util.isRedAlliance(),
                                 this));
+
+        pathPlannerRobotConfig = pathPlannerConfig.get();
 
         logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
 
@@ -166,7 +170,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 new Translation2d(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond)
                         .rotateBy(getPose().getRotation());
 
-        if (vector.getNorm() < 0.05) return Optional.empty();
+        if (vector.getNorm() < 0.1) return Optional.empty();
 
         return Optional.of(vector.getAngle());
     }
@@ -180,15 +184,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
      */
     void keepOperatorPerspectiveUpdated() {
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
-            DriverStation.getAlliance()
-                    .ifPresent(
-                            allianceColor -> {
-                                setOperatorPerspectiveForward(
-                                        allianceColor == Alliance.Red
-                                                ? Rotation2d.k180deg
-                                                : Rotation2d.kZero);
-                                m_hasAppliedOperatorPerspective = true;
-                            });
+            setOperatorPerspectiveForward(
+                    Util.isRedAlliance() ? Rotation2d.k180deg : Rotation2d.kZero);
+            m_hasAppliedOperatorPerspective = true;
         }
     }
 
@@ -266,88 +264,93 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             Angle ccwErrorTolerance) {
         var command =
                 new Command() {
-                    private PIDController leftRightPID, fwdPID;
-                    // private ProfiledPIDController omegaPID;
-                    private Timer timer = new Timer();
-
-                    // private boolean omegaGood;
+                    private HolonomicDriveController holonomicDriveController;
+                    private Rotation2d targetRotation;
 
                     @Override
                     public void initialize() {
-                        leftRightPID = new PIDController(6.5, 0.0, 0.0);
-                        fwdPID = new PIDController(6.0, 0.0, 0.0);
-                        // omegaPID =
-                        //         new ProfiledPIDController(
-                        //                 6.0,
-                        //                 0.0,
-                        //                 0.0,
-                        //                 new TrapezoidProfile.Constraints(
-                        //                         0.75 * Math.PI * 2, 4 * Math.PI * 2));
-                        // omegaPID.setGoal(
-                        //         ccwPositiveError
-                        //                 .get()
-                        //                 .map(
-                        //                         error ->
-                        //                                 error.plus(
-                        //                                         getPose()
-                        //                                                 .getRotation()
-                        //                                                 .getMeasure()))
-                        //                 .orElse(getPose().getRotation().getMeasure())
-                        //                 .in(Radians));
-                        leftRightPID.setTolerance(errorTolerance.in(Meters));
-                        fwdPID.setTolerance(fwdErrorTolerance.in(Meters));
-                        // omegaPID.setTolerance(ccwErrorTolerance.in(Radians));
-                        timer.restart();
-                        // omegaGood = false;
+                        holonomicDriveController =
+                                new HolonomicDriveController(
+                                        new PIDController(10.0, 0.0, 0.0),
+                                        new PIDController(10.0, 0.0, 0.0),
+                                        new ProfiledPIDController(
+                                                3.0,
+                                                0.0,
+                                                0.0,
+                                                new TrapezoidProfile.Constraints(
+                                                        config.getKMaxAngularRate()
+                                                                .in(RadiansPerSecond),
+                                                        config.getKMaxAngularRate()
+                                                                        .in(RadiansPerSecond)
+                                                                * 0.75)));
+                        holonomicDriveController.setTolerance(
+                                new Pose2d(
+                                        fwdErrorTolerance.in(Meters),
+                                        errorTolerance.in(Meters),
+                                        new Rotation2d(ccwErrorTolerance)));
+
+                        targetRotation =
+                                ccwPositiveError
+                                        .get()
+                                        .map(
+                                                error ->
+                                                        new Rotation2d(
+                                                                error.plus(
+                                                                        getPose()
+                                                                                .getRotation()
+                                                                                .getMeasure())))
+                                        .orElse(getPose().getRotation());
                     }
 
                     @Override
                     public void execute() {
-                        // var omegaError = ccwPositiveError.get();
-                        // var omegaOutput = 0.0;
-                        // if (omegaError.isPresent() && !omegaGood) {
-                        //     omegaOutput =
-                        //             omegaPID.calculate(
-                        //                     getPose().getRotation().getMeasure().in(Radians));
-                        //     if (omegaPID.atSetpoint()) {
-                        //         omegaOutput = 0.0;
-                        //         omegaGood = true;
-                        //     }
-                        // }
+                        var vyError =
+                                leftPositiveError
+                                        .get()
+                                        .map(
+                                                error ->
+                                                        error.isNear(Meters.zero(), errorTolerance)
+                                                                ? Meters.zero()
+                                                                : error.isNear(
+                                                                                Meters.zero(),
+                                                                                Inches.of(4.0))
+                                                                        ? error
+                                                                        : Inches.of(
+                                                                                4.0
+                                                                                        * Math
+                                                                                                .signum(
+                                                                                                        error
+                                                                                                                .baseUnitMagnitude())))
+                                        .orElse(Meters.zero());
+                        var vxError =
+                                fwdError.get()
+                                        .map(
+                                                error ->
+                                                        vyError.isNear(
+                                                                        Meters.zero(),
+                                                                        Inches.of(2.0))
+                                                                ? error.isNear(
+                                                                                Meters.zero(),
+                                                                                Inches.of(4.0))
+                                                                        ? error
+                                                                        : Inches.of(
+                                                                                4.0
+                                                                                        * Math
+                                                                                                .signum(
+                                                                                                        error
+                                                                                                                .baseUnitMagnitude()))
+                                                                : Meters.zero())
+                                        .orElse(Meters.zero());
 
-                        var vyError = leftPositiveError.get();
-                        var vyOutput = 0.0;
-                        if (vyError.isPresent()) {
-                            leftRightPID.setSetpoint(vyError.get().in(Meters));
-                            vyOutput = leftRightPID.calculate(0.0);
-
-                            if (Math.abs(vyOutput) > 0.25) {
-                                vyOutput = 0.25 * Math.signum(vyOutput);
-                            }
-                            if (vyError.get().isNear(Inches.zero(), Inches.of(2.0))) {
-                                vyOutput =
-                                        InchesPerSecond.of(3.5).in(MetersPerSecond)
-                                                * Math.signum(vyError.get().in(Inches));
-                            }
-                            if (leftRightPID.atSetpoint()) {
-                                vyOutput = 0.0;
-                            }
-                        }
-
-                        var vxError = fwdError.get();
-                        var vxOutput = 0.0;
-                        if (vxError.isPresent() && Math.abs(vyOutput) < 0.04) {
-                            fwdPID.setSetpoint(vxError.get().in(Meters));
-                            vxOutput = fwdPID.calculate(0.0);
-                            if (fwdPID.atSetpoint()) {
-                                vxOutput = 0.0;
-                            }
-                            if (Math.abs(vxOutput) > 0.3) {
-                                vxOutput = 0.3 * Math.signum(vxOutput);
-                            }
-                        }
-
-                        driveWithSpeeds(new ChassisSpeeds(vxOutput, vyOutput, 0.0));
+                        driveWithSpeeds(
+                                holonomicDriveController.calculate(
+                                        getPose(),
+                                        getPose()
+                                                .plus(
+                                                        new Transform2d(
+                                                                vxError, vyError, targetRotation)),
+                                        0.0,
+                                        targetRotation));
                     }
 
                     @Override
@@ -358,15 +361,16 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     @Override
                     public boolean isFinished() {
                         return fwdError.get().isPresent()
-                                && fwdPID.atSetpoint()
                                 && leftPositiveError.get().isPresent()
-                                && leftRightPID.atSetpoint()
+                                && holonomicDriveController.atReference()
                                 && Math.abs(getState().Speeds.vxMetersPerSecond) < 0.0025
                                 && Math.abs(getState().Speeds.vyMetersPerSecond) < 0.0025;
                     }
                 };
 
         command.addRequirements(this);
+
+        command.setName("Precise Alignment");
 
         return command;
     }

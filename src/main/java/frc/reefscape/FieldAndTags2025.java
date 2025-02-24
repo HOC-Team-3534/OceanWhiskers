@@ -1,5 +1,6 @@
 package frc.reefscape;
 
+import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.apriltag.AprilTag;
@@ -9,6 +10,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.hocLib.util.Util;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -93,8 +95,7 @@ public final class FieldAndTags2025 {
         }
 
         public Optional<Integer> getID() {
-            return DriverStation.getAlliance()
-                    .map(alliance -> alliance.equals(Alliance.Red) ? redID : blueID);
+            return Optional.of(Util.isRedAlliance() ? redID : blueID);
         }
     }
 
@@ -123,7 +124,8 @@ public final class FieldAndTags2025 {
     }
 
     public static Optional<AllianceValues> getAllianceValues() {
-        return DriverStation.getAlliance().map(AllianceValues::fromAlliance);
+        return Optional.of(
+                AllianceValues.fromAlliance(Util.isRedAlliance() ? Alliance.Red : Alliance.Blue));
     }
 
     public enum SideOfField {
@@ -151,12 +153,18 @@ public final class FieldAndTags2025 {
     }
 
     public static List<AprilTag> getAllianceReefTags() {
-        return DriverStation.getAlliance()
-                .map(
-                        alliance ->
-                                alliance.equals(Alliance.Red)
-                                        ? RED_REEF_APRIL_TAGS
-                                        : BLUE_REEF_APRIL_TAGS)
-                .orElse(List.of());
+        return Util.isRedAlliance() ? RED_REEF_APRIL_TAGS : BLUE_REEF_APRIL_TAGS;
+    }
+
+    public static boolean isRobotOnOurSide(Pose2d robotPose2d) {
+        return isRobotOnOurSide(robotPose2d, Feet.of(1));
+    }
+
+    public static boolean isRobotOnOurSide(Pose2d robotPose, Distance tolerance) {
+        var values = getAllianceValues();
+        if (values.isEmpty()) return false;
+        return values.get()
+                .getDistanceFromAllianceWall(robotPose)
+                .lte(FIELD_LENGTH.div(2).plus(tolerance));
     }
 }
