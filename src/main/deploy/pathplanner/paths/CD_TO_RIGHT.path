@@ -3,13 +3,13 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 3.7742424242424244,
-        "y": 2.9069444444444446
+        "x": 3.8240778688524584,
+        "y": 2.8801741803278684
       },
       "prevControl": null,
       "nextControl": {
-        "x": 2.056147529975439,
-        "y": 2.458569615109057
+        "x": 2.105982974585473,
+        "y": 2.4317993509924807
       },
       "isLocked": false,
       "linkedName": "CD"
@@ -40,8 +40,8 @@
     }
   ],
   "globalConstraints": {
-    "maxVelocity": 1.5,
-    "maxAcceleration": 0.5,
+    "maxVelocity": 4.0,
+    "maxAcceleration": 3.0,
     "maxAngularVelocity": 540.0,
     "maxAngularAcceleration": 720.0,
     "nominalVoltage": 12.0,

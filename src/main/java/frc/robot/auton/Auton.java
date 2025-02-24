@@ -32,6 +32,7 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.reefscape.FieldAndTags2025.SideOfField;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 import frc.robot.swerve.Swerve;
 import frc.robot.tusks.Tusks;
 import java.util.ArrayList;
@@ -272,7 +273,7 @@ public class Auton {
 
         @Override
         public Command alignWithGoalPose() {
-            return alignLeftRightOnWall();
+            return alignLeftRightOnWall().until(() -> RobotStates.AlignedWithReef.getAsBoolean());
         }
     }
 

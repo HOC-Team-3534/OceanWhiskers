@@ -14,6 +14,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.FollowPathCommand;
+import com.pathplanner.lib.commands.PathfindingCommand;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
@@ -120,7 +121,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         keepOperatorPerspectiveUpdated();
         if (!warmedUp) {
             var warmup = FollowPathCommand.warmupCommand().withName("Follow Path Warmup");
+            var findingWarmup = PathfindingCommand.warmupCommand().withName("Pathfinding Warmup");
             warmup.schedule();
+            findingWarmup.schedule();
             warmedUp = true;
         }
     }
