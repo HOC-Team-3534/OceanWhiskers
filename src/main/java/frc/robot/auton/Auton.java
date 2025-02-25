@@ -88,7 +88,7 @@ public class Auton {
         Distance skipPathForDTMTolerance = Inches.of(2.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
-        Distance offsetFromWallToCenterDTM = Inches.of(15.2);
+        Distance offsetFromWallToCenterDTM = Inches.of(.2);
 
         Distance alignFwdTolerance = Inches.of(0.15);
         Distance alignLeftRightTolerance = Inches.of(0.6);

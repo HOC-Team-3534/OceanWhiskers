@@ -176,17 +176,11 @@ public class VisionSystem extends HocSubsystem {
 
         if (fromLeft.isEmpty()) {
             var dist = fromRight.get().in(Inches);
-            if (Math.abs(dist) > 3.0) {
-                dist = 3.0 * Math.signum(dist);
-            }
             return Optional.of(Inches.of(dist));
         }
 
         if (fromRight.isEmpty()) {
             var dist = fromLeft.get().in(Inches);
-            if (Math.abs(dist) > 3.0) {
-                dist = 3.0 * Math.signum(dist);
-            }
             return Optional.of(Inches.of(dist));
         }
 

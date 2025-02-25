@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import frc.hocLib.util.CachedValue;
@@ -36,7 +37,7 @@ public class Tusks extends TalonSRXMechanism {
         @Getter private boolean motionProfilingEnabled;
 
         @Getter private Angle up = Degrees.of(91);
-        @Getter private Angle pickup = Degrees.of(40);
+        @Getter private Angle pickup = Degrees.of(52.5);
         @Getter private Angle preDeploy = Degrees.of(40);
         @Getter private Angle l4Deploy = Degrees.of(-45);
         @Getter private Angle l2l3Deploy = Degrees.of(-35);
@@ -63,8 +64,8 @@ public class Tusks extends TalonSRXMechanism {
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
                 new TrapezoidProfile.Constraints(
-                        RotationsPerSecond.of(1.0).in(RadiansPerSecond),
-                        RotationsPerSecondPerSecond.of(4.0).in(RadiansPerSecondPerSecond));
+                        RotationsPerSecond.of(1.5).in(RadiansPerSecond),
+                        RotationsPerSecondPerSecond.of(6.0).in(RadiansPerSecondPerSecond));
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -149,22 +150,28 @@ public class Tusks extends TalonSRXMechanism {
         return goToAngle(config.up);
     }
 
+    private Trigger RobotIsStill =
+            new Trigger(() -> Robot.getSwerve().getRobotDriveDirection().isEmpty()).debounce(0.25);
+
     public Command pickup() {
         return goToAngle(config.pickup)
                 .alongWith(
                         Commands.waitUntil(
                                         () ->
-                                                getPosition().isNear(config.pickup, Degrees.of(5.0))
+                                                getPosition()
+                                                                .isNear(
+                                                                        config.pickup,
+                                                                        Degrees.of(10.0))
                                                         && Math.abs(
                                                                         getVelocity()
                                                                                 .in(
                                                                                         DegreesPerSecond))
-                                                                < 0.75)
+                                                                < 0.25)
                                 .andThen(
                                         Commands.run(
                                                 () -> {
-                                                    if (getVelocity()
-                                                            .lt(DegreesPerSecond.of(1.0))) {
+                                                    if (getVelocity().lt(DegreesPerSecond.of(-3.0))
+                                                            && RobotIsStill.getAsBoolean()) {
                                                         state.setHoldingCoral(true);
                                                     }
                                                 })));
@@ -176,8 +183,8 @@ public class Tusks extends TalonSRXMechanism {
 
     public Command deployl4() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(5.0)))
-                        .andThen(Commands.waitSeconds(1.0)),
+                Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(10.0)))
+                        .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l4Deploy),
                 Commands.startEnd(
                         () -> profile.setForceNoCoralFF(true),
@@ -189,8 +196,8 @@ public class Tusks extends TalonSRXMechanism {
 
     public Command deployl2l3() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(8.0)))
-                        .andThen(Commands.waitSeconds(1.0)),
+                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(10.0)))
+                        .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l2l3Deploy),
                 Commands.startEnd(
                         () -> profile.setForceNoCoralFF(true),
@@ -202,8 +209,8 @@ public class Tusks extends TalonSRXMechanism {
 
     public Command deployl1() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.of(5.0)))
-                        .andThen(Commands.waitSeconds(1.0)),
+                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.of(10.0)))
+                        .andThen(Commands.waitSeconds(0.5)),
                 goToAngle(config.l1Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }

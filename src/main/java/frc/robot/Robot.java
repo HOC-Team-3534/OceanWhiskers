@@ -39,6 +39,7 @@ import frc.robot.tusks.Tusks;
 import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
 import frc.robot.vision.VisionSystem.VisionConfig;
+import java.util.Optional;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
@@ -181,6 +182,10 @@ public class Robot extends HocRobot {
                             .in(Inches));
 
             SmartDashboard.putNumber(
+                    "Vision Distance to Align Fwd (In.)",
+                    getVisionSystem().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
+
+            SmartDashboard.putNumber(
                     "Vision Angle to Align (Deg.)",
                     getVisionSystem().getAngleToAlign().orElse(Degrees.zero()).in(Degrees));
 
@@ -237,6 +242,7 @@ public class Robot extends HocRobot {
 
     @Override
     public void teleopInit() {
+        Auton.setCurrentStep(Optional.empty());
         resetCommandsAndButtons();
     }
 

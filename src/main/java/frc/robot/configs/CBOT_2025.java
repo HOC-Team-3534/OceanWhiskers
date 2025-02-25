@@ -19,7 +19,7 @@ public class CBOT_2025 extends Config {
         this.algaeWheel.setAttached(false);
         this.elevator.setAttached(true);
         this.jaws.setAttached(false);
-        this.lights.setAttached(false);
+        this.lights.setAttached(true);
         this.tusks.setAttached(true);
 
         this.vision.setAttached(true);
