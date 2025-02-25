@@ -118,10 +118,10 @@ public class RobotStates {
         return Auton.isLevel(level).latchWithReset(TusksHoldingCoral.not().or(Util.teleop));
     }
 
-    public static final Trigger GoToL1Coral = codriver.GoToL1_A.or(isAutonLevel(1));
-    public static final Trigger GoToL2Coral = codriver.GoToL2_B.or(isAutonLevel(2));
-    public static final Trigger GoToL3Coral = codriver.GoToL3_X.or(isAutonLevel(3));
-    public static final Trigger GoToL4Coral = codriver.GoToL4_Y.or(isAutonLevel(4));
+    public static final Trigger GoToL1Coral = codriver.GoToL1Coral_A.or(isAutonLevel(1));
+    public static final Trigger GoToL2Coral = codriver.GoToL2Coral_B.or(isAutonLevel(2));
+    public static final Trigger GoToL3Coral = codriver.GoToL3Coral_X.or(isAutonLevel(3));
+    public static final Trigger GoToL4Coral = codriver.GoToL4Coral_Y.or(isAutonLevel(4));
 
     static Trigger isAutonTusksPickupSide(Tusks.Side side) {
         return Auton.isTusksSide(side).latchWithReset(TusksHoldingCoral.or(Util.teleop));
@@ -131,6 +131,9 @@ public class RobotStates {
             codriver.PickupCoralLeft_LT.or(isAutonTusksPickupSide(Tusks.Side.Left));
     public static final Trigger PickupCoralRight =
             codriver.PickupCoralRight_RT.or(isAutonTusksPickupSide(Tusks.Side.Right));
+
+    public static final Trigger PreClimb = codriver.PreClimb_Select;
+    public static final Trigger Climb = codriver.Climb_Start;
 
     public static final Trigger Deploy =
             ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))

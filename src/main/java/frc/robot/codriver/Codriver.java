@@ -13,10 +13,10 @@ public class Codriver extends Gamepad {
 
     public final Trigger UseSysIdOverManual = Trigger.kFalse;
 
-    public final Trigger GoToL1_A = A.and(teleop);
-    public final Trigger GoToL2_B = B.and(teleop);
-    public final Trigger GoToL3_X = X.and(teleop);
-    public final Trigger GoToL4_Y = Y.and(teleop);
+    public final Trigger GoToL1Coral_A = A.and(noFn, teleop);
+    public final Trigger GoToL2Coral_B = B.and(noFn, teleop);
+    public final Trigger GoToL3Coral_X = X.and(noFn, teleop);
+    public final Trigger GoToL4Coral_Y = Y.and(noFn, teleop);
 
     public final Trigger VoltageUp_UDP = upDpad.and(teleop, UseSysIdOverManual.not());
     public final Trigger VoltageDown_DDP = downDpad.and(teleop, UseSysIdOverManual.not());
@@ -30,6 +30,9 @@ public class Codriver extends Gamepad {
 
     public final Trigger PickupCoralLeft_LT = leftTrigger.and(noFn, teleop);
     public final Trigger PickupCoralRight_RT = rightTrigger.and(noFn, teleop);
+
+    public final Trigger PreClimb_Select = select.and(teleop);
+    public final Trigger Climb_Start = start.and(teleop);
 
     public final Trigger RawRT = rightTrigger;
 

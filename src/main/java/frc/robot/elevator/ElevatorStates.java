@@ -32,6 +32,17 @@ public class ElevatorStates {
         GoToL4Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
         GoToL4Coral.and(Deploy).whileTrue(goToLevel(Level.L4));
 
+        PreClimb.whileTrue(goToLevel(Level.PreClimb));
+
+        Climb.and(
+                        () ->
+                                (elevator.getState().isNearTargetHeight()
+                                                && elevator.getState()
+                                                        .getTargetLevel()
+                                                        .equals(Level.PreClimb))
+                                        || elevator.getState().isClimbing())
+                .whileTrue(elevator.climb());
+
         PickupCoralLeft.or(PickupCoralRight).whileTrue(goToLevel(Level.PickUp));
 
         RequestJawsClosed.not()

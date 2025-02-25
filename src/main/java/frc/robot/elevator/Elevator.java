@@ -29,20 +29,23 @@ import lombok.Setter;
 
 public class Elevator extends TalonFXMechanism {
 
+    @Getter
     public static class ElevatorConfig extends Config {
         // TODO: tune heights for each level and pickup height
-        @Getter private Distance L1 = Inches.of(0);
-        @Getter private Distance L1Pre = Inches.of(0);
-        @Getter private Distance L2 = Inches.of(14.5);
-        @Getter private Distance L2Pre = Inches.of(3.5);
-        @Getter private Distance L3 = Inches.of(30.5);
-        @Getter private Distance L3Pre = Inches.of(19.5);
-        @Getter private Distance L4 = Inches.of(54.5);
-        @Getter private Distance L4Pre = Inches.of(54.5);
-        @Getter private Distance PickUp = Inches.of(0.0);
-        @Getter private Distance Jaws = Inches.of(6.0);
+        Distance L1 = Inches.of(0);
+        Distance L1Pre = Inches.of(0);
+        Distance L2 = Inches.of(14.5);
+        Distance L2Pre = Inches.of(3.5);
+        Distance L3 = Inches.of(30.5);
+        Distance L3Pre = Inches.of(19.5);
+        Distance L4 = Inches.of(54.5);
+        Distance L4Pre = Inches.of(54.5);
+        Distance PickUp = Inches.of(0.0);
+        Distance Jaws = Inches.of(6.0);
 
-        @Getter private boolean motionMagicEnabled;
+        @Getter Distance PreClimb = Inches.of(10);
+
+        boolean motionMagicEnabled;
 
         public ElevatorConfig() {
             super("Elevator Leader", 14);
@@ -186,6 +189,8 @@ public class Elevator extends TalonFXMechanism {
 
         if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
 
+        if (state.isClimbing()) return run(() -> setVoltageOut(Volts.zero()));
+
         return startRun(
                         () -> {
                             state.setTargetLevel(level);
@@ -207,8 +212,16 @@ public class Elevator extends TalonFXMechanism {
     // Don't let climbing occur unless the current go to height is already pre climb, or has been
     // pre climb within the last say 5 seconds
 
+    public Command climb() {
+        return startEnd(() -> state.setClimbing(true), () -> setVoltageOut(Volts.of(0)))
+                .until(() -> getHeight().lt(Inches.of(3.0)))
+                .andThen(
+                        runEnd(
+                                () -> setVoltageOut(Volts.of(-1)),
+                                () -> setVoltageOut(Volts.zero())));
+    }
+
     // TODO: add heights for coral deploy, make codriver fn switch between coral and algae height
-    // TODO: add lift height and require lift before retraction or extension of jaws
 
     public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
         switch (direction) {
@@ -257,7 +270,8 @@ public class Elevator extends TalonFXMechanism {
         L4Pre,
         L4,
         PickUp,
-        Jaws;
+        Jaws,
+        PreClimb;
 
         public Distance getHeight(ElevatorConfig config) {
             switch (this) {
@@ -281,6 +295,9 @@ public class Elevator extends TalonFXMechanism {
                     return config.getL4Pre();
                 case Jaws:
                     return config.getJaws();
+                case PreClimb:
+                    return config.getPreClimb();
+
                 default:
                     return Inches.of(0);
             }
