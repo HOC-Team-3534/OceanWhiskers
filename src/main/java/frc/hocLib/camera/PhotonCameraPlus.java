@@ -1,23 +1,28 @@
 package frc.hocLib.camera;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.Utils;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
-import frc.robot.swerve.Swerve;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -30,17 +35,11 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraPlus {
-    private static final Swerve swerve = Robot.getSwerve();
 
     final String subsystemName = "Vision";
 
     @Delegate final PhotonCamera camera;
     final PhotonPoseEstimator poseEstimator;
-
-    @Getter private Optional<Distance> latestLeftPostiveToTag = Optional.empty();
-    @Getter private Optional<Distance> latestFwdToTag = Optional.empty();
-    @Getter private Optional<Angle> latestAngleToTag = Optional.empty();
-    @Getter private int latestTagId = 0;
 
     // The field from AprilTagFields will be different depending on the game.
     static AprilTagFieldLayout aprilTagFieldLayout =
@@ -52,6 +51,9 @@ public class PhotonCameraPlus {
 
     private SimCameraProperties cameraProp = new SimCameraProperties();
     private PhotonCameraSim cameraSim;
+
+    @Getter private List<PhotonTrackedTarget> latestEstimateTargets = new ArrayList<>();
+    private Timer latestEstimateTimer = new Timer();
 
     public PhotonCameraPlus(String name, Transform3d robotToCamera) {
         camera = new PhotonCamera(name);
@@ -84,6 +86,7 @@ public class PhotonCameraPlus {
         if (Robot.isSimulation()) {
             visionSim.addCamera(cameraSim, robotToCamera);
         }
+        latestEstimateTimer.restart();
     }
 
     private PoseStrategy calculateCurrentPoseStrategy() {
@@ -117,7 +120,7 @@ public class PhotonCameraPlus {
                         var poseDifference =
                                 estmt.estimatedPose
                                         .toPose2d()
-                                        .relativeTo(swerve.getState().Pose)
+                                        .relativeTo(Robot.getSwerve().getState().Pose)
                                         .getTranslation()
                                         .getNorm();
 
@@ -144,66 +147,42 @@ public class PhotonCameraPlus {
                         var visionMeasurementStdDevs =
                                 VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
-                        swerve.addVisionMeasurement(
-                                estmt.estimatedPose.toPose2d(),
-                                Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                visionMeasurementStdDevs);
+                        Robot.getSwerve()
+                                .addVisionMeasurement(
+                                        estmt.estimatedPose.toPose2d(),
+                                        Utils.fpgaToCurrentTime(estmt.timestampSeconds),
+                                        visionMeasurementStdDevs);
 
-                        var largestTag =
-                                estmt.targetsUsed.stream()
-                                        .max((tag1, tag2) -> (int) (tag1.area - tag2.area * 1000));
+                        latestEstimateTargets.clear();
+                        latestEstimateTargets.addAll(estmt.targetsUsed);
 
-                        SmartDashboard.putNumber(
-                                "Largest Tag Area", largestTag.map((tg) -> tg.area).orElse(0.0));
-
-                        var closeUpAlignmentTarget =
-                                estmt.targetsUsed.stream()
-                                        .filter((tg) -> tg.area > 0.01)
-                                        .filter(
-                                                (tg) ->
-                                                        tg.bestCameraToTarget
-                                                                        .getTranslation()
-                                                                        .toTranslation2d()
-                                                                        .getNorm()
-                                                                < Feet.of(3.0).in(Meters))
-                                        .max(
-                                                (tag1, tag2) ->
-                                                        (int) ((tag1.area - tag2.area) * 1000));
-
-                        closeUpAlignmentTarget.ifPresent(target -> logTrackedTarget(target));
-
-                        latestTagId = closeUpAlignmentTarget.map(tag -> tag.fiducialId).orElse(0);
-
-                        var targetPose = aprilTagFieldLayout.getTagPose(latestTagId);
-
-                        latestLeftPostiveToTag =
-                                targetPose.map(
-                                        tp ->
-                                                estmt.estimatedPose
-                                                        .toPose2d()
-                                                        .minus(tp.toPose2d())
-                                                        .getMeasureY());
-
-                        latestFwdToTag =
-                                targetPose.map(
-                                        tp ->
-                                                estmt.estimatedPose
-                                                        .toPose2d()
-                                                        .minus(tp.toPose2d())
-                                                        .getMeasureX());
-
-                        latestAngleToTag =
-                                targetPose.map(
-                                        tp ->
-                                                tp.getRotation()
-                                                        .getMeasureZ()
-                                                        .plus(Degrees.of(180))
-                                                        .minus(
-                                                                estmt.estimatedPose
-                                                                        .getRotation()
-                                                                        .getMeasureZ()));
+                        latestEstimateTimer.restart();
                     });
         }
+    }
+
+    public Optional<Transform2d> getRobotToTarget(
+            int targetOfInterestId, Time timeLimitSinceLastDetected) {
+
+        if (latestEstimateTimer.hasElapsed(timeLimitSinceLastDetected.in(Seconds)))
+            return Optional.empty();
+
+        var targetOfInterest =
+                latestEstimateTargets.stream()
+                        .filter((t) -> t.fiducialId == targetOfInterestId)
+                        .findFirst();
+
+        if (targetOfInterest.isEmpty()) return Optional.empty();
+
+        var robotToTarget =
+                new Pose3d()
+                        .transformBy(robotToCamera)
+                        .transformBy(targetOfInterest.get().bestCameraToTarget)
+                        .transformBy(
+                                new Transform3d(
+                                        new Translation3d(), new Rotation3d(Rotation2d.k180deg)));
+
+        return Optional.of(robotToTarget.toPose2d().minus(new Pose2d()));
     }
 
     void logConnected() {

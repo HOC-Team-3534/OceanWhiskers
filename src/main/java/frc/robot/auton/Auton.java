@@ -20,6 +20,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.units.measure.Angle;
@@ -30,6 +31,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.hocLib.util.CachedValue;
+import frc.reefscape.FieldAndTags2025;
 import frc.reefscape.FieldAndTags2025.SideOfField;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
@@ -88,11 +91,10 @@ public class Auton {
         Distance skipPathForDTMTolerance = Inches.of(2.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
-        Distance offsetFromWallToCenterDTM = Inches.of(.2);
+        Distance offsetFromWallToCenterDTM = Inches.of(-15.2);
 
-        Distance alignFwdTolerance = Inches.of(0.15);
-        Distance alignLeftRightTolerance = Inches.of(0.6);
-        Angle alignAngleTolerance = Degrees.of(3);
+        Pose2d dtmAlignTolerance =
+                new Pose2d(Inches.of(0.5), Inches.of(0.5), Rotation2d.fromDegrees(2.0));
     }
 
     private Command m_autonomousCommand;
@@ -206,7 +208,7 @@ public class Auton {
         }
 
         public Command alignWithGoalPose() {
-            return swerve.preciseAlignment(getGoalPose());
+            return swerve.driveToPose(getGoalPose());
         }
 
         public abstract boolean isStepComplete();
@@ -307,14 +309,7 @@ public class Auton {
 
         @Override
         public Command alignWithGoalPose() {
-            return swerve.alignLeftRightOnWall(
-                            () -> Optional.of(Inches.of(4.0)),
-                            Inches.one(),
-                            () -> Optional.of(Inches.zero()),
-                            Inches.one(),
-                            () -> Optional.of(Degrees.zero()),
-                            Degrees.one())
-                    .withTimeout(0.5);
+            return pushForwardAgainstWall().asProxy().withTimeout(0.5);
         }
     }
 
@@ -386,21 +381,19 @@ public class Auton {
     public static class PickupOption {
         @Getter private Tusks.Side tusksSide;
     }
+
+    private Command pushForwardAgainstWall() {
+        return swerve.driveWithTransform(
+                () -> new Transform2d(Inches.of(2.0), Inches.zero(), new Rotation2d()),
+                new Pose2d());
+    }
+
     // DTM
     public Command dtmToHumanPlayerStation() {
         var command =
                 Commands.parallel(
-                        followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
-                                .andThen(
-                                        swerve.alignLeftRightOnWall(
-                                                        () -> Optional.of(Inches.of(4.0)),
-                                                        Inches.one(),
-                                                        () -> Optional.of(Inches.zero()),
-                                                        Inches.one(),
-                                                        () -> Optional.of(Degrees.zero()),
-                                                        Degrees.one())
-                                                .asProxy()
-                                                .withTimeout(0.5)),
+                        followPathToAprilTagID(Auton::getClosestHumanPlayerStationID)
+                                .andThen(pushForwardAgainstWall().asProxy().withTimeout(0.5)),
                         Commands.startEnd(
                                 () -> RobotStates.setDrivingAutonomously(true),
                                 () -> RobotStates.setDrivingAutonomously(false)));
@@ -413,26 +406,8 @@ public class Auton {
     public Command dtmToReef() {
         var command =
                 Commands.parallel(
-                        followPathToAprilTagID(Auton::findClosestReefID)
-                                .andThen(
-                                        alignLeftRightOnWall()
-                                                .asProxy()
-                                                .unless(
-                                                        () -> {
-                                                            var closestID =
-                                                                    Auton.findClosestReefID();
-                                                            var visionID =
-                                                                    Robot.getVisionSystem()
-                                                                            .getAlignTagId();
-
-                                                            if (closestID.isEmpty()
-                                                                    || visionID.isEmpty())
-                                                                return true;
-
-                                                            return !closestID
-                                                                    .get()
-                                                                    .equals(visionID.get());
-                                                        })),
+                        followPathToAprilTagID(Auton::getClosestReefID)
+                                .andThen(alignLeftRightOnWall().asProxy()),
                         Commands.startEnd(
                                 () -> RobotStates.setDrivingAutonomously(true),
                                 () -> RobotStates.setDrivingAutonomously(false)));
@@ -443,7 +418,7 @@ public class Auton {
     }
 
     public Optional<Pose2d> getDTMToReefGoal() {
-        return findClosestReefID().flatMap(this::findGoalPoseInFrontOfTag);
+        return getClosestReefID().flatMap(this::findGoalPoseInFrontOfTag);
     }
 
     // Path Planning Helpers
@@ -513,27 +488,69 @@ public class Auton {
                 });
     }
 
-    public Optional<Distance> getDistanceToAlignFwd() {
+    private CachedValue<Optional<Transform2d>> cachedBumperToReefAlignment =
+            new CachedValue<>(this::updateBumperToReefAlignment);
+
+    public Optional<Transform2d> updateBumperToReefAlignment() {
         return Robot.getVisionSystem()
-                .getDistanceToAlignFwd()
-                .map(
-                        distance -> {
-                            var fwdError = distance.minus(config.getOffsetFromWallToCenterDTM());
+                .getRobotToReefAlignment()
+                .flatMap(
+                        (robotToReef) -> {
+                            if (getClosestReefID().isEmpty()) return Optional.empty();
 
-                            if (fwdError.lt(Inches.zero())) return Inches.zero();
+                            var reefId = getClosestReefID().get();
+                            var reefTargetPose =
+                                    FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT
+                                            .getTagPose(reefId)
+                                            .map(Pose3d::toPose2d);
 
-                            return fwdError;
+                            if (reefTargetPose.isEmpty()) return Optional.empty();
+
+                            var backedUpFromReef =
+                                    new Transform2d(
+                                            new Translation2d(
+                                                    config.getOffsetFromWallToCenterDTM(),
+                                                    Inches.of(0)),
+                                            new Rotation2d());
+
+                            var bumperToCenterOfRobotAwayFromReef =
+                                    robotToReef.plus(backedUpFromReef);
+
+                            return Optional.of(bumperToCenterOfRobotAwayFromReef);
                         });
     }
 
+    public Optional<Transform2d> getBumperToReefAlignment() {
+        return cachedBumperToReefAlignment.get();
+    }
+
+    public boolean isBumperToReefAligned() {
+        return getBumperToReefAlignment()
+                .map(
+                        (bumperToReef) -> {
+                            var tolerance = config.getDtmAlignTolerance();
+                            return bumperToReef.getMeasureX().abs(Meters) <= tolerance.getX()
+                                    && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY()
+                                    && bumperToReef.getRotation().getMeasure().abs(Degrees)
+                                            <= tolerance.getRotation().getMeasure().in(Degrees);
+                        })
+                .orElse(false);
+    }
+
+    public Transform2d getAlignReefFinalTransform() {
+        return getBumperToReefAlignment()
+                .orElseGet(
+                        () ->
+                                getDTMToReefGoal()
+                                        .map(
+                                                (reefGoalPose) ->
+                                                        new Transform2d(getPose(), reefGoalPose))
+                                        .orElse(new Transform2d()));
+    }
+
     private Command alignLeftRightOnWall() {
-        return swerve.alignLeftRightOnWall(
-                this::getDistanceToAlignFwd,
-                config.getAlignFwdTolerance(),
-                () -> Robot.getVisionSystem().getDistanceToAlignLeftPositive(),
-                config.getAlignLeftRightTolerance(),
-                () -> Robot.getVisionSystem().getAngleToAlign(),
-                config.getAlignAngleTolerance());
+        return swerve.driveWithTransform(
+                this::getAlignReefFinalTransform, config.getDtmAlignTolerance());
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {
@@ -567,14 +584,23 @@ public class Auton {
                                                         Rotation2d.fromDegrees(180))));
     }
 
-    private static Optional<Integer> findClosestHumanPlayerStationID() {
+    private static CachedValue<Optional<Integer>> cachedClosestHumanPlayerStation =
+            new CachedValue<>(Auton::updateClosestHumanPlayerStationID);
+    private static CachedValue<Optional<Integer>> cachedClosestReef =
+            new CachedValue<>(Auton::updateClosestReefID);
+
+    private static Optional<Integer> updateClosestHumanPlayerStationID() {
         if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1))
                 || !isRobotOnOurSide(getPose())) return Optional.empty();
 
         return SideOfField.getCurrentSide(getPose()).flatMap(SideOfField::getPickUpID);
     }
 
-    public static Optional<Integer> findClosestReefID() {
+    public static Optional<Integer> getClosestHumanPlayerStationID() {
+        return cachedClosestHumanPlayerStation.get();
+    }
+
+    private static Optional<Integer> updateClosestReefID() {
         if (!isRobotOnOurSide(getPose()) || getAllianceReefTags().isEmpty())
             return Optional.empty();
 
@@ -589,5 +615,9 @@ public class Auton {
                                 })
                         .get()
                         .ID);
+    }
+
+    public static Optional<Integer> getClosestReefID() {
+        return cachedClosestReef.get();
     }
 }

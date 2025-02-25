@@ -43,8 +43,7 @@
     ".roboRIOTeamNumberSetter": true,
     "logs": true,
     "gradle.properties": true,
-    "src\\main\\java\\frc\\reefscape": true,
-    "src\\main\\java\\frc\\hocLib": true
+    "src\\main\\java\\frc\\reefscape": true
   },
   "java.test.config": [
     {

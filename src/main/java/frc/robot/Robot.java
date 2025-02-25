@@ -4,10 +4,9 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Meters;
-
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructPublisher;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -162,10 +161,21 @@ public class Robot extends HocRobot {
         RobotStates.setupStates();
     }
 
+    private StructPublisher<Pose2d> alignBumperToReefPosePublisher =
+            NetworkTableInstance.getDefault()
+                    .getStructTopic("Align Bumper to Reef Pose", Pose2d.struct)
+                    .publish();
+
     @Override
     public void robotPeriodic() {
         FieldAndTags2025.updateMasking();
         try {
+            alignBumperToReefPosePublisher.set(
+                    getSwerve()
+                            .getState()
+                            .Pose
+                            .transformBy(getAuton().getAlignReefFinalTransform()));
+
             SmartDashboard.putBoolean(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
             SmartDashboard.putBoolean(
@@ -173,25 +183,6 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Tusks Voltage Up Trigger", RobotStates.TusksVoltageUp.getAsBoolean());
             SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
-
-            SmartDashboard.putNumber(
-                    "Vision Distance to Align Left Positive (In.)",
-                    getVisionSystem()
-                            .getDistanceToAlignLeftPositive()
-                            .orElse(Meters.zero())
-                            .in(Inches));
-
-            SmartDashboard.putNumber(
-                    "Vision Distance to Align Fwd (In.)",
-                    getVisionSystem().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
-
-            SmartDashboard.putNumber(
-                    "Vision Angle to Align (Deg.)",
-                    getVisionSystem().getAngleToAlign().orElse(Degrees.zero()).in(Degrees));
-
-            SmartDashboard.putNumber(
-                    "Auton / Align Distance to Fwd (In.)",
-                    getAuton().getDistanceToAlignFwd().orElse(Meters.zero()).in(Inches));
 
             SmartDashboard.putBoolean(
                     "Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
@@ -202,10 +193,7 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
-            SmartDashboard.putNumber("Closest Reef Tag ID", Auton.findClosestReefID().orElse(0));
-
-            SmartDashboard.putNumber(
-                    "Vision Align Tag ID", Robot.getVisionSystem().getAlignTagId().orElse(0));
+            SmartDashboard.putNumber("Closest Reef Tag ID", Auton.getClosestReefID().orElse(0));
 
             SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 

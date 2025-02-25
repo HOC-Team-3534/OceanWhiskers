@@ -3,8 +3,10 @@ package frc.robot.vision;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Seconds;
 
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -12,9 +14,9 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
-import frc.hocLib.util.CachedValue;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
+import frc.robot.auton.Auton;
 import java.util.Optional;
 import lombok.Setter;
 import org.photonvision.simulation.VisionSystemSim;
@@ -69,11 +71,6 @@ public class VisionSystem extends HocSubsystem {
     @SuppressWarnings("unused")
     private VisionConfig config;
 
-    private final CachedValue<Optional<Distance>> cachedDistanceToAlignLeftPositive,
-            cachedDistanceToAlignFwd;
-
-    private final CachedValue<Optional<Angle>> cachedAngleToAlign;
-
     private VisionSystemSim visionSim;
 
     public VisionSystem(VisionConfig config) {
@@ -84,13 +81,6 @@ public class VisionSystem extends HocSubsystem {
         fr_camera = new PhotonCameraPlus("fr_camera", config.getFRRobotToCamera());
         rl_camera = new PhotonCameraPlus("rl_camera", config.getRLRobotToCamera());
         rr_camera = new PhotonCameraPlus("rr_camera", config.getRRRobotToCamera());
-
-        cachedDistanceToAlignLeftPositive =
-                new CachedValue<>(this::updateDistanceToAlignLeftPositive);
-
-        cachedDistanceToAlignFwd = new CachedValue<>(this::updateDistanceToAlignFwd);
-
-        cachedAngleToAlign = new CachedValue<>(this::updateAngleToAlign);
 
         if (Robot.isSimulation()) {
 
@@ -122,96 +112,18 @@ public class VisionSystem extends HocSubsystem {
         visionSim.update(Robot.getSwerve().getState().Pose);
     }
 
-    public Optional<Distance> getDistanceToAlignLeftPositive() {
-        return cachedDistanceToAlignLeftPositive.get();
-    }
+    public Optional<Transform2d> getRobotToReefAlignment() {
+        if (Auton.getClosestReefID().isEmpty()) return Optional.empty();
 
-    public Optional<Integer> getAlignTagId() {
-        var fromLeft = fl_camera.getLatestTagId();
-        var fromRight = fr_camera.getLatestTagId();
+        var reefId = Auton.getClosestReefID().get();
 
-        if (fromLeft == fromRight) return Optional.of(fromLeft);
-
-        if (fl_camera.getLatestFwdToTag().isPresent()) return Optional.of(fromLeft);
-
-        if (fr_camera.getLatestFwdToTag().isPresent()) return Optional.of(fromRight);
-
-        return Optional.empty();
-    }
-
-    private Optional<Distance> updateDistanceToAlignLeftPositive() {
-        var fromLeft = fl_camera.getLatestLeftPostiveToTag();
-        var fromRight = fr_camera.getLatestLeftPostiveToTag();
+        var fromLeft = fl_camera.getRobotToTarget(reefId, Seconds.of(0.50));
+        var fromRight = fr_camera.getRobotToTarget(reefId, Seconds.of(0.50));
 
         if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
 
-        if (fromLeft.isEmpty()) {
-            var dist = fromRight.get().in(Inches);
-            if (Math.abs(dist) > 3.0) {
-                dist = 3.0 * Math.signum(dist);
-            }
-            return Optional.of(Inches.of(dist));
-        }
-
-        if (fromRight.isEmpty()) {
-            var dist = fromLeft.get().in(Inches);
-            if (Math.abs(dist) > 3.0) {
-                dist = 3.0 * Math.signum(dist);
-            }
-            return Optional.of(Inches.of(dist));
-        }
-
-        return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
-    }
-
-    public Optional<Distance> getDistanceToAlignFwd() {
-        return cachedDistanceToAlignFwd.get();
-    }
-
-    private Optional<Distance> updateDistanceToAlignFwd() {
-        var fromLeft = fl_camera.getLatestFwdToTag();
-        var fromRight = fr_camera.getLatestFwdToTag();
-
-        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
-
-        if (fromLeft.isEmpty()) {
-            var dist = fromRight.get().in(Inches);
-            return Optional.of(Inches.of(dist));
-        }
-
-        if (fromRight.isEmpty()) {
-            var dist = fromLeft.get().in(Inches);
-            return Optional.of(Inches.of(dist));
-        }
-
-        return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
-    }
-
-    public Optional<Angle> getAngleToAlign() {
-        return cachedAngleToAlign.get();
-    }
-
-    private Optional<Angle> updateAngleToAlign() {
-        var fromLeft = fl_camera.getLatestAngleToTag();
-        var fromRight = fr_camera.getLatestAngleToTag();
-
-        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
-
-        if (fromLeft.isEmpty()) {
-            var angle = fromRight.get().in(Degrees);
-            if (Math.abs(angle) > 3.0) {
-                angle = 3.0 * Math.signum(angle);
-            }
-            return Optional.of(Degrees.of(angle));
-        }
-
-        if (fromRight.isEmpty()) {
-            var angle = fromLeft.get().in(Degrees);
-            if (Math.abs(angle) > 3.0) {
-                angle = 3.0 * Math.signum(angle);
-            }
-            return Optional.of(Degrees.of(angle));
-        }
+        if (fromLeft.isEmpty()) return fromRight;
+        if (fromRight.isEmpty()) return fromLeft;
 
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }

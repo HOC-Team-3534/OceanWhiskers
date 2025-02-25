@@ -27,8 +27,6 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -258,20 +256,16 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 this);
     }
 
-    public Command alignLeftRightOnWall(
-            Supplier<Optional<Distance>> fwdError,
-            Distance fwdErrorTolerance,
-            Supplier<Optional<Distance>> leftPositiveError,
-            Distance errorTolerance,
-            Supplier<Optional<Angle>> ccwPositiveError,
-            Angle ccwErrorTolerance) {
+    public Command driveWithTransform(Supplier<Transform2d> errorTransform, Pose2d errorTolerance) {
         var command =
                 new Command() {
                     private HolonomicDriveController holonomicDriveController;
-                    private Rotation2d targetRotation;
+                    private Pose2d targetPose;
 
                     @Override
                     public void initialize() {
+                        targetPose = getPose().plus(errorTransform.get());
+
                         holonomicDriveController =
                                 new HolonomicDriveController(
                                         new PIDController(4.0, 0.0, 0.0),
@@ -286,76 +280,24 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                                         config.getKMaxAngularRate()
                                                                         .in(RadiansPerSecond)
                                                                 * 0.75)));
-                        holonomicDriveController.setTolerance(
-                                new Pose2d(
-                                        fwdErrorTolerance.in(Meters),
-                                        errorTolerance.in(Meters),
-                                        new Rotation2d(ccwErrorTolerance)));
-
-                        targetRotation =
-                                ccwPositiveError
-                                        .get()
-                                        .map(
-                                                error ->
-                                                        new Rotation2d(
-                                                                error.plus(
-                                                                        getPose()
-                                                                                .getRotation()
-                                                                                .getMeasure())))
-                                        .orElse(getPose().getRotation());
+                        holonomicDriveController.setTolerance(errorTolerance);
                     }
 
                     @Override
                     public void execute() {
-                        var vyError =
-                                leftPositiveError
-                                        .get()
-                                        .map(
-                                                error ->
-                                                        error.isNear(Meters.zero(), errorTolerance)
-                                                                ? Meters.zero()
-                                                                : error.isNear(
-                                                                                Meters.zero(),
-                                                                                Inches.of(4.0))
-                                                                        ? error
-                                                                        : Inches.of(
-                                                                                4.0
-                                                                                        * Math
-                                                                                                .signum(
-                                                                                                        error
-                                                                                                                .in(
-                                                                                                                        Inches))))
-                                        .orElse(Meters.zero());
-                        var vxError =
-                                fwdError.get()
-                                        .map(
-                                                error ->
-                                                        vyError.isNear(
-                                                                        Meters.zero(),
-                                                                        Inches.of(2.0))
-                                                                ? error.isNear(
-                                                                                Meters.zero(),
-                                                                                Inches.of(4.0))
-                                                                        ? error
-                                                                        : Inches.of(
-                                                                                4.0
-                                                                                        * Math
-                                                                                                .signum(
-                                                                                                        error
-                                                                                                                .in(
-                                                                                                                        Inches)))
-                                                                : Meters.zero())
-                                        .orElse(Meters.zero());
+                        var liveTargetPose = getPose().plus(errorTransform.get());
+
+                        if (liveTargetPose
+                                        .getTranslation()
+                                        .minus(targetPose.getTranslation())
+                                        .getNorm()
+                                > Inches.of(4.0).in(Meters)) {
+                            initialize();
+                        }
 
                         driveWithSpeeds(
                                 holonomicDriveController.calculate(
-                                        getPose(),
-                                        getPose()
-                                                .plus(
-                                                        new Transform2d(
-                                                                vxError, vyError, targetRotation)),
-                                        0.0,
-                                        targetRotation));
+                                        getPose(), targetPose, 0.0, targetPose.getRotation()));
                     }
 
                     @Override
@@ -365,9 +307,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public boolean isFinished() {
-                        return fwdError.get().isPresent()
-                                && leftPositiveError.get().isPresent()
-                                && holonomicDriveController.atReference()
+                        return holonomicDriveController.atReference()
                                 && Math.abs(getState().Speeds.vxMetersPerSecond) < 0.0025
                                 && Math.abs(getState().Speeds.vyMetersPerSecond) < 0.0025;
                     }
@@ -380,7 +320,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         return command;
     }
 
-    public Command preciseAlignment(Pose2d targetPose) {
+    public Command driveToPose(Pose2d targetPose) {
         // TODO: for push against wall and adjust right and left, just calculate the target pose
         // do until error left and right good and bottom of tag at certain height on center camera
         // screen within tolerance
