@@ -10,7 +10,7 @@ public class CBOT_2025 extends Config {
                 // TODO: run system identification on swerve
                 swerve.configDriveGains(0.077614, 2.3152, 0.30834)
                         .configEncoderOffsets(
-                                0.38720703125, -0.35400390625, -0.314697265625, 0.2451171875);
+                                0.376708984375, -0.3603515625, 0.325927734375, 0.1435546875);
 
         elevator.enableMotionMagic();
 
