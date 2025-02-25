@@ -1,6 +1,7 @@
 package frc.robot.swerve;
 
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
@@ -261,15 +262,24 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 new Command() {
                     private HolonomicDriveController holonomicDriveController;
                     private Pose2d targetPose;
+                    private int reinitializeCount;
 
                     @Override
                     public void initialize() {
                         targetPose = getPose().plus(errorTransform.get());
 
+                        reinitializeCount++;
+
+                        var xPID = new PIDController(4.0, 1.0, 0.0);
+                        var yPID = new PIDController(4.0, 1.0, 0.0);
+
+                        xPID.setIZone(Inches.of(3.0).in(Meters));
+                        yPID.setIZone(Inches.of(3.0).in(Meters));
+
                         holonomicDriveController =
                                 new HolonomicDriveController(
-                                        new PIDController(4.0, 0.0, 0.0),
-                                        new PIDController(4.0, 0.0, 0.0),
+                                        xPID,
+                                        yPID,
                                         new ProfiledPIDController(
                                                 3.0,
                                                 0.0,
@@ -288,10 +298,12 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                         var liveTargetPose = getPose().plus(errorTransform.get());
 
                         if (liveTargetPose
-                                        .getTranslation()
-                                        .minus(targetPose.getTranslation())
-                                        .getNorm()
-                                > Inches.of(4.0).in(Meters)) {
+                                                .getTranslation()
+                                                .minus(targetPose.getTranslation())
+                                                .getNorm()
+                                        > Inches.of(4.0).in(Meters)
+                                || (holonomicDriveController.atReference()
+                                        && reinitializeCount < 10)) {
                             initialize();
                         }
 
@@ -307,9 +319,12 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public boolean isFinished() {
+                        reinitializeCount = 0;
                         return holonomicDriveController.atReference()
-                                && Math.abs(getState().Speeds.vxMetersPerSecond) < 0.0025
-                                && Math.abs(getState().Speeds.vyMetersPerSecond) < 0.0025;
+                                && Math.abs(getState().Speeds.vxMetersPerSecond)
+                                        < InchesPerSecond.of(1.0).in(MetersPerSecond)
+                                && Math.abs(getState().Speeds.vyMetersPerSecond)
+                                        < InchesPerSecond.of(1.0).in(MetersPerSecond);
                     }
                 };
 

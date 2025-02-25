@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
@@ -196,6 +198,16 @@ public class Robot extends HocRobot {
             SmartDashboard.putNumber("Closest Reef Tag ID", Auton.getClosestReefID().orElse(0));
 
             SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
+
+            SmartDashboard.putNumber(
+                    "Align Fwd (In.)",
+                    getAuton().getAlignReefFinalTransform().getMeasureX().in(Inches));
+            SmartDashboard.putNumber(
+                    "Align Left Right (In.)",
+                    getAuton().getAlignReefFinalTransform().getMeasureY().in(Inches));
+            SmartDashboard.putNumber(
+                    "Align Angle (Deg.)",
+                    getAuton().getAlignReefFinalTransform().getRotation().getDegrees());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

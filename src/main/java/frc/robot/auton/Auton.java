@@ -391,7 +391,7 @@ public class Auton {
     // DTM
     public Command dtmToHumanPlayerStation() {
         var command =
-                Commands.parallel(
+                Commands.deadline(
                         followPathToAprilTagID(Auton::getClosestHumanPlayerStationID)
                                 .andThen(pushForwardAgainstWall().asProxy().withTimeout(0.5)),
                         Commands.startEnd(
@@ -405,7 +405,7 @@ public class Auton {
 
     public Command dtmToReef() {
         var command =
-                Commands.parallel(
+                Commands.deadline(
                         followPathToAprilTagID(Auton::getClosestReefID)
                                 .andThen(alignLeftRightOnWall().asProxy()),
                         Commands.startEnd(
@@ -525,16 +525,14 @@ public class Auton {
     }
 
     public boolean isBumperToReefAligned() {
-        return getBumperToReefAlignment()
-                .map(
-                        (bumperToReef) -> {
-                            var tolerance = config.getDtmAlignTolerance();
-                            return bumperToReef.getMeasureX().abs(Meters) <= tolerance.getX()
-                                    && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY()
-                                    && bumperToReef.getRotation().getMeasure().abs(Degrees)
-                                            <= tolerance.getRotation().getMeasure().in(Degrees);
-                        })
-                .orElse(false);
+        var bumperToReef = getAlignReefFinalTransform();
+
+        var tolerance = config.getDtmAlignTolerance();
+
+        return bumperToReef.getMeasureX().abs(Meters) <= tolerance.getX()
+                && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY()
+                && bumperToReef.getRotation().getMeasure().abs(Degrees)
+                        <= tolerance.getRotation().getMeasure().in(Degrees);
     }
 
     public Transform2d getAlignReefFinalTransform() {
