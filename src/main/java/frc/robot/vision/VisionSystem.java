@@ -74,7 +74,7 @@ public class VisionSystem extends HocSubsystem {
 
     private final CachedValue<Optional<Angle>> cachedAngleToAlign;
 
-    private final VisionSystemSim visionSim = new VisionSystemSim("main");
+    private VisionSystemSim visionSim;
 
     public VisionSystem(VisionConfig config) {
         super(config);
@@ -92,12 +92,17 @@ public class VisionSystem extends HocSubsystem {
 
         cachedAngleToAlign = new CachedValue<>(this::updateAngleToAlign);
 
-        visionSim.addAprilTags(FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT);
+        if (Robot.isSimulation()) {
 
-        fl_camera.addToVisionSim(visionSim);
-        fr_camera.addToVisionSim(visionSim);
-        rl_camera.addToVisionSim(visionSim);
-        rr_camera.addToVisionSim(visionSim);
+            visionSim = new VisionSystemSim("main");
+
+            visionSim.addAprilTags(FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT);
+
+            fl_camera.addToVisionSim(visionSim);
+            fr_camera.addToVisionSim(visionSim);
+            rl_camera.addToVisionSim(visionSim);
+            rr_camera.addToVisionSim(visionSim);
+        }
     }
 
     @Override

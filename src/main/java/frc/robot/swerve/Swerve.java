@@ -274,8 +274,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     public void initialize() {
                         holonomicDriveController =
                                 new HolonomicDriveController(
-                                        new PIDController(7.0, 0.0, 0.0),
-                                        new PIDController(7.0, 0.0, 0.0),
+                                        new PIDController(4.0, 0.0, 0.0),
+                                        new PIDController(4.0, 0.0, 0.0),
                                         new ProfiledPIDController(
                                                 3.0,
                                                 0.0,

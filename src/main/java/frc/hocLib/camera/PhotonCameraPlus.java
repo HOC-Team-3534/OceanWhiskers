@@ -50,16 +50,19 @@ public class PhotonCameraPlus {
 
     static HashSet<Integer> HIGH_TAGS = new HashSet<>();
 
-    private final SimCameraProperties cameraProp = new SimCameraProperties();
-    private final PhotonCameraSim cameraSim;
+    private SimCameraProperties cameraProp = new SimCameraProperties();
+    private PhotonCameraSim cameraSim;
 
     public PhotonCameraPlus(String name, Transform3d robotToCamera) {
         camera = new PhotonCamera(name);
 
-        cameraProp.setFPS(90);
-        cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
+        if (Robot.isSimulation()) {
 
-        cameraSim = new PhotonCameraSim(camera, cameraProp);
+            cameraProp.setFPS(90);
+            cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
+
+            cameraSim = new PhotonCameraSim(camera, cameraProp);
+        }
 
         this.robotToCamera = robotToCamera;
 
@@ -78,7 +81,9 @@ public class PhotonCameraPlus {
     }
 
     public void addToVisionSim(VisionSystemSim visionSim) {
-        visionSim.addCamera(cameraSim, robotToCamera);
+        if (Robot.isSimulation()) {
+            visionSim.addCamera(cameraSim, robotToCamera);
+        }
     }
 
     private PoseStrategy calculateCurrentPoseStrategy() {

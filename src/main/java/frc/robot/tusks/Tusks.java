@@ -152,13 +152,17 @@ public class Tusks extends TalonSRXMechanism {
     public Command pickup() {
         return goToAngle(config.pickup)
                 .alongWith(
-                        Commands.run(
-                                () -> {
-                                    if (getVelocity().lt(DegreesPerSecond.zero())
-                                            && getError().gt(Degrees.of(3.0))) {
-                                        state.setHoldingCoral(true);
-                                    }
-                                }));
+                        Commands.waitUntil(
+                                        () ->
+                                                getPosition().isNear(config.pickup, Degrees.of(5.0))
+                                                        && Math.abs(getVelocity().in(DegreesPerSecond)) < 0.75)
+                                .andThen(
+                                        Commands.run(
+                                                () -> {
+                                                    if (getVelocity().lt(DegreesPerSecond.of(1.0))) {
+                                                        state.setHoldingCoral(true);
+                                                    }
+                                                })));
     }
 
     public Command preDeploy() {
