@@ -47,7 +47,7 @@ public class Lights extends HocSubsystem {
                 .withName("Lights Pick Up Left");
     }
 
-    public Command followingPath() {
+    public Command drivingAutonomously() {
         return run(() -> {
                     leftLights.set(
                             0.43); // color 1 and 2 beats per minute, impacted by adj. 1 and 2

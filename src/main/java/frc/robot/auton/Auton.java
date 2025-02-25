@@ -219,7 +219,10 @@ public class Auton {
                             .andThen(new WaitUntilCommand(this::isStepComplete)),
                     Commands.startEnd(
                             () -> setCurrentStep(Optional.of(this)),
-                            () -> setCurrentStep(Optional.empty())));
+                            () -> setCurrentStep(Optional.empty())),
+                    Commands.startEnd(
+                            () -> RobotStates.setDrivingAutonomously(true),
+                            () -> RobotStates.setDrivingAutonomously(false)));
         }
 
         public boolean isLevel(int level) {
@@ -382,17 +385,21 @@ public class Auton {
     // DTM
     public Command dtmToHumanPlayerStation() {
         var command =
-                followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
-                        .andThen(
-                                swerve.alignLeftRightOnWall(
-                                                () -> Optional.of(Inches.of(4.0)),
-                                                Inches.one(),
-                                                () -> Optional.of(Inches.zero()),
-                                                Inches.one(),
-                                                () -> Optional.of(Degrees.zero()),
-                                                Degrees.one())
-                                        .asProxy()
-                                        .withTimeout(0.5));
+                Commands.parallel(
+                        followPathToAprilTagID(Auton::findClosestHumanPlayerStationID)
+                                .andThen(
+                                        swerve.alignLeftRightOnWall(
+                                                        () -> Optional.of(Inches.of(4.0)),
+                                                        Inches.one(),
+                                                        () -> Optional.of(Inches.zero()),
+                                                        Inches.one(),
+                                                        () -> Optional.of(Degrees.zero()),
+                                                        Degrees.one())
+                                                .asProxy()
+                                                .withTimeout(0.5)),
+                        Commands.startEnd(
+                                () -> RobotStates.setDrivingAutonomously(true),
+                                () -> RobotStates.setDrivingAutonomously(false)));
 
         command.setName("DTM TO PICKUP STATION");
 
@@ -401,21 +408,30 @@ public class Auton {
 
     public Command dtmToReef() {
         var command =
-                followPathToAprilTagID(Auton::findClosestReefID)
-                        .andThen(
-                                alignLeftRightOnWall()
-                                        .asProxy()
-                                        .unless(
-                                                () -> {
-                                                    var closestID = Auton.findClosestReefID();
-                                                    var visionID =
-                                                            Robot.getVisionSystem().getAlignTagId();
+                Commands.parallel(
+                        followPathToAprilTagID(Auton::findClosestReefID)
+                                .andThen(
+                                        alignLeftRightOnWall()
+                                                .asProxy()
+                                                .unless(
+                                                        () -> {
+                                                            var closestID =
+                                                                    Auton.findClosestReefID();
+                                                            var visionID =
+                                                                    Robot.getVisionSystem()
+                                                                            .getAlignTagId();
 
-                                                    if (closestID.isEmpty() || visionID.isEmpty())
-                                                        return true;
+                                                            if (closestID.isEmpty()
+                                                                    || visionID.isEmpty())
+                                                                return true;
 
-                                                    return !closestID.get().equals(visionID.get());
-                                                }));
+                                                            return !closestID
+                                                                    .get()
+                                                                    .equals(visionID.get());
+                                                        })),
+                        Commands.startEnd(
+                                () -> RobotStates.setDrivingAutonomously(true),
+                                () -> RobotStates.setDrivingAutonomously(false)));
 
         command.setName("DTM TO REEF");
 

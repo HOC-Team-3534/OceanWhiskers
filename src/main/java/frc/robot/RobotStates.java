@@ -2,7 +2,6 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
-import com.pathplanner.lib.commands.PathPlannerAuto;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
@@ -14,6 +13,8 @@ import frc.robot.elevator.Elevator;
 import frc.robot.jaws.Jaws;
 import frc.robot.swerve.Swerve;
 import frc.robot.tusks.Tusks;
+import lombok.Getter;
+import lombok.Setter;
 
 public class RobotStates {
     private static final Driver driver = Robot.getDriver();
@@ -148,8 +149,10 @@ public class RobotStates {
     public static final Trigger RequestJawsClosed =
             RequestGrabAlgae.or(HoldAlgae, RequestReleaseAlgae);
 
-    public static final Trigger FollowingPath =
-            new Trigger(() -> PathPlannerAuto.currentPathName.isEmpty()).not();
+    @Getter @Setter private static boolean drivingAutonomously;
+
+    public static final Trigger DrivingAutonomously =
+            new Trigger(RobotStates::isDrivingAutonomously);
 
     public static void setupStates() {
         driver.DTMToReef_A.and(

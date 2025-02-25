@@ -155,11 +155,16 @@ public class Tusks extends TalonSRXMechanism {
                         Commands.waitUntil(
                                         () ->
                                                 getPosition().isNear(config.pickup, Degrees.of(5.0))
-                                                        && Math.abs(getVelocity().in(DegreesPerSecond)) < 0.75)
+                                                        && Math.abs(
+                                                                        getVelocity()
+                                                                                .in(
+                                                                                        DegreesPerSecond))
+                                                                < 0.75)
                                 .andThen(
                                         Commands.run(
                                                 () -> {
-                                                    if (getVelocity().lt(DegreesPerSecond.of(1.0))) {
+                                                    if (getVelocity()
+                                                            .lt(DegreesPerSecond.of(1.0))) {
                                                         state.setHoldingCoral(true);
                                                     }
                                                 })));

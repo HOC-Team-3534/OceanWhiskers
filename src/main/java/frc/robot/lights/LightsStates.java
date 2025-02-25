@@ -14,6 +14,6 @@ public class LightsStates {
     public static void setupBindings() {
         PickupCoralLeft.whileTrue(lights.pickUpLeft());
         PickupCoralRight.whileTrue(lights.pickUpRight());
-        FollowingPath.whileTrue(lights.followingPath());
+        DrivingAutonomously.whileTrue(lights.drivingAutonomously());
     }
 }
