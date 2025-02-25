@@ -215,8 +215,12 @@ public class Auton {
             return Commands.deadline(
                     followPath()
                             .asProxy()
-                            .andThen(alignWithGoalPose().asProxy())
-                            .andThen(new WaitUntilCommand(this::isStepComplete)),
+                            .andThen(
+                                    Commands.parallel(
+                                            alignWithGoalPose()
+                                                    .asProxy()
+                                                    .until(this::isStepComplete)),
+                                    new WaitUntilCommand(this::isStepComplete)),
                     Commands.startEnd(
                             () -> setCurrentStep(Optional.of(this)),
                             () -> setCurrentStep(Optional.empty())),
