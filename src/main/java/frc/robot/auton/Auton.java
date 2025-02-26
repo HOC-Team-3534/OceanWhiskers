@@ -85,16 +85,16 @@ public class Auton {
 
         Distance driveForwardDistance = Feet.of(2);
 
-        Distance offsetFromWallToCenter = Inches.of(16);
+        Distance offsetFromWallToCenter = Inches.of(16.5);
 
         // TODO: tune skip and alignment values
         Distance skipPathForDTMTolerance = Inches.of(2.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
 
-        Distance offsetFromWallToCenterDTM = Inches.of(-15.2);
+        Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
 
         Pose2d dtmAlignTolerance =
-                new Pose2d(Inches.of(0.5), Inches.of(0.5), Rotation2d.fromDegrees(2.0));
+                new Pose2d(Inches.of(1.5), Inches.of(0.8), Rotation2d.fromDegrees(4.0));
     }
 
     private Command m_autonomousCommand;
@@ -283,7 +283,9 @@ public class Auton {
 
         @Override
         public Command alignWithGoalPose() {
-            return alignLeftRightOnWall().until(() -> RobotStates.AlignedWithReef.getAsBoolean());
+            return alignLeftRightOnWall()
+                    .asProxy()
+                    .until(() -> RobotStates.AlignedWithReef.getAsBoolean());
         }
     }
 
@@ -383,7 +385,7 @@ public class Auton {
     }
 
     private Command pushForwardAgainstWall() {
-        return swerve.driveWithTransform(
+        return swerve.driveAgainstWallAlign(
                 () -> new Transform2d(Inches.of(2.0), Inches.zero(), new Rotation2d()),
                 new Pose2d());
     }
@@ -407,7 +409,13 @@ public class Auton {
         var command =
                 Commands.deadline(
                         followPathToAprilTagID(Auton::getClosestReefID)
-                                .andThen(alignLeftRightOnWall().asProxy()),
+                                .andThen(
+                                        alignLeftRightOnWall()
+                                                .asProxy()
+                                                .until(
+                                                        () ->
+                                                                RobotStates.AlignedWithReef
+                                                                        .getAsBoolean())),
                         Commands.startEnd(
                                 () -> RobotStates.setDrivingAutonomously(true),
                                 () -> RobotStates.setDrivingAutonomously(false)));
@@ -529,10 +537,10 @@ public class Auton {
 
         var tolerance = config.getDtmAlignTolerance();
 
-        return bumperToReef.getMeasureX().abs(Meters) <= tolerance.getX()
-                && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY()
+        return Robot.getSwerve().getAdditionalState().isPushedUpOnWall()
+                && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY() * 1.1
                 && bumperToReef.getRotation().getMeasure().abs(Degrees)
-                        <= tolerance.getRotation().getMeasure().in(Degrees);
+                        <= tolerance.getRotation().getMeasure().in(Degrees) * 1.1;
     }
 
     public Transform2d getAlignReefFinalTransform() {
@@ -547,7 +555,7 @@ public class Auton {
     }
 
     private Command alignLeftRightOnWall() {
-        return swerve.driveWithTransform(
+        return swerve.driveAgainstWallAlign(
                 this::getAlignReefFinalTransform, config.getDtmAlignTolerance());
     }
 

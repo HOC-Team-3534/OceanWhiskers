@@ -32,6 +32,7 @@ import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -44,6 +45,7 @@ import frc.hocLib.util.Util;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements Subsystem so it can easily
@@ -257,54 +259,104 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 this);
     }
 
-    public Command driveWithTransform(Supplier<Transform2d> errorTransform, Pose2d errorTolerance) {
+    @Getter
+    @Setter
+    public static class AdditionalState {
+        private boolean pushedUpOnWall;
+    }
+
+    @Getter private AdditionalState additionalState = new AdditionalState();
+
+    public Command driveAgainstWallAlign(
+            Supplier<Transform2d> errorTransform, Pose2d errorTolerance) {
         var command =
                 new Command() {
-                    private HolonomicDriveController holonomicDriveController;
+                    private HolonomicDriveController holonomicDriveController =
+                            createHolonomicController();
                     private Pose2d targetPose;
-                    private int reinitializeCount;
+                    private Timer resetTimer = new Timer();
+                    private Timer pushedAgainstWallTimer = new Timer();
 
                     @Override
                     public void initialize() {
                         targetPose = getPose().plus(errorTransform.get());
 
-                        reinitializeCount++;
+                        resetTimer.restart();
+                        pushedAgainstWallTimer.stop();
+                        pushedAgainstWallTimer.reset();
 
-                        var xPID = new PIDController(4.0, 1.0, 0.0);
-                        var yPID = new PIDController(4.0, 1.0, 0.0);
+                        additionalState.setPushedUpOnWall(false);
 
-                        xPID.setIZone(Inches.of(3.0).in(Meters));
-                        yPID.setIZone(Inches.of(3.0).in(Meters));
+                        holonomicDriveController = createHolonomicController();
 
-                        holonomicDriveController =
-                                new HolonomicDriveController(
-                                        xPID,
-                                        yPID,
-                                        new ProfiledPIDController(
-                                                3.0,
-                                                0.0,
-                                                0.0,
-                                                new TrapezoidProfile.Constraints(
-                                                        config.getKMaxAngularRate()
-                                                                .in(RadiansPerSecond),
-                                                        config.getKMaxAngularRate()
-                                                                        .in(RadiansPerSecond)
-                                                                * 0.75)));
                         holonomicDriveController.setTolerance(errorTolerance);
+                    }
+
+                    private HolonomicDriveController createHolonomicController() {
+                        var xPID = new PIDController(1.5, 0.00, 0.0);
+                        var yPID = new PIDController(1.5, 0.00, 0.0);
+
+                        xPID.setIZone(Inches.of(2.0).in(Meters));
+                        yPID.setIZone(Inches.of(2.0).in(Meters));
+
+                        return new HolonomicDriveController(
+                                xPID,
+                                yPID,
+                                new ProfiledPIDController(
+                                        3.0,
+                                        0.0,
+                                        0.0,
+                                        new TrapezoidProfile.Constraints(
+                                                config.getKMaxAngularRate().in(RadiansPerSecond),
+                                                config.getKMaxAngularRate().in(RadiansPerSecond)
+                                                        * 0.75)));
+                    }
+
+                    private boolean isAligned() {
+                        var liveTargetPose = getPose().plus(errorTransform.get());
+                        return additionalState.isPushedUpOnWall()
+                                && Math.abs(liveTargetPose.getY()) <= errorTolerance.getY();
                     }
 
                     @Override
                     public void execute() {
-                        var liveTargetPose = getPose().plus(errorTransform.get());
-
-                        if (liveTargetPose
-                                                .getTranslation()
-                                                .minus(targetPose.getTranslation())
-                                                .getNorm()
-                                        > Inches.of(4.0).in(Meters)
-                                || (holonomicDriveController.atReference()
-                                        && reinitializeCount < 10)) {
+                        if (holonomicDriveController.atReference()
+                                && !isAligned()
+                                && resetTimer.hasElapsed(1.0)) {
                             initialize();
+                        }
+
+                        var translationToTarget = targetPose.relativeTo(getPose()).getTranslation();
+
+                        if (pushedAgainstWallTimer.hasElapsed(0.25)) {
+                            additionalState.setPushedUpOnWall(true);
+                        }
+
+                        if (((Math.abs(translationToTarget.getX()) < errorTolerance.getX()
+                                                && Math.abs(translationToTarget.getY())
+                                                        < 2 * errorTolerance.getY())
+                                        || pushedAgainstWallTimer.isRunning())
+                                && !additionalState.isPushedUpOnWall()) {
+                            if (!pushedAgainstWallTimer.isRunning()) {
+                                pushedAgainstWallTimer.restart();
+                            }
+                            driveWithSpeeds(new ChassisSpeeds(0.02, 0.0, 0.0));
+                            return;
+                        }
+
+                        if (additionalState.isPushedUpOnWall()) {
+                            driveWithSpeeds(
+                                    new ChassisSpeeds(
+                                            0.0,
+                                            InchesPerSecond.of(
+                                                            7.5
+                                                                    * Math.signum(
+                                                                            translationToTarget
+                                                                                    .getY()))
+                                                    .in(MetersPerSecond),
+                                            0.0));
+
+                            return;
                         }
 
                         driveWithSpeeds(
@@ -319,8 +371,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public boolean isFinished() {
-                        reinitializeCount = 0;
                         return holonomicDriveController.atReference()
+                                && isAligned()
                                 && Math.abs(getState().Speeds.vxMetersPerSecond)
                                         < InchesPerSecond.of(1.0).in(MetersPerSecond)
                                 && Math.abs(getState().Speeds.vyMetersPerSecond)
