@@ -538,6 +538,7 @@ public class Auton {
         var tolerance = config.getDtmAlignTolerance();
 
         return Robot.getSwerve().getAdditionalState().isPushedUpOnWall()
+                && getBumperToReefAlignment().isPresent()
                 && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY() * 1.1
                 && bumperToReef.getRotation().getMeasure().abs(Degrees)
                         <= tolerance.getRotation().getMeasure().in(Degrees) * 1.1;
@@ -556,7 +557,15 @@ public class Auton {
 
     private Command alignLeftRightOnWall() {
         return swerve.driveAgainstWallAlign(
-                this::getAlignReefFinalTransform, config.getDtmAlignTolerance());
+                        this::getAlignReefFinalTransform, config.getDtmAlignTolerance())
+                .asProxy()
+                .withTimeout(0.5)
+                .andThen(
+                        Commands.deferredProxy(
+                                () -> {
+                                    if (!isBumperToReefAligned()) return alignLeftRightOnWall();
+                                    return Commands.none();
+                                }));
     }
 
     private static Rotation2d calculateDirectionToStartDrivingIn(Pose2d goalPose) {

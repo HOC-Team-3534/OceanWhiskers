@@ -120,10 +120,7 @@ public class VisionSystem extends HocSubsystem {
         var fromLeft = fl_camera.getRobotToTarget(reefId, Seconds.of(0.50));
         var fromRight = fr_camera.getRobotToTarget(reefId, Seconds.of(0.50));
 
-        if (fromLeft.isEmpty() && fromRight.isEmpty()) return Optional.empty();
-
-        if (fromLeft.isEmpty()) return fromRight;
-        if (fromRight.isEmpty()) return fromLeft;
+        if (fromLeft.isEmpty() || fromRight.isEmpty()) return Optional.empty();
 
         return Optional.of(fromLeft.get().plus(fromRight.get()).div(2));
     }

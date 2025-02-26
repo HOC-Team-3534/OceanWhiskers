@@ -145,10 +145,12 @@ public class RobotStates {
 
     public static void setupStates() {
         driver.DTMToReef_A.and(
-                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose))
+                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(auton.dtmToReef());
         driver.DTMToHumanPlayerStation_B.and(
-                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose))
+                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(auton.dtmToHumanPlayerStation());
     }
 
