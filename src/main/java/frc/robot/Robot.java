@@ -9,6 +9,8 @@ import static edu.wpi.first.units.Units.Inches;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -84,6 +86,8 @@ public class Robot extends HocRobot {
 
         try {
 
+            startLoggingIfNotAlready();
+
             SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
 
             SmartDashboard.putString(
@@ -142,6 +146,36 @@ public class Robot extends HocRobot {
         }
     }
 
+    private  boolean dataLogging;
+    private  Timer checkDataLogging = new Timer();
+
+    private void startLoggingIfNotAlready(){
+        if(!checkDataLogging.isRunning()){
+            checkDataLogging.restart();
+        }
+
+        if(!dataLogging && checkDataLogging.hasElapsed(5.0) && this.isDisabled()){
+        // Starts recording to data log
+        DataLogManager.start();
+
+        dataLogging = true;
+
+        if (DataLogManager.getLogDir().startsWith("/u")) {
+
+            // Record both DS control and joystick data
+            DriverStation.startDataLog(DataLogManager.getLog());
+
+            // (alternatively) Record only DS control data
+            // DriverStation.startDataLog(DataLogManager.getLog(), false);
+        } else {
+            // DO NOT LOG WHEN NOT USING A USB
+
+            DataLogManager.stop();
+            dataLogging = false;
+        }
+    }
+    }
+
     /**
      * This method cancels all commands and returns subsystems to their default commands and the
      * gamepad configs are reset so that new bindings can be assigned based on mode This method
@@ -177,6 +211,8 @@ public class Robot extends HocRobot {
     @Override
     public void robotPeriodic() {
         FieldAndTags2025.updateMasking();
+
+        startLoggingIfNotAlready();
         try {
             alignBumperToReefPosePublisher.set(
                     getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
