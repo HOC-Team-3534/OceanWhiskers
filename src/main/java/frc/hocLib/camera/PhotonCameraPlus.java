@@ -107,57 +107,61 @@ public class PhotonCameraPlus {
             poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
         }
 
-        var results = camera.getAllUnreadResults();
-
         // TODO: validate isConnected is updating properly and catching connection issues
         logConnected();
 
-        for (var result : results) {
-            var estimate = poseEstimator.update(result);
+        if (isConnected()) {
 
-            estimate.ifPresent(
-                    estmt -> {
-                        var poseDifference =
-                                estmt.estimatedPose
-                                        .toPose2d()
-                                        .relativeTo(Robot.getSwerve().getState().Pose)
-                                        .getTranslation()
-                                        .getNorm();
+            var results = camera.getAllUnreadResults();
 
-                        double sumTargetArea = 0.0;
-                        boolean hasHighUpTags = false;
-                        for (var tg : estmt.targetsUsed) {
-                            sumTargetArea += tg.getArea();
-                            if (HIGH_TAGS.contains(tg.fiducialId)) {
-                                hasHighUpTags = true;
-                                break;
+            for (var result : results) {
+                var estimate = poseEstimator.update(result);
+
+                estimate.ifPresent(
+                        estmt -> {
+                            var poseDifference =
+                                    estmt.estimatedPose
+                                            .toPose2d()
+                                            .relativeTo(Robot.getSwerve().getState().Pose)
+                                            .getTranslation()
+                                            .getNorm();
+
+                            double sumTargetArea = 0.0;
+                            boolean hasHighUpTags = false;
+                            for (var tg : estmt.targetsUsed) {
+                                sumTargetArea += tg.getArea();
+                                if (HIGH_TAGS.contains(tg.fiducialId)) {
+                                    hasHighUpTags = true;
+                                    break;
+                                }
                             }
-                        }
 
-                        var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
+                            var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
 
-                        double xyStds = 2.0;
-                        // TODO: consider modifying weights to help with center camera and alignment
-                        if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
-                        else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
-                        else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
-                        else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
-                        else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
+                            double xyStds = 2.0;
+                            // TODO: consider modifying weights to help with center camera and
+                            // alignment
+                            if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
+                            else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
+                            else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
+                            else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
+                            else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
 
-                        var visionMeasurementStdDevs =
-                                VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
+                            var visionMeasurementStdDevs =
+                                    VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
-                        Robot.getSwerve()
-                                .addVisionMeasurement(
-                                        estmt.estimatedPose.toPose2d(),
-                                        Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                        visionMeasurementStdDevs);
+                            Robot.getSwerve()
+                                    .addVisionMeasurement(
+                                            estmt.estimatedPose.toPose2d(),
+                                            Utils.fpgaToCurrentTime(estmt.timestampSeconds),
+                                            visionMeasurementStdDevs);
 
-                        latestEstimateTargets.clear();
-                        latestEstimateTargets.addAll(estmt.targetsUsed);
+                            latestEstimateTargets.clear();
+                            latestEstimateTargets.addAll(estmt.targetsUsed);
 
-                        latestEstimateTimer.restart();
-                    });
+                            latestEstimateTimer.restart();
+                        });
+            }
         }
     }
 
