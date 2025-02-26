@@ -18,6 +18,11 @@ public class Telemetry {
     private List<Pose2d> activePath = new ArrayList<>();
     private List<Pose2d> robotPoses = new ArrayList<>();
 
+    private StructPublisher<Pose2d> pathPlannerTargetPosePublisher =
+            NetworkTableInstance.getDefault()
+                    .getStructTopic("PathPlanner Target Pose", Pose2d.struct)
+                    .publish();
+
     /**
      * Construct a telemetry object, with the specified max speed of the robot
      *
@@ -39,6 +44,7 @@ public class Telemetry {
         PathPlannerLogging.setLogTargetPoseCallback(
                 (pose) -> {
                     m_field.getObject("target").setPose(pose);
+                    pathPlannerTargetPosePublisher.set(pose);
                 });
 
         PathPlannerLogging.setLogActivePathCallback(
