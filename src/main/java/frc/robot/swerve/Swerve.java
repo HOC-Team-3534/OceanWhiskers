@@ -1,5 +1,7 @@
 package frc.robot.swerve;
 
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
@@ -28,12 +30,15 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.FunctionalCommand;
@@ -126,6 +131,17 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             warmup.schedule();
             findingWarmup.schedule();
             warmedUp = true;
+        }
+
+        if (!additionalState.isPushedUpOnWall()) {
+            additionalState.setXSincePushedUpOnWall(Meters.zero());
+        } else {
+            additionalState.updateXSincePushedUpOnWall(
+                    MetersPerSecond.of(getState().Speeds.vxMetersPerSecond));
+        }
+
+        if (additionalState.getXSincePushedUpOnWall().lt(Inches.of(-0.5))) {
+            additionalState.setPushedUpOnWall(false);
         }
     }
 
@@ -263,29 +279,30 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     @Setter
     public static class AdditionalState {
         private boolean pushedUpOnWall;
+        private Distance xSincePushedUpOnWall;
+
+        private void updateXSincePushedUpOnWall(LinearVelocity xVelocity) {
+            setXSincePushedUpOnWall(xSincePushedUpOnWall.plus(xVelocity.times(Seconds.of(0.020))));
+        }
     }
 
     @Getter private AdditionalState additionalState = new AdditionalState();
 
     public Command driveAgainstWallAlign(
-            Supplier<Transform2d> errorTransform, Pose2d errorTolerance) {
+            Supplier<Transform2d> errorTransform, Pose2d errorTolerance, Time pushForwardTime) {
         var command =
                 new Command() {
                     private HolonomicDriveController holonomicDriveController =
                             createHolonomicController();
                     private Pose2d targetPose;
-                    private Timer resetTimer = new Timer();
                     private Timer pushedAgainstWallTimer = new Timer();
 
                     @Override
                     public void initialize() {
                         targetPose = getPose().plus(errorTransform.get());
 
-                        resetTimer.restart();
                         pushedAgainstWallTimer.stop();
                         pushedAgainstWallTimer.reset();
-
-                        additionalState.setPushedUpOnWall(false);
 
                         holonomicDriveController = createHolonomicController();
 
@@ -303,7 +320,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                 xPID,
                                 yPID,
                                 new ProfiledPIDController(
-                                        3.0,
+                                        5.0,
                                         0.0,
                                         0.0,
                                         new TrapezoidProfile.Constraints(
@@ -320,27 +337,42 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public void execute() {
-                        if (holonomicDriveController.atReference()
-                                && !isAligned()
-                                && resetTimer.hasElapsed(1.0)) {
-                            initialize();
-                        }
 
                         var translationToTarget = targetPose.relativeTo(getPose()).getTranslation();
+                        var rotationToTarget =
+                                targetPose.relativeTo(getPose()).getRotation().getMeasure();
 
-                        if (pushedAgainstWallTimer.hasElapsed(0.25)) {
+                        if (pushedAgainstWallTimer.hasElapsed(pushForwardTime.in(Seconds))
+                                || translationToTarget.getX() < 0) {
                             additionalState.setPushedUpOnWall(true);
                         }
 
-                        if (((Math.abs(translationToTarget.getX()) < errorTolerance.getX()
-                                                && Math.abs(translationToTarget.getY())
-                                                        < 2 * errorTolerance.getY())
-                                        || pushedAgainstWallTimer.isRunning())
+                        var readyToPushAgainstWall =
+                                Math.abs(translationToTarget.getX()) < errorTolerance.getX()
+                                        && Math.abs(translationToTarget.getY())
+                                                < 3.5 * errorTolerance.getY()
+                                        && rotationToTarget.abs(Degrees)
+                                                < errorTolerance.getRotation().getDegrees() * 0.5;
+
+                        SmartDashboard.putBoolean(
+                                "Align Ready to Push Against Wall", readyToPushAgainstWall);
+
+                        if (!readyToPushAgainstWall && additionalState.isPushedUpOnWall()) {
+                            additionalState.setPushedUpOnWall(false);
+                            pushedAgainstWallTimer.stop();
+                            pushedAgainstWallTimer.reset();
+                        }
+
+                        if ((readyToPushAgainstWall || pushedAgainstWallTimer.isRunning())
                                 && !additionalState.isPushedUpOnWall()) {
                             if (!pushedAgainstWallTimer.isRunning()) {
                                 pushedAgainstWallTimer.restart();
                             }
-                            driveWithSpeeds(new ChassisSpeeds(0.02, 0.0, 0.0));
+                            driveWithSpeeds(
+                                    new ChassisSpeeds(
+                                            InchesPerSecond.of(10.0).in(MetersPerSecond),
+                                            0.0,
+                                            0.0));
                             return;
                         }
 
@@ -371,12 +403,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
                     @Override
                     public boolean isFinished() {
-                        return holonomicDriveController.atReference()
-                                && isAligned()
-                                && Math.abs(getState().Speeds.vxMetersPerSecond)
-                                        < InchesPerSecond.of(1.0).in(MetersPerSecond)
-                                && Math.abs(getState().Speeds.vyMetersPerSecond)
-                                        < InchesPerSecond.of(1.0).in(MetersPerSecond);
+                        return holonomicDriveController.atReference() && isAligned() && !isMoving();
                     }
                 };
 
@@ -385,6 +412,15 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         command.setName("Precise Alignment");
 
         return command;
+    }
+
+    public boolean isMoving() {
+        return Math.abs(getState().Speeds.vxMetersPerSecond)
+                        > InchesPerSecond.of(1.5).in(MetersPerSecond)
+                || Math.abs(getState().Speeds.vyMetersPerSecond)
+                        > InchesPerSecond.of(1.5).in(MetersPerSecond)
+                || Math.abs(getState().Speeds.omegaRadiansPerSecond)
+                        > DegreesPerSecond.of(1.5).in(RadiansPerSecond);
     }
 
     public Command driveToPose(Pose2d targetPose) {

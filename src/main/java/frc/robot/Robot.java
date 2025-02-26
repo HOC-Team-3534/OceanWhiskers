@@ -213,6 +213,13 @@ public class Robot extends HocRobot {
                     "Align Angle (Deg.)",
                     getDtm().getAlignReefFinalTransform().getRotation().getDegrees());
 
+            SmartDashboard.putBoolean(
+                    "Align is Pushed Forward", getSwerve().getAdditionalState().isPushedUpOnWall());
+
+            SmartDashboard.putBoolean(
+                    "Bumper Reef Alignment Transform Present",
+                    getDtm().getBumperToReefAlignment().isPresent());
+
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
             // intercept error and log it

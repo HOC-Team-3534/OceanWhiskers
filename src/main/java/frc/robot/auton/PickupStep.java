@@ -30,6 +30,6 @@ public class PickupStep extends AutonStep {
 
     @Override
     public Command alignWithGoalPose() {
-        return DTM.pushForwardAgainstWall().asProxy().withTimeout(0.5);
+        return Robot.getDtm().pushForwardAgainstWallPickup().asProxy().withTimeout(0.5);
     }
 }

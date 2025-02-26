@@ -37,7 +37,7 @@ public class DeployStep extends AutonStep {
     @Override
     public Command alignWithGoalPose() {
         return Robot.getDtm()
-                .alignLeftRightOnWall()
+                .alignLeftRightOnReefWall()
                 .asProxy()
                 .until(() -> RobotStates.AlignedWithReef.getAsBoolean());
     }

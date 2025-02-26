@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 import static frc.reefscape.FieldAndTags2025.*;
 
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -22,6 +23,7 @@ import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.util.CachedValue;
@@ -50,13 +52,16 @@ public class DTM {
         Distance offsetFromWallToCenter = Inches.of(16.5);
 
         // TODO: tune skip and alignment values
-        Distance skipPathForDTMTolerance = Inches.of(2.0); // taken out so never skip
-        Angle skipPathFromDTMAngleTolerance = Degrees.of(5.0);
+        Distance skipPathForDTMTolerance = Inches.of(3.0); // taken out so never skip
+        Angle skipPathFromDTMAngleTolerance = Degrees.of(10.0);
 
         Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
 
         Pose2d dtmAlignTolerance =
-                new Pose2d(Inches.of(1.5), Inches.of(0.8), Rotation2d.fromDegrees(4.0));
+                new Pose2d(Inches.of(3.25), Inches.of(0.8), Rotation2d.fromDegrees(4.0));
+
+        Time pushAgainstWallTimeReef = Seconds.of(0.20);
+        Time pushAgainstWallTimePickup = Seconds.of(0.5);
     }
 
     private final DTMConfig config;
@@ -69,7 +74,7 @@ public class DTM {
         var command =
                 Commands.deadline(
                         followPathToAprilTagID(FieldAndTags2025::getClosestHumanPlayerStationID)
-                                .andThen(pushForwardAgainstWall().asProxy().withTimeout(0.5)),
+                                .andThen(pushForwardAgainstWallPickup().asProxy().withTimeout(0.5)),
                         Commands.startEnd(
                                 () -> RobotStates.setDrivingAutonomously(true),
                                 () -> RobotStates.setDrivingAutonomously(false)));
@@ -84,7 +89,7 @@ public class DTM {
                 Commands.deadline(
                         followPathToAprilTagID(FieldAndTags2025::getClosestReefID)
                                 .andThen(
-                                        alignLeftRightOnWall()
+                                        alignLeftRightOnReefWall()
                                                 .asProxy()
                                                 .until(
                                                         () ->
@@ -165,25 +170,29 @@ public class DTM {
                 });
     }
 
-    protected Command alignLeftRightOnWall() {
+    protected Command alignLeftRightOnReefWall() {
         return Robot.getSwerve()
                 .driveAgainstWallAlign(
-                        this::getAlignReefFinalTransform, config.getDtmAlignTolerance())
+                        this::getAlignReefFinalTransform,
+                        config.getDtmAlignTolerance(),
+                        config.getPushAgainstWallTimeReef())
                 .asProxy()
-                .withTimeout(0.5)
+                .withTimeout(0.75)
                 .andThen(
                         Commands.deferredProxy(
                                 () -> {
-                                    if (!isBumperToReefAligned()) return alignLeftRightOnWall();
+                                    if (!RobotStates.AlignedWithReef.getAsBoolean())
+                                        return alignLeftRightOnReefWall();
                                     return Commands.none();
                                 }));
     }
 
-    protected static Command pushForwardAgainstWall() {
+    protected Command pushForwardAgainstWallPickup() {
         return Robot.getSwerve()
                 .driveAgainstWallAlign(
                         () -> new Transform2d(Inches.of(2.0), Inches.zero(), new Rotation2d()),
-                        new Pose2d());
+                        new Pose2d(),
+                        config.getPushAgainstWallTimePickup());
     }
 
     private CachedValue<Optional<Transform2d>> cachedBumperToReefAlignment =
@@ -227,9 +236,9 @@ public class DTM {
 
         var tolerance = config.getDtmAlignTolerance();
 
-        return Robot.getSwerve().getAdditionalState().isPushedUpOnWall()
-                && getBumperToReefAlignment().isPresent()
-                && bumperToReef.getMeasureY().abs(Meters) < tolerance.getY() * 1.1
+        return getBumperToReefAlignment().isPresent()
+                && bumperToReef.getMeasureY().abs(Meters)
+                        < tolerance.getY() + Inches.of(0.25).in(Meters)
                 && bumperToReef.getRotation().getMeasure().abs(Degrees)
                         <= tolerance.getRotation().getMeasure().in(Degrees) * 1.1;
     }
