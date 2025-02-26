@@ -18,6 +18,9 @@ public class Codriver extends Gamepad {
     public final Trigger GoToL3Coral_X = X.and(noFn, teleop);
     public final Trigger GoToL4Coral_Y = Y.and(noFn, teleop);
 
+    public final Trigger GoToL2Algae_B = B.and(fn, teleop);
+    public final Trigger GoToL3Algae_X = X.and(fn, teleop);
+
     public final Trigger VoltageUp_UDP = upDpad.and(teleop, UseSysIdOverManual.not());
     public final Trigger VoltageDown_DDP = downDpad.and(teleop, UseSysIdOverManual.not());
 

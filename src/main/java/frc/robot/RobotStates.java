@@ -131,9 +131,8 @@ public class RobotStates {
                             .and(codriver.Deploy_LS.or(AlignedWithReef)))
                     .debounce(0.15);
 
-    public static final Trigger GoToL3Algae = Trigger.kFalse;
-    public static final Trigger GoToL2Algae = Trigger.kFalse;
-    public static final Trigger GoToPreClimb = Trigger.kFalse;
+    public static final Trigger GoToL3Algae = codriver.GoToL3Algae_X;
+    public static final Trigger GoToL2Algae = codriver.GoToL2Algae_B;
 
     public static final Trigger RequestReleaseAlgae = codriver.ReleaseAlgae_LT;
     public static final Trigger HoldAlgae = AlgaeWheelHoldingAlgae.and(RequestReleaseAlgae.not());

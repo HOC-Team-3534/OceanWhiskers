@@ -1,8 +1,9 @@
 package frc.robot.elevator;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.RobotStates.*;
+
+import java.util.function.Supplier;
 
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -10,7 +11,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Robot;
 import frc.robot.elevator.Elevator.Level;
-import java.util.function.Supplier;
 
 public class ElevatorStates {
     private static Elevator elevator = Robot.getElevator();
@@ -32,6 +32,9 @@ public class ElevatorStates {
         GoToL4Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
         GoToL4Coral.and(Deploy).whileTrue(goToLevel(Level.L4));
 
+        GoToL2Algae.whileTrue(goToLevel(Level.L2Algae));
+        GoToL3Algae.whileTrue(goToLevel(Level.L3Algae));
+
         PreClimb.whileTrue(goToLevel(Level.PreClimb));
 
         Climb.and(
@@ -50,7 +53,7 @@ public class ElevatorStates {
                 // No other command is setting the target height above 0
                 .and(
                         () ->
-                                elevator.getTargetHeight().isEquivalent(Inches.zero())
+                                elevator.getState().getTargetLevel().equals(Level.Bottom)
                                         && !elevator.getState().isClimbing())
                 .onTrue(goToLevel(Level.Jaws).until(JawsOpened));
 
@@ -71,8 +74,6 @@ public class ElevatorStates {
         ElevatorQuasiasticDown.whileTrue(elevator.sysIdQuasistatic(Direction.kReverse));
         ElevatorDynamicUp.whileTrue(elevator.sysIdDynamic(Direction.kForward));
         ElevatorDynamicDown.whileTrue(elevator.sysIdDynamic(Direction.kReverse));
-
-        // TODO: add elevator climb and climbing logic to keep the elevator from breaking
     }
 
     static Command goToLevel(Level level) {

@@ -31,7 +31,6 @@ public class Elevator extends TalonFXMechanism {
 
     @Getter
     public static class ElevatorConfig extends Config {
-        // TODO: tune heights for each level and pickup height
         Distance L1 = Inches.of(0);
         Distance L1Pre = Inches.of(0);
         Distance L2 = Inches.of(14.5);
@@ -41,9 +40,12 @@ public class Elevator extends TalonFXMechanism {
         Distance L4 = Inches.of(54.5);
         Distance L4Pre = Inches.of(54.5);
         Distance PickUp = Inches.of(0.0);
-        Distance Jaws = Inches.of(6.0);
-
-        @Getter Distance PreClimb = Inches.of(15);
+        // TODO: tune jaw height
+        Distance Jaws = Inches.of(10.0);
+        Distance PreClimb = Inches.of(15);
+        // TODO: tune algae heights
+        Distance L2Algae = Inches.of(10.0);
+        Distance L3Algae = Inches.of(26.0);
 
         boolean motionMagicEnabled;
 
@@ -275,7 +277,9 @@ public class Elevator extends TalonFXMechanism {
         L4,
         PickUp,
         Jaws,
-        PreClimb;
+        PreClimb,
+        L2Algae,
+        L3Algae;
 
         public Distance getHeight(ElevatorConfig config) {
             switch (this) {
@@ -301,7 +305,10 @@ public class Elevator extends TalonFXMechanism {
                     return config.getJaws();
                 case PreClimb:
                     return config.getPreClimb();
-
+                case L2Algae:
+                    return config.getL2Algae();
+                case L3Algae:
+                    return config.getL3Algae();
                 default:
                     return Inches.of(0);
             }

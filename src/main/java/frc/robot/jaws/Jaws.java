@@ -19,7 +19,6 @@ public class Jaws extends TalonSRXMechanism {
 
         public JawsConfig() {
             super("Jaws", 17);
-            setAttached(false);
         }
     }
 
@@ -30,6 +29,10 @@ public class Jaws extends TalonSRXMechanism {
     public Jaws(JawsConfig config) {
         super(config);
         this.config = config;
+
+        if(isAttached()){
+            motor.setInverted(false);
+        }
     }
 
     @Override
