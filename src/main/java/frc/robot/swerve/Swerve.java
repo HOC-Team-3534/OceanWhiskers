@@ -320,7 +320,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                 xPID,
                                 yPID,
                                 new ProfiledPIDController(
-                                        5.0,
+                                        1.0,
                                         0.0,
                                         0.0,
                                         new TrapezoidProfile.Constraints(
@@ -352,16 +352,10 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                         && Math.abs(translationToTarget.getY())
                                                 < 3.5 * errorTolerance.getY()
                                         && rotationToTarget.abs(Degrees)
-                                                < errorTolerance.getRotation().getDegrees() * 0.5;
+                                                < errorTolerance.getRotation().getDegrees() * 0.9;
 
                         SmartDashboard.putBoolean(
                                 "Align Ready to Push Against Wall", readyToPushAgainstWall);
-
-                        if (!readyToPushAgainstWall && additionalState.isPushedUpOnWall()) {
-                            additionalState.setPushedUpOnWall(false);
-                            pushedAgainstWallTimer.stop();
-                            pushedAgainstWallTimer.reset();
-                        }
 
                         if ((readyToPushAgainstWall || pushedAgainstWallTimer.isRunning())
                                 && !additionalState.isPushedUpOnWall()) {
@@ -376,16 +370,13 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                             return;
                         }
 
-                        if (additionalState.isPushedUpOnWall()) {
+                        if (additionalState.isPushedUpOnWall() && readyToPushAgainstWall) {
                             driveWithSpeeds(
                                     new ChassisSpeeds(
                                             0.0,
-                                            InchesPerSecond.of(
-                                                            7.5
-                                                                    * Math.signum(
-                                                                            translationToTarget
-                                                                                    .getY()))
-                                                    .in(MetersPerSecond),
+                                            holonomicDriveController
+                                                    .getXController()
+                                                    .calculate(translationToTarget.getY()),
                                             0.0));
 
                             return;

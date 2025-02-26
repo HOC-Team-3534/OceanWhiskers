@@ -30,7 +30,7 @@ public class Jaws extends TalonSRXMechanism {
         super(config);
         this.config = config;
 
-        if(isAttached()){
+        if (isAttached()) {
             motor.setInverted(false);
         }
     }

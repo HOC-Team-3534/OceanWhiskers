@@ -52,7 +52,7 @@ public class DTM {
         Distance offsetFromWallToCenter = Inches.of(16.5);
 
         // TODO: tune skip and alignment values
-        Distance skipPathForDTMTolerance = Inches.of(3.0); // taken out so never skip
+        Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(10.0);
 
         Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
@@ -60,7 +60,7 @@ public class DTM {
         Pose2d dtmAlignTolerance =
                 new Pose2d(Inches.of(3.25), Inches.of(0.8), Rotation2d.fromDegrees(4.0));
 
-        Time pushAgainstWallTimeReef = Seconds.of(0.20);
+        Time pushAgainstWallTimeReef = Seconds.of(0.40);
         Time pushAgainstWallTimePickup = Seconds.of(0.5);
     }
 
@@ -88,13 +88,7 @@ public class DTM {
         var command =
                 Commands.deadline(
                         followPathToAprilTagID(FieldAndTags2025::getClosestReefID)
-                                .andThen(
-                                        alignLeftRightOnReefWall()
-                                                .asProxy()
-                                                .until(
-                                                        () ->
-                                                                RobotStates.AlignedWithReef
-                                                                        .getAsBoolean())),
+                                .andThen(alignLeftRightOnReefWall().asProxy()),
                         Commands.startEnd(
                                 () -> RobotStates.setDrivingAutonomously(true),
                                 () -> RobotStates.setDrivingAutonomously(false)));
@@ -177,7 +171,8 @@ public class DTM {
                         config.getDtmAlignTolerance(),
                         config.getPushAgainstWallTimeReef())
                 .asProxy()
-                .withTimeout(0.75)
+                .until(() -> RobotStates.AlignedWithReef.getAsBoolean())
+                .withTimeout(0.5)
                 .andThen(
                         Commands.deferredProxy(
                                 () -> {

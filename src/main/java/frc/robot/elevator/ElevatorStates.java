@@ -3,14 +3,13 @@ package frc.robot.elevator;
 import static edu.wpi.first.units.Units.Volts;
 import static frc.robot.RobotStates.*;
 
-import java.util.function.Supplier;
-
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Robot;
 import frc.robot.elevator.Elevator.Level;
+import java.util.function.Supplier;
 
 public class ElevatorStates {
     private static Elevator elevator = Robot.getElevator();

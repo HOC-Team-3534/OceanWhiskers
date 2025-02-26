@@ -39,7 +39,7 @@ public class RobotStates {
 
     public static final Trigger AlignedWithReef =
             new Trigger(dtm::isBumperToReefAligned)
-                    .debounce(0.25)
+                    .debounce(0.2)
                     .and(
                             () -> swerve.getAdditionalState().isPushedUpOnWall(),
                             () -> !swerve.isMoving());
