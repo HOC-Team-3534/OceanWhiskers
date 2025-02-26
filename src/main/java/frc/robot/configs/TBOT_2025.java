@@ -13,7 +13,7 @@ public class TBOT_2025 extends Config {
                         .configEncoderOffsets(
                                 0.145751953125, -0.001953125, 0.326416015625, 0.22998046875);
 
-        auton.setOffsetFromWallToCenter(Inches.of(17.0));
+        dtm.setOffsetFromWallToCenter(Inches.of(17.0));
 
         vision.setFl_yaw(Degrees.of(45));
         vision.setFr_yaw(Degrees.of(-45));

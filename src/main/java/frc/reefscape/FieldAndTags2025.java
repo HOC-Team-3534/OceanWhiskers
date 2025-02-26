@@ -7,10 +7,13 @@ import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.Util;
+import frc.robot.Robot;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -147,5 +150,51 @@ public final class FieldAndTags2025 {
         return values.get()
                 .getDistanceFromAllianceWall(robotPose)
                 .lte(FIELD_LENGTH.div(2).plus(tolerance));
+    }
+
+    private static CachedValue<Optional<Integer>> cachedClosestHumanPlayerStation =
+            new CachedValue<>(FieldAndTags2025::updateClosestHumanPlayerStationID);
+    private static CachedValue<Optional<Integer>> cachedClosestReef =
+            new CachedValue<>(FieldAndTags2025::updateClosestReefID);
+
+    private static Pose2d getPose() {
+        return Robot.getSwerve().getState().Pose;
+    }
+
+    private static Optional<Integer> updateClosestHumanPlayerStationID() {
+        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1))
+                || !isRobotOnOurSide(getPose())) return Optional.empty();
+
+        return SideOfField.getCurrentSide(getPose()).flatMap(SideOfField::getPickUpID);
+    }
+
+    public static Optional<Integer> getClosestHumanPlayerStationID() {
+        return cachedClosestHumanPlayerStation.get();
+    }
+
+    private static Distance findDistanceFromRobot(Pose3d tag) {
+        return Meters.of(
+                tag.getTranslation().toTranslation2d().getDistance(getPose().getTranslation()));
+    }
+
+    private static Optional<Integer> updateClosestReefID() {
+        if (!isRobotOnOurSide(getPose()) || getAllianceReefTags().isEmpty())
+            return Optional.empty();
+
+        return Optional.of(
+                getAllianceReefTags().stream()
+                        .min(
+                                (t1, t2) -> {
+                                    var dist1 = findDistanceFromRobot(t1.pose);
+                                    var dist2 = findDistanceFromRobot(t2.pose);
+
+                                    return (int) Math.round(dist1.minus(dist2).in(Meters) * 1000);
+                                })
+                        .get()
+                        .ID);
+    }
+
+    public static Optional<Integer> getClosestReefID() {
+        return cachedClosestReef.get();
     }
 }

@@ -5,6 +5,10 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Seconds;
 
+import java.util.Optional;
+
+import org.photonvision.simulation.VisionSystemSim;
+
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -16,10 +20,7 @@ import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
-import frc.robot.auton.Auton;
-import java.util.Optional;
 import lombok.Setter;
-import org.photonvision.simulation.VisionSystemSim;
 
 public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
@@ -113,9 +114,9 @@ public class VisionSystem extends HocSubsystem {
     }
 
     public Optional<Transform2d> getRobotToReefAlignment() {
-        if (Auton.getClosestReefID().isEmpty()) return Optional.empty();
+        if (FieldAndTags2025.getClosestReefID().isEmpty()) return Optional.empty();
 
-        var reefId = Auton.getClosestReefID().get();
+        var reefId = FieldAndTags2025.getClosestReefID().get();
 
         var fromLeft = fl_camera.getRobotToTarget(reefId, Seconds.of(0.50));
         var fromRight = fr_camera.getRobotToTarget(reefId, Seconds.of(0.50));

@@ -4,7 +4,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.hocLib.util.CachedSendableChooser;
 import frc.reefscape.FieldAndTags2025.SideOfField;
-import frc.robot.auton.Auton.ReefBranch;
 
 public class AutonChoosers {
 

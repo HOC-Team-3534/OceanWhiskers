@@ -20,7 +20,10 @@ import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
+import frc.robot.auton.AutonStep;
 import frc.robot.auton.Auton.AutonConfig;
+import frc.robot.auton.DTM.DTMConfig;
+import frc.robot.auton.DTM;
 import frc.robot.codriver.Codriver;
 import frc.robot.codriver.Codriver.CodriverConfig;
 import frc.robot.configs.CBOT_2025;
@@ -57,6 +60,7 @@ public class Robot extends HocRobot {
         public AlgaeWheelConfig algaeWheel = new AlgaeWheelConfig();
 
         public AutonConfig auton = new AutonConfig();
+        public DTMConfig dtm = new DTMConfig();
         public VisionConfig vision = new VisionConfig();
         public LightsConfig lights = new LightsConfig();
     }
@@ -73,6 +77,7 @@ public class Robot extends HocRobot {
     @Getter private static Lights lights;
 
     @Getter private static Auton auton;
+    @Getter private static DTM dtm;
 
     public Robot() {
         super();
@@ -125,6 +130,7 @@ public class Robot extends HocRobot {
             visionSystem = new VisionSystem(config.vision);
             lights = new Lights(config.lights);
             auton = new Auton(config.auton);
+            dtm = new DTM(config.dtm);
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
@@ -176,7 +182,7 @@ public class Robot extends HocRobot {
                     getSwerve()
                             .getState()
                             .Pose
-                            .transformBy(getAuton().getAlignReefFinalTransform()));
+                            .transformBy(getDtm().getAlignReefFinalTransform()));
 
             SmartDashboard.putBoolean(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
@@ -195,19 +201,19 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
-            SmartDashboard.putNumber("Closest Reef Tag ID", Auton.getClosestReefID().orElse(0));
+            SmartDashboard.putNumber("Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
 
             SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 
             SmartDashboard.putNumber(
                     "Align Fwd (In.)",
-                    getAuton().getAlignReefFinalTransform().getMeasureX().in(Inches));
+                    getDtm().getAlignReefFinalTransform().getMeasureX().in(Inches));
             SmartDashboard.putNumber(
                     "Align Left Right (In.)",
-                    getAuton().getAlignReefFinalTransform().getMeasureY().in(Inches));
+                    getDtm().getAlignReefFinalTransform().getMeasureY().in(Inches));
             SmartDashboard.putNumber(
                     "Align Angle (Deg.)",
-                    getAuton().getAlignReefFinalTransform().getRotation().getDegrees());
+                    getDtm().getAlignReefFinalTransform().getRotation().getDegrees());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
@@ -243,7 +249,7 @@ public class Robot extends HocRobot {
 
     @Override
     public void teleopInit() {
-        Auton.setCurrentStep(Optional.empty());
+        AutonStep.setCurrentStep(Optional.empty());
         resetCommandsAndButtons();
     }
 

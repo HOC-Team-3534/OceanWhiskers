@@ -7,6 +7,7 @@ import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.auton.Auton;
+import frc.robot.auton.DTM;
 import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
 import frc.robot.elevator.Elevator;
@@ -20,7 +21,7 @@ public class RobotStates {
     private static final Driver driver = Robot.getDriver();
     private static final Codriver codriver = Robot.getCodriver();
 
-    private static final Auton auton = Robot.getAuton();
+    private static final DTM dtm = Robot.getDtm();
 
     // SWERVE
     private static final Swerve swerve = Robot.getSwerve();
@@ -37,7 +38,7 @@ public class RobotStates {
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
     public static final Trigger AlignedWithReef =
-            new Trigger(auton::isBumperToReefAligned).debounce(0.5);
+            new Trigger(dtm::isBumperToReefAligned).debounce(0.5);
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
@@ -147,11 +148,11 @@ public class RobotStates {
         driver.DTMToReef_A.and(
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(auton.dtmToReef());
+                .whileTrue(dtm.dtmToReef());
         driver.DTMToHumanPlayerStation_B.and(
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(auton.dtmToHumanPlayerStation());
+                .whileTrue(dtm.dtmToHumanPlayerStation());
     }
 
     private RobotStates() {
