@@ -20,10 +20,10 @@ import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.auton.Auton;
-import frc.robot.auton.AutonStep;
 import frc.robot.auton.Auton.AutonConfig;
-import frc.robot.auton.DTM.DTMConfig;
+import frc.robot.auton.AutonStep;
 import frc.robot.auton.DTM;
+import frc.robot.auton.DTM.DTMConfig;
 import frc.robot.codriver.Codriver;
 import frc.robot.codriver.Codriver.CodriverConfig;
 import frc.robot.configs.CBOT_2025;
@@ -179,10 +179,7 @@ public class Robot extends HocRobot {
         FieldAndTags2025.updateMasking();
         try {
             alignBumperToReefPosePublisher.set(
-                    getSwerve()
-                            .getState()
-                            .Pose
-                            .transformBy(getDtm().getAlignReefFinalTransform()));
+                    getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
 
             SmartDashboard.putBoolean(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
@@ -201,7 +198,8 @@ public class Robot extends HocRobot {
             SmartDashboard.putBoolean(
                     "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
-            SmartDashboard.putNumber("Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
+            SmartDashboard.putNumber(
+                    "Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
 
             SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 

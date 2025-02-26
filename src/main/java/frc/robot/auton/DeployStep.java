@@ -1,14 +1,13 @@
 package frc.robot.auton;
 
+import static frc.robot.auton.AutonChoosers.*;
+
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
-
-import static frc.robot.auton.AutonChoosers.*;
 
 @RequiredArgsConstructor
 @Getter
@@ -37,7 +36,8 @@ public class DeployStep extends AutonStep {
 
     @Override
     public Command alignWithGoalPose() {
-        return Robot.getDtm().alignLeftRightOnWall()
+        return Robot.getDtm()
+                .alignLeftRightOnWall()
                 .asProxy()
                 .until(() -> RobotStates.AlignedWithReef.getAsBoolean());
     }

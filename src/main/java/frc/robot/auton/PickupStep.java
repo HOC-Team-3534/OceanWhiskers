@@ -1,12 +1,12 @@
 package frc.robot.auton;
 
+import static frc.robot.auton.AutonChoosers.*;
+
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Robot;
 import frc.robot.tusks.Tusks;
 import lombok.RequiredArgsConstructor;
-
-import static frc.robot.auton.AutonChoosers.*;
 
 @RequiredArgsConstructor
 public class PickupStep extends AutonStep {

@@ -5,10 +5,6 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Seconds;
 
-import java.util.Optional;
-
-import org.photonvision.simulation.VisionSystemSim;
-
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
@@ -20,7 +16,9 @@ import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
+import java.util.Optional;
 import lombok.Setter;
+import org.photonvision.simulation.VisionSystemSim;
 
 public class VisionSystem extends HocSubsystem {
     public static class VisionConfig extends HocSubsystem.Config {
