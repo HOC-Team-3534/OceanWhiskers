@@ -18,7 +18,7 @@ import lombok.Setter;
 
 @NoArgsConstructor
 public abstract class AutonStep {
-    @Getter @Setter private static Optional<AutonStep> currentStep;
+    @Getter @Setter private static Optional<AutonStep> currentStep = Optional.empty();
 
     public abstract PathPlannerPath getPath();
 
