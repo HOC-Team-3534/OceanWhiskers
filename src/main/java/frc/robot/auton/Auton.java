@@ -376,14 +376,6 @@ public class Auton {
         return getPose().plus(new Transform2d(x, Meters.zero(), new Rotation2d()));
     }
 
-    public static class PlaceOption {
-        @Getter private ReefSide reefSide;
-    }
-
-    public static class PickupOption {
-        @Getter private Tusks.Side tusksSide;
-    }
-
     private Command pushForwardAgainstWall() {
         return swerve.driveAgainstWallAlign(
                 () -> new Transform2d(Inches.of(2.0), Inches.zero(), new Rotation2d()),
