@@ -43,7 +43,7 @@ public class Elevator extends TalonFXMechanism {
         Distance PickUp = Inches.of(0.0);
         Distance Jaws = Inches.of(6.0);
 
-        @Getter Distance PreClimb = Inches.of(10);
+        @Getter Distance PreClimb = Inches.of(15);
 
         boolean motionMagicEnabled;
 
@@ -158,7 +158,7 @@ public class Elevator extends TalonFXMechanism {
             volts = Volts.of(0.35);
         }
         if (getHeight().isNear(Inches.zero(), Inches.of(4.0))) {
-            volts = Volts.of(Math.max(volts.in(Volts), 0.35));
+            volts = Volts.of(Math.max(volts.in(Volts), 0.0));
         }
         super.setVoltageOut(volts);
     }
@@ -197,7 +197,7 @@ public class Elevator extends TalonFXMechanism {
                         },
                         () -> {
                             if (state.isNearTargetHeight()
-                                    && state.getTargetLevel().equals(Level.Bottom))
+                                    && state.getTargetLevel().getHeight(config).lt(Inches.of(0.5)))
                                 setVoltageOut(Volts.zero());
                             else
                                 motor.setControl(
