@@ -451,4 +451,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     public void setupBindings() {
         SwerveStates.setupBindings();
     }
+
+    @Override
+    public void disabledInit() {
+        setControl(new SwerveRequest.ApplyRobotSpeeds());
+    }
 }

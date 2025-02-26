@@ -220,6 +220,7 @@ public class Robot extends HocRobot {
     @Override
     public void disabledInit() {
         resetCommandsAndButtons();
+        super.disabledInit();
     }
 
     @Override

@@ -345,4 +345,9 @@ public class Elevator extends TalonFXMechanism {
     public void setupDefaultCommand() {
         ElevatorStates.setupDefaultCommand();
     }
+
+    @Override
+    public void disabledInit() {
+        setVoltageOut(Volts.zero());
+    }
 }

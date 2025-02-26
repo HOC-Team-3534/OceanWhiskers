@@ -25,6 +25,8 @@ public abstract class HocSubsystem extends SubsystemBase {
 
     public abstract void setupDefaultCommand();
 
+    public void disabledInit() {}
+
     public Trigger isCurrentCommand(String name) {
         return new Trigger(() -> this.getCurrentCommand().getName().equals(name));
     }

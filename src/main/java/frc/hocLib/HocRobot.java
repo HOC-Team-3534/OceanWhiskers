@@ -27,4 +27,9 @@ public abstract class HocRobot extends TimedRobot {
         // Bind Triggers for all subsystems
         subsystems.forEach(HocSubsystem::setupBindings);
     }
+
+    @Override
+    public void disabledInit() {
+        subsystems.forEach(HocSubsystem::disabledInit);
+    }
 }
