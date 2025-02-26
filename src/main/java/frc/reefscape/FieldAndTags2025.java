@@ -80,25 +80,6 @@ public final class FieldAndTags2025 {
         tag.get().pose = newPose.get();
     }
 
-    public enum ReefSide {
-        Front(7, 18),
-        FrontRight(8, 17),
-        BackRight(9, 22),
-        Back(10, 21),
-        BackLeft(11, 20),
-        FrontLeft(6, 19);
-        int redID, blueID;
-
-        ReefSide(int redID, int blueID) {
-            this.redID = redID;
-            this.blueID = blueID;
-        }
-
-        public Optional<Integer> getID() {
-            return Optional.of(Util.isRedAlliance() ? redID : blueID);
-        }
-    }
-
     @RequiredArgsConstructor
     public enum AllianceValues {
         Blue(13, 12, pose -> pose.getMeasureX(), pose -> pose.getMeasureY()),
