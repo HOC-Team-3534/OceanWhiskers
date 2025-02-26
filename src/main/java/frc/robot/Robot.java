@@ -6,6 +6,8 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
@@ -45,7 +47,6 @@ import frc.robot.tusks.Tusks;
 import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
 import frc.robot.vision.VisionSystem.VisionConfig;
-import java.util.Optional;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
@@ -214,6 +215,7 @@ public class Robot extends HocRobot {
         FieldAndTags2025.updateMasking();
 
         startLoggingIfNotAlready();
+
         try {
             alignBumperToReefPosePublisher.set(
                     getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
