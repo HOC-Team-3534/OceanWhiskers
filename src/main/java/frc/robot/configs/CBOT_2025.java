@@ -14,7 +14,7 @@ public class CBOT_2025 extends Config {
 
         elevator.enableMotionMagic();
 
-        tusks.enableMotionProfiling();
+        tusks.enableMotionMagic();
 
         this.algaeWheel.setAttached(true);
         this.elevator.setAttached(true);

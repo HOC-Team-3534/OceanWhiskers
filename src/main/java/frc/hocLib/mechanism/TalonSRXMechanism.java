@@ -32,6 +32,7 @@ public abstract class TalonSRXMechanism extends Mechanism {
 
     private final CachedValue<Double> cachedPositionInSensorTicks;
     private final CachedValue<Double> cachedVelocityInSensorTicksPer100ms;
+    private final CachedValue<Integer> cachedDutyCycleOut;
 
     public TalonSRXMechanism(Config config) {
         super(config);
@@ -56,6 +57,7 @@ public abstract class TalonSRXMechanism extends Mechanism {
         cachedPositionInSensorTicks = createCache(this::updatePositionInSensorTicks, 0.0);
         cachedVelocityInSensorTicksPer100ms =
                 createCache(this::updateVelocityInSensorTicksPer100ms, 0.0);
+                cachedDutyCycleOut = createCache(() -> (int) Math.round(motor.getMotorOutputPercent() * 1023), 0);
     }
 
     void telemetryInit() {
@@ -76,6 +78,10 @@ public abstract class TalonSRXMechanism extends Mechanism {
 
     public double getVelocityInSensorTicksPer100ms() {
         return cachedVelocityInSensorTicksPer100ms.get();
+    }
+
+    public int getDutyCycleOut(){
+        return cachedDutyCycleOut.get();
     }
 
     @Override
@@ -205,12 +211,12 @@ public abstract class TalonSRXMechanism extends Mechanism {
             this.talonConfig.motionCurveStrength = curveStrength;
         }
 
-        private double accelerationToAccelerationInSensorTicksPer100msPerSecond(
+        protected double accelerationToAccelerationInSensorTicksPer100msPerSecond(
                 AngularAcceleration acceleration) {
             return velocityToVelocityInSensorTicksPer100ms(acceleration.times(Seconds.one()));
         }
 
-        private double velocityToVelocityInSensorTicksPer100ms(AngularVelocity velocity) {
+        protected double velocityToVelocityInSensorTicksPer100ms(AngularVelocity velocity) {
             return velocity.in(RotationsPerSecond)
                     / 10
                     / this.SensorToMechanismRatio
