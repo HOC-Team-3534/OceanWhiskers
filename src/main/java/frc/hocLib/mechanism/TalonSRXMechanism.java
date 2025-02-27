@@ -141,8 +141,12 @@ public abstract class TalonSRXMechanism extends Mechanism {
     @Override
     protected void setVoltageOut(Voltage voltage) {
         if (isAttached()) {
-            motor.set(ControlMode.PercentOutput, voltage.div(getSupplyVoltage()).magnitude());
+            motor.set(ControlMode.PercentOutput, voltageToPercentOutput(voltage));
         }
+    }
+
+    protected double voltageToPercentOutput(Voltage voltage) {
+        return voltage.div(getSupplyVoltage()).magnitude();
     }
 
     public static class FollowerConfig extends HocSubsystem.Config {
