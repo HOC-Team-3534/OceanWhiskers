@@ -2,6 +2,7 @@ package frc.hocLib.mechanism;
 
 import static edu.wpi.first.units.Units.Radians;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.TalonSRXControlMode;
@@ -10,6 +11,7 @@ import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.util.CachedValue;
+import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,7 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
 
     @Getter
     public static class Config extends TalonSRXMechanism.Config {
-        private List<ArmSlotConfig> slotConfigs;
+        private final List<ArmSlotConfig> slotConfigs = new ArrayList<>();
         private final Angle startingAngle;
         @Setter private boolean sensorPhase;
 
@@ -40,7 +42,8 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
         }
 
         public void setSlotConfigs(ArmSlotConfig slotConfig0, ArmSlotConfig... nextSlotConfigs) {
-            this.slotConfigs = List.of(slotConfig0);
+            this.slotConfigs.clear();
+            this.slotConfigs.add(slotConfig0);
             for (var slotConfig : nextSlotConfigs) {
                 this.slotConfigs.add(slotConfig);
             }
@@ -109,7 +112,13 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
             motor.selectProfileSlot(requestedCurrentSlot, 0);
         }
 
-        cachedClosedLoopTargetPosition = createCache(motor::getClosedLoopTarget, 0.0);
+        cachedClosedLoopTargetPosition =
+                createCache(
+                        () ->
+                                getControlMode().equals(ControlMode.MotionMagic)
+                                        ? motor.getClosedLoopTarget()
+                                        : 0.0,
+                        0.0);
         cachedActiveTrajectoryPosition = createCache(motor::getActiveTrajectoryPosition, 0.0);
         cachedActiveTrajectoryVelocity = createCache(motor::getActiveTrajectoryVelocity, 0.0);
     }
