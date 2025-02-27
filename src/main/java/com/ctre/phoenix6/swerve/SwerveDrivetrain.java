@@ -662,7 +662,7 @@ public abstract class SwerveDrivetrain<
      *
      * @return Current state of the drivetrain
      */
-    public final SwerveDriveState getState() {
+    public SwerveDriveState getState() {
         m_jni.JNI_GetState(m_drivetrainId);
         try {
             m_stateLock.lock();

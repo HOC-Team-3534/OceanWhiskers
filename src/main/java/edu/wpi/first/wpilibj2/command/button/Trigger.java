@@ -10,6 +10,7 @@ import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.wpilibj.event.EventLoop;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.hocLib.util.CachedValue;
 import java.util.function.BooleanSupplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -30,10 +31,11 @@ import lombok.Setter;
  * to activate only if Teleop was enabled.
  */
 public class Trigger implements BooleanSupplier {
-    private final BooleanSupplier m_condition;
     private final EventLoop m_loop;
     public static final Trigger kFalse = new Trigger(() -> false);
     public static final Trigger kTrue = new Trigger(() -> true);
+
+    private final CachedValue<Boolean> m_cachedCondition;
 
     /**
      * Creates a new trigger based on the given condition.
@@ -43,7 +45,8 @@ public class Trigger implements BooleanSupplier {
      */
     public Trigger(EventLoop loop, BooleanSupplier condition) {
         m_loop = requireNonNullParam(loop, "loop", "Trigger");
-        m_condition = requireNonNullParam(condition, "condition", "Trigger");
+        var m_condition = requireNonNullParam(condition, "condition", "Trigger");
+        m_cachedCondition = new CachedValue<>(m_condition::getAsBoolean);
     }
 
     /**
@@ -67,11 +70,11 @@ public class Trigger implements BooleanSupplier {
         requireNonNullParam(command, "command", "onChange");
         m_loop.bind(
                 new Runnable() {
-                    private boolean m_pressedLast = m_condition.getAsBoolean();
+                    private boolean m_pressedLast = m_cachedCondition.get();
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (m_pressedLast != pressed) {
                             command.schedule();
@@ -97,7 +100,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (!m_pressedLast && pressed) {
                             command.schedule();
@@ -123,7 +126,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (m_pressedLast && !pressed) {
                             command.schedule();
@@ -153,7 +156,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (!m_pressedLast && pressed) {
                             command.schedule();
@@ -185,7 +188,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (m_pressedLast && !pressed) {
                             command.schedule();
@@ -213,7 +216,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (!m_pressedLast && pressed) {
                             if (command.isScheduled()) {
@@ -243,7 +246,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public void run() {
-                        boolean pressed = m_condition.getAsBoolean();
+                        boolean pressed = m_cachedCondition.get();
 
                         if (m_pressedLast && !pressed) {
                             if (command.isScheduled()) {
@@ -274,7 +277,7 @@ public class Trigger implements BooleanSupplier {
 
     @Override
     public boolean getAsBoolean() {
-        return m_condition.getAsBoolean();
+        return m_cachedCondition.get();
     }
 
     /**
@@ -285,7 +288,7 @@ public class Trigger implements BooleanSupplier {
      */
     public Trigger and(BooleanSupplier trigger) {
         if (trigger == null) throw new RuntimeException();
-        return new Trigger(m_loop, () -> m_condition.getAsBoolean() && trigger.getAsBoolean());
+        return new Trigger(m_loop, () -> m_cachedCondition.get() && trigger.getAsBoolean());
     }
 
     /**
@@ -326,7 +329,7 @@ public class Trigger implements BooleanSupplier {
      */
     public Trigger or(BooleanSupplier trigger) {
         if (trigger == null) throw new RuntimeException();
-        return new Trigger(m_loop, () -> m_condition.getAsBoolean() || trigger.getAsBoolean());
+        return new Trigger(m_loop, () -> m_cachedCondition.get() || trigger.getAsBoolean());
     }
 
     /**
@@ -336,7 +339,7 @@ public class Trigger implements BooleanSupplier {
      * @return the negated trigger
      */
     public Trigger negate() {
-        return new Trigger(m_loop, () -> !m_condition.getAsBoolean());
+        return new Trigger(m_loop, () -> !m_cachedCondition.get());
     }
 
     /**
@@ -375,7 +378,7 @@ public class Trigger implements BooleanSupplier {
 
                     @Override
                     public boolean getAsBoolean() {
-                        return m_debouncer.calculate(m_condition.getAsBoolean());
+                        return m_debouncer.calculate(m_cachedCondition.get());
                     }
                 });
     }
@@ -389,7 +392,7 @@ public class Trigger implements BooleanSupplier {
         return new Trigger(
                 m_loop,
                 () -> {
-                    if (m_condition.getAsBoolean()) {
+                    if (m_cachedCondition.get()) {
                         value.setValue(true);
                     }
 

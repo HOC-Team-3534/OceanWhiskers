@@ -46,6 +46,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.characterization.FeedForwardCharacterizer;
 import frc.hocLib.swerve.CustomSwerveRequest;
 import frc.hocLib.swerve.Telemetry;
+import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.Util;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -157,6 +158,13 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             e.printStackTrace();
             return Optional.empty();
         }
+    }
+
+    private CachedValue<SwerveDriveState> cachedState = new CachedValue<>(super::getState);
+
+    @Override
+    public SwerveDriveState getState() {
+        return cachedState.get();
     }
 
     Pose2d getPose() {

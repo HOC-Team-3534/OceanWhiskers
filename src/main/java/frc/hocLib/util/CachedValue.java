@@ -16,8 +16,6 @@ public class CachedValue<T> implements Supplier<T>, Subsystem {
 
     public CachedValue(Supplier<T> canCall) {
         this.canCall = canCall;
-        value = canCall.get();
-        isCached = true;
         this.register();
     }
 

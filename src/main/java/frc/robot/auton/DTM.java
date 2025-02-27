@@ -242,7 +242,10 @@ public class DTM {
         return getClosestReefID().flatMap(this::findGoalPoseInFrontOfTag);
     }
 
-    public Transform2d getAlignReefFinalTransform() {
+    private CachedValue<Transform2d> cachedAlignReefFinalTransform =
+            new CachedValue<>(this::updateAlignReefFinalTransform);
+
+    private Transform2d updateAlignReefFinalTransform() {
         return getBumperToReefAlignment()
                 .orElseGet(
                         () ->
@@ -251,6 +254,10 @@ public class DTM {
                                                 (reefGoalPose) ->
                                                         new Transform2d(getPose(), reefGoalPose))
                                         .orElse(new Transform2d()));
+    }
+
+    public Transform2d getAlignReefFinalTransform() {
+        return cachedAlignReefFinalTransform.get();
     }
 
     private Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {

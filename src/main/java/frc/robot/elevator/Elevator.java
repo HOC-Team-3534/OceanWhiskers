@@ -192,7 +192,7 @@ public class Elevator extends TalonFXMechanism {
         if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
 
         return Commands.either(
-                startRun(
+                        startRun(
                                 () -> {
                                     state.setTargetLevel(level);
                                 },
@@ -207,10 +207,10 @@ public class Elevator extends TalonFXMechanism {
                                                 motionMagicVoltage.withPosition(
                                                         linearPositionToPosition(
                                                                 level.getHeight(config))));
-                                })
-                        .withName("Elevator.Go To " + level.name()),
-                run(() -> setVoltageOut(Volts.zero())),
-                () -> !state.isClimbing());
+                                }),
+                        run(() -> setVoltageOut(Volts.zero())),
+                        () -> !state.isClimbing())
+                .withName("Elevator.Go To " + level.name());
     }
 
     // TODO: add climb command and climb level for pre climb, then lockout go to height once
