@@ -37,13 +37,13 @@ public class Tusks extends TalonSRXMechanism {
         @Getter private boolean motionProfilingEnabled;
 
         @Getter private Angle up = Degrees.of(91);
-        @Getter private Angle pickup = Degrees.of(52.5);
+        @Getter private Angle pickup = Degrees.of(42);
         @Getter private Angle preDeploy = Degrees.of(40);
         @Getter private Angle l4Deploy = Degrees.of(-45);
         @Getter private Angle l2l3Deploy = Degrees.of(-35);
         @Getter private Angle l1Deploy = Degrees.of(-30);
 
-        @Getter private double kP = 1.0;
+        @Getter private double kP = 0.5;
 
         @Getter private double kI = 0.0;
         @Getter private double kD = 0.0;
@@ -56,7 +56,7 @@ public class Tusks extends TalonSRXMechanism {
         // kg = (voltageToMoveUp + voltageToMoveDown) / 2
         // ks = (voltageToMoveUp - voltageToMoveDown) / 2
 
-        @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.74, 0.16, 0.87, 0.002);
+        @Getter @Setter ArmFeedforward ff_noCoral = new ArmFeedforward(0.44, 0.16, 0.87, 0.002);
 
         @Getter @Setter ArmFeedforward ff_withCoral = new ArmFeedforward(0.44, 0.75, 0.87, 0.01);
 
@@ -64,8 +64,8 @@ public class Tusks extends TalonSRXMechanism {
         @Getter @Setter
         TrapezoidProfile.Constraints profileConstants =
                 new TrapezoidProfile.Constraints(
-                        RotationsPerSecond.of(1.5).in(RadiansPerSecond),
-                        RotationsPerSecondPerSecond.of(6.0).in(RadiansPerSecondPerSecond));
+                        RotationsPerSecond.of(1.0).in(RadiansPerSecond),
+                        RotationsPerSecondPerSecond.of(4.0).in(RadiansPerSecondPerSecond));
 
         public TusksConfig() {
             super("Tusks", 18, 1440, 1.0);
@@ -129,7 +129,12 @@ public class Tusks extends TalonSRXMechanism {
         SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
         SmartDashboard.putNumber("Tusks/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
-        SmartDashboard.putNumber("Tusks/Setpoint (Rots)", profile.getSetpoint().position);
+        SmartDashboard.putNumber(
+                "Tusks/Setpoint (Degrees)", Radians.of(profile.getSetpoint().position).in(Degrees));
+
+        SmartDashboard.putNumber(
+                "Tusks/Setpoint Velocity (deg/s)",
+                RadiansPerSecond.of(profile.getSetpoint().velocity).in(DegreesPerSecond));
     }
 
     public enum Side {
@@ -158,10 +163,7 @@ public class Tusks extends TalonSRXMechanism {
                 .alongWith(
                         Commands.waitUntil(
                                         () ->
-                                                getPosition()
-                                                                .isNear(
-                                                                        config.pickup,
-                                                                        Degrees.of(10.0))
+                                                getPosition().isNear(config.pickup, Degrees.of(1.0))
                                                         && Math.abs(
                                                                         getVelocity()
                                                                                 .in(
@@ -174,7 +176,8 @@ public class Tusks extends TalonSRXMechanism {
                                                             && RobotIsStill.getAsBoolean()) {
                                                         state.setHoldingCoral(true);
                                                     }
-                                                })));
+                                                })))
+                .withName("Tusks.Pickup");
     }
 
     public Command preDeploy() {
@@ -303,21 +306,22 @@ public class Tusks extends TalonSRXMechanism {
         }
 
         Voltage getFF() {
-            var position = pid.getSetpoint().position;
             var velocity = pid.getSetpoint().velocity;
             // TODO: try JNI now that infinite loop should be fixed in wpilib 2025.3.1
             return Volts.of(
                     getCurrentFF()
                             .calculate(
-                                    position,
+                                    getPosition().in(Radians),
                                     velocity,
                                     velocity - getVelocity().in(RadiansPerSecond)));
         }
 
         Voltage calculate() {
-            var pidOutput =
-                    pid.calculate(getPosition().in(Radians)) * (state.isHoldingCoral() ? 1 : 1);
+
+            var pidOutput = pid.calculate(getPosition().in(Radians));
+
             var ff = getFF();
+
             return ff.plus(Volts.of(pidOutput));
         }
     }
