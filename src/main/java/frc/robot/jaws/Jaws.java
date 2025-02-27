@@ -1,5 +1,6 @@
 package frc.robot.jaws;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
 
@@ -14,8 +15,8 @@ import lombok.Setter;
 public class Jaws extends TalonSRXMechanism {
     public static class JawsConfig extends TalonSRXMechanism.Config {
         // TODO: tune power spike and output voltage levels
-        @Getter private Power spikeThreshold = Watts.of(5.0);
-        @Getter private Voltage openAndCloseVoltage = Volts.of(5.0); // close is positive
+        @Getter private Power spikeThreshold = Watts.of(60.0);
+        @Getter private Voltage openAndCloseVoltage = Volts.of(8.3); // close is positive
 
         public JawsConfig() {
             super("Jaws", 17);
@@ -38,6 +39,8 @@ public class Jaws extends TalonSRXMechanism {
     @Override
     public void periodic() {
         SmartDashboard.putNumber("Jaws/Power (Watts)", getPower().in(Watts));
+        SmartDashboard.putNumber("Jaws/Voltage", getVoltage().in(Volts));
+        SmartDashboard.putNumber("Jaws/Current", getCurrent().in(Amps));
     }
 
     private boolean isPowerSpikeExceeded() {

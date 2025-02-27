@@ -1,7 +1,5 @@
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Inches;
-
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
@@ -62,11 +60,12 @@ public class RobotStates {
     public static final Trigger ElevatorVoltageDown =
             codriver.VoltageDown_DDP.and(ElevatorIsTesting);
 
-    public static final Trigger ElevatorBelowOrGoingToBelow4In =
+    public static final Trigger ElevatorBelowOrGoingToBelowJawsCanMoveHeight =
             new Trigger(
                     () ->
-                            elevator.getHeight().lt(Inches.of(4.0))
-                                    || elevator.getTargetHeight().lt(Inches.of(4.0)));
+                            elevator.getHeight().lt(Robot.getConfig().elevator.getJaws())
+                                    || elevator.getTargetHeight()
+                                            .lt(Robot.getConfig().elevator.getJaws()));
 
     public static final Trigger ElevatorReadyToDeploy =
             new Trigger(() -> elevator.getState().isReadyToDeploy());
@@ -100,7 +99,7 @@ public class RobotStates {
     // JAWS
     private static final Jaws jaws = Robot.getJaws();
 
-    public static final Trigger JawsCanMove = ElevatorBelowOrGoingToBelow4In.not();
+    public static final Trigger JawsCanMove = ElevatorBelowOrGoingToBelowJawsCanMoveHeight.not();
 
     public static final Trigger JawsOpened = new Trigger(() -> jaws.getState().isOpened());
     public static final Trigger JawsClosed = new Trigger(() -> jaws.getState().isClosed());

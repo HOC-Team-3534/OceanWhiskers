@@ -347,12 +347,15 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                             additionalState.setPushedUpOnWall(true);
                         }
 
+                        var rotationGood =
+                                rotationToTarget.abs(Degrees)
+                                        < errorTolerance.getRotation().getDegrees() * 0.9;
+
                         var readyToPushAgainstWall =
                                 Math.abs(translationToTarget.getX()) < errorTolerance.getX()
                                         && Math.abs(translationToTarget.getY())
                                                 < 3.5 * errorTolerance.getY()
-                                        && rotationToTarget.abs(Degrees)
-                                                < errorTolerance.getRotation().getDegrees() * 0.9;
+                                        && rotationGood;
 
                         SmartDashboard.putBoolean(
                                 "Align Ready to Push Against Wall", readyToPushAgainstWall);
@@ -370,13 +373,17 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                             return;
                         }
 
-                        if (additionalState.isPushedUpOnWall() && readyToPushAgainstWall) {
+                        if (additionalState.isPushedUpOnWall() && rotationGood) {
                             driveWithSpeeds(
                                     new ChassisSpeeds(
                                             0.0,
-                                            holonomicDriveController
-                                                    .getXController()
-                                                    .calculate(translationToTarget.getY()),
+                                            (Math.abs(translationToTarget.getY())
+                                                                    < Inches.of(2.0).in(Meters)
+                                                            ? InchesPerSecond.of(8.5)
+                                                                    .in(MetersPerSecond)
+                                                            : InchesPerSecond.of(11.0)
+                                                                    .in(MetersPerSecond))
+                                                    * Math.signum(translationToTarget.getY()),
                                             0.0));
 
                             return;

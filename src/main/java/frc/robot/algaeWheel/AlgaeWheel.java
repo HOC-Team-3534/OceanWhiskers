@@ -19,7 +19,7 @@ public class AlgaeWheel extends TalonSRXMechanism {
     public static class AlgaeWheelConfig extends TalonSRXMechanism.Config {
         Power spikeThreshold = Watts.of(Double.POSITIVE_INFINITY);
         // TODO: tune power on wheel for removing algae from reef
-        Voltage grabVoltage = Volts.of(5.0);
+        Voltage grabVoltage = Volts.of(12.0);
         Voltage releaseVoltage = Volts.of(-7.0);
         Voltage holdVoltage = Volts.of(0.3);
 
