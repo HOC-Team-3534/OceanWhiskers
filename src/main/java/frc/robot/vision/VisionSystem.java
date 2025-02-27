@@ -12,6 +12,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.reefscape.FieldAndTags2025;
@@ -92,7 +93,12 @@ public class VisionSystem extends HocSubsystem {
             rl_camera.addToVisionSim(visionSim);
             rr_camera.addToVisionSim(visionSim);
         }
+
+        fl_camera.getTimeTracker().setEnabled(true);
+        printTimer.start();
     }
+
+    private Timer printTimer = new Timer();
 
     @Override
     public void periodic() {
@@ -103,12 +109,17 @@ public class VisionSystem extends HocSubsystem {
             fr_camera.update();
             rl_camera.update();
             rr_camera.update();
+
+            if (printTimer.hasElapsed(10.0)) {
+                fl_camera.getTimeTracker().printStepAverages();
+                printTimer.restart();
+            }
         }
     }
 
     @Override
     public void simulationPeriodic() {
-        visionSim.update(Robot.getSwerve().getState().Pose);
+        // visionSim.update(Robot.getSwerve().getState().Pose);
     }
 
     public Optional<Transform2d> getRobotToReefAlignment() {

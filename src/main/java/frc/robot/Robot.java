@@ -209,6 +209,8 @@ public class Robot extends HocRobot {
                     .getStructTopic("Align Bumper to Reef Pose", Pose2d.struct)
                     .publish();
 
+    private Timer printTimer = new Timer();
+
     @Override
     public void robotPeriodic() {
         FieldAndTags2025.updateMasking();
@@ -259,6 +261,12 @@ public class Robot extends HocRobot {
                     getDtm().getBumperToReefAlignment().isPresent());
 
             CommandScheduler.getInstance().run();
+
+            printTimer.start();
+            if (printTimer.hasElapsed(5.0)) {
+                CommandScheduler.getInstance().printWatchdogEpochs();
+                printTimer.restart();
+            }
         } catch (Throwable t) {
             // intercept error and log it
             CrashTracker.logThrowableCrash(t);

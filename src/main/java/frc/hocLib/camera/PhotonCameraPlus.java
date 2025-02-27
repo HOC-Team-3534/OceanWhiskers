@@ -19,6 +19,7 @@ import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.hocLib.util.TimeTracker;
 import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -102,23 +103,32 @@ public class PhotonCameraPlus {
                 aprilTagFieldLayout, calculateCurrentPoseStrategy(), robotToCamera);
     }
 
+    @Getter private TimeTracker timeTracker = new TimeTracker();
+
     public void update() {
+        timeTracker.trackStep("Switch Strategy");
+
         if (!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())) {
             poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
         }
+
+        timeTracker.trackStep("Log Connected");
 
         // TODO: validate isConnected is updating properly and catching connection issues
         logConnected();
 
         if (isConnected()) {
 
+            timeTracker.trackStep("Get All Unread Results");
             var results = camera.getAllUnreadResults();
 
             for (var result : results) {
+                timeTracker.trackStep("Update Pose Estimator");
                 var estimate = poseEstimator.update(result);
 
                 estimate.ifPresent(
                         estmt -> {
+                            timeTracker.trackStep("Calculate Values for Standard Devs");
                             var poseDifference =
                                     estmt.estimatedPose
                                             .toPose2d()
@@ -138,6 +148,7 @@ public class PhotonCameraPlus {
 
                             var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
 
+                            timeTracker.trackStep("Calculate Standard Devs");
                             double xyStds = 2.0;
                             // TODO: consider modifying weights to help with center camera and
                             // alignment
@@ -150,12 +161,15 @@ public class PhotonCameraPlus {
                             var visionMeasurementStdDevs =
                                     VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
+                            timeTracker.trackStep("Add Swerve Vision Measurement");
+
                             Robot.getSwerve()
                                     .addVisionMeasurement(
                                             estmt.estimatedPose.toPose2d(),
                                             Utils.fpgaToCurrentTime(estmt.timestampSeconds),
                                             visionMeasurementStdDevs);
 
+                            timeTracker.trackStep("Update Targets Used");
                             latestEstimateTargets.clear();
                             latestEstimateTargets.addAll(estmt.targetsUsed);
 
@@ -163,6 +177,7 @@ public class PhotonCameraPlus {
                         });
             }
         }
+        timeTracker.stop();
     }
 
     public Optional<Transform2d> getRobotToTarget(
