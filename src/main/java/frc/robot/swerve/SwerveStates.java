@@ -2,6 +2,7 @@ package frc.robot.swerve;
 
 import static frc.robot.RobotStates.*;
 
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.Robot;
 import frc.robot.driver.Driver;
@@ -23,5 +24,15 @@ public class SwerveStates {
         SwerveQuasiasticBackward.whileTrue(swerve.sysIdQuasistatic(Direction.kReverse));
         SwerveDynamicForward.whileTrue(swerve.sysIdDynamic(Direction.kForward));
         SwerveDynamicBackward.whileTrue(swerve.sysIdDynamic(Direction.kReverse));
+
+        var fwd = new ChassisSpeeds(0.1, 0.0, 0.0);
+        var back = new ChassisSpeeds(-0.1, 0.0, 0.0);
+        var left = new ChassisSpeeds(0.0, 0.1, 0.0);
+        var right = new ChassisSpeeds(0.0, -0.1, 0.0);
+
+        RobotCentricForward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(fwd)));
+        RobotCentricBackward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(back)));
+        RobotCentricLeft.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(left)));
+        RobotCentricRight.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(right)));
     }
 }

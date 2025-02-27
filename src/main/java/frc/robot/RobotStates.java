@@ -25,6 +25,12 @@ public class RobotStates {
     private static final Swerve swerve = Robot.getSwerve();
 
     public static final Trigger SwerveIsTesting = new Trigger(swerve::isTesting);
+    public static final Trigger SwerveNotTesting = SwerveIsTesting.not();
+
+    public static final Trigger RobotCentricForward = driver.RobotCentricForward.and(SwerveNotTesting);
+    public static final Trigger RobotCentricBackward = driver.RobotCentricBackward.and(SwerveNotTesting);
+    public static final Trigger RobotCentricLeft = driver.RobotCentricLeft.and(SwerveNotTesting);
+    public static final Trigger RobotCentricRight = driver.RobotCentricRight.and(SwerveNotTesting);
 
     public static final Trigger SwerveQuasiasticForward =
             driver.SwerveQuasiasticForward_UDP.and(SwerveIsTesting);
@@ -46,7 +52,7 @@ public class RobotStates {
     private static final Elevator elevator = Robot.getElevator();
 
     public static final Trigger ElevatorIsTesting =
-            new Trigger(elevator::isTesting).and(SwerveIsTesting.not());
+            new Trigger(elevator::isTesting).and(SwerveNotTesting);
 
     public static final Trigger ElevatorQuasiasticUp =
             codriver.QuasiasticUp_UDP.and(ElevatorIsTesting);

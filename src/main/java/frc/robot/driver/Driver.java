@@ -20,6 +20,11 @@ public class Driver extends Gamepad {
     public final Trigger SwerveDynamicForward_UDP = upDpad.and(fn, teleop);
     public final Trigger SwerveDynamicBackward_DDP = downDpad.and(fn, teleop);
 
+    public final Trigger RobotCentricForward = upDpad.and(teleop);
+    public final Trigger RobotCentricBackward = downDpad.and(teleop);
+    public final Trigger RobotCentricLeft = leftDpad.and(teleop);
+    public final Trigger RobotCentricRight = rightDpad.and(teleop);
+
     public final Trigger DTMToReef_A = A.and(noFn, teleop);
     public final Trigger DTMToHumanPlayerStation_B = B.and(noFn, teleop);
 
