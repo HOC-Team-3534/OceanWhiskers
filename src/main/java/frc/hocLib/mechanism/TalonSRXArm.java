@@ -69,15 +69,23 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
             slotConfiguration.kI = kI;
             slotConfiguration.kD = kD;
 
-            var encoderTicksPerRadianOfSensor = (1 / (2 * Math.PI) * config.getTicksPerRotation());
-            var volts100msPerEncoderTick =
-                    kFinVoltsSecondsPerRadianOfMechanism
-                            * 10
-                            / config.getSensorToMechanismRatio()
-                            / encoderTicksPerRadianOfSensor;
-            var dutyCycle100msPerEncoderTick = volts100msPerEncoderTick * 1023.0 / 12.0;
+            var _100msOverSeconds = 10.0 / 1.0;
 
-            slotConfiguration.kF = dutyCycle100msPerEncoderTick;
+            var radsMechOverRadsSensor = 1.0 / config.getSensorToMechanismRatio();
+
+            var radsOverRotations = (2 * Math.PI) / 1.0;
+
+            var rotationsOverEncoderTicks = 1.0 / config.getTicksPerRotation();
+
+            var dutyCycleOverVolts = 1023.0 / 12.0;
+
+            slotConfiguration.kF =
+                    kFinVoltsSecondsPerRadianOfMechanism
+                            * _100msOverSeconds
+                            * radsMechOverRadsSensor
+                            * radsOverRotations
+                            * rotationsOverEncoderTicks
+                            * dutyCycleOverVolts;
 
             return slotConfiguration;
         }
