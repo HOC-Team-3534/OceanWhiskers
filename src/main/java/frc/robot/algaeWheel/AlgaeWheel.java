@@ -5,8 +5,8 @@ import static edu.wpi.first.units.Units.Watts;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,7 +47,7 @@ public class AlgaeWheel extends TalonSRXMechanism {
             state.setHoldingBall(false);
         }
 
-        SmartDashboard.putNumber("Algae Wheel/Power (Watts)", getPower().in(Watts));
+        Logging.log("Algae Wheel", this);
     }
 
     private boolean isPowerSpikeExceeded() {
