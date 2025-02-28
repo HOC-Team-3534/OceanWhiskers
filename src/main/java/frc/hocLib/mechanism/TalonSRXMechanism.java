@@ -58,13 +58,20 @@ public abstract class TalonSRXMechanism extends Mechanism {
         cachedPositionInSensorTicks = createCache(this::updatePositionInSensorTicks, 0.0);
         cachedVelocityInSensorTicksPer100ms =
                 createCache(this::updateVelocityInSensorTicksPer100ms, 0.0);
-        cachedDutyCycleOut =
-                createCache(() -> (int) Math.round(motor.getMotorOutputPercent() * 1023), 0);
-        cachedControlMode = createCache(motor::getControlMode, ControlMode.Disabled);
+        cachedDutyCycleOut = createCache(this::updateDutyCycleOut, 0);
+        cachedControlMode = createCache(this::updateControlMode, ControlMode.Disabled);
     }
 
     void telemetryInit() {
         SmartDashboard.putData(this);
+    }
+
+    private Integer updateDutyCycleOut() {
+        return (int) Math.round(motor.getMotorOutputPercent() * 1023);
+    }
+
+    private ControlMode updateControlMode() {
+        return motor.getControlMode();
     }
 
     protected ControlMode getControlMode() {

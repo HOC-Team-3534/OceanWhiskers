@@ -120,15 +120,21 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
             motor.selectProfileSlot(requestedCurrentSlot, 0);
         }
 
-        cachedClosedLoopTargetPosition =
-                createCache(
-                        () ->
-                                getControlMode().equals(ControlMode.MotionMagic)
-                                        ? motor.getClosedLoopTarget()
-                                        : 0.0,
-                        0.0);
-        cachedActiveTrajectoryPosition = createCache(motor::getActiveTrajectoryPosition, 0.0);
-        cachedActiveTrajectoryVelocity = createCache(motor::getActiveTrajectoryVelocity, 0.0);
+        cachedClosedLoopTargetPosition = createCache(this::updateClosedLoopTargetPosition, 0.0);
+        cachedActiveTrajectoryPosition = createCache(this::updateActiveTrajectoryPosition, 0.0);
+        cachedActiveTrajectoryVelocity = createCache(this::updateActiveTrajectoryVelocity, 0.0);
+    }
+
+    private double updateClosedLoopTargetPosition() {
+        return getControlMode().equals(ControlMode.MotionMagic) ? motor.getClosedLoopTarget() : 0.0;
+    }
+
+    private double updateActiveTrajectoryPosition() {
+        return motor.getActiveTrajectoryPosition();
+    }
+
+    private double updateActiveTrajectoryVelocity() {
+        return motor.getActiveTrajectoryVelocity();
     }
 
     public Angle getClosedLoopTarget() {

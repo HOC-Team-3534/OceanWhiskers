@@ -136,7 +136,9 @@ public class Tusks extends TalonSRXArm {
     }
 
     private Trigger ReadyToDetectPickup =
-            new Trigger(() -> isNearPositionAndStill(config.pickup)).debounce(0.1);
+            new Trigger(() -> isNearPositionAndStill(config.pickup))
+                    .debounce(0.1)
+                    .and(RobotIsStill);
 
     public Command pickup() {
         return goToAngle(config.pickup)
