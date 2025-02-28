@@ -8,40 +8,40 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.733194946785706,
-        "y": 2.440804014050824
+        "x": 6.0100903335263665,
+        "y": 2.3268305522147905
       },
       "isLocked": false,
       "linkedName": "StartRight"
     },
     {
       "anchor": {
-        "x": 4.3875,
-        "y": 2.3407274590163936
+        "x": 4.437357954545455,
+        "y": 1.9608806818181812
       },
       "prevControl": {
-        "x": 6.023953763234577,
-        "y": 2.0714128598089427
+        "x": 5.808883267015327,
+        "y": 1.9378029260855776
       },
       "nextControl": {
-        "x": 4.024086829129985,
-        "y": 2.400535120349956
+        "x": 3.9016888091033106,
+        "y": 1.969894034746932
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 3.144065656565657,
-        "y": 3.05998975409836
+        "x": 2.7920454545454545,
+        "y": 2.868295454545454
       },
       "prevControl": {
-        "x": 3.3958878752039086,
-        "y": 2.645419465690454
+        "x": 3.066509924912701,
+        "y": 2.2755584812127267
       },
       "nextControl": {
-        "x": 2.9893965213220692,
-        "y": 3.314618707621509
+        "x": 2.6869990544235733,
+        "y": 3.0951550010085325
       },
       "isLocked": false,
       "linkedName": null
@@ -52,8 +52,8 @@
         "y": 3.9640151515151514
       },
       "prevControl": {
-        "x": 3.0024745810630415,
-        "y": 3.6590044526538605
+        "x": 2.3134090909090905,
+        "y": 3.9252840909090905
       },
       "nextControl": null,
       "isLocked": false,
@@ -61,7 +61,21 @@
     }
   ],
   "rotationTargets": [],
-  "constraintZones": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 2.329913180741903,
+      "maxWaypointRelativePos": 3.0,
+      "constraints": {
+        "maxVelocity": 2.0,
+        "maxAcceleration": 2.0,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 360.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
   "pointTowardsZones": [],
   "eventMarkers": [
     {
