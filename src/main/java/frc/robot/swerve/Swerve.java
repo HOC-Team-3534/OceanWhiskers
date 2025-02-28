@@ -425,9 +425,9 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     public boolean isMoving() {
         return Math.abs(getState().Speeds.vxMetersPerSecond)
-                        > InchesPerSecond.of(8.0).in(MetersPerSecond)
+                        > InchesPerSecond.of(6.0).in(MetersPerSecond)
                 || Math.abs(getState().Speeds.vyMetersPerSecond)
-                        > InchesPerSecond.of(8.0).in(MetersPerSecond)
+                        > InchesPerSecond.of(6.0).in(MetersPerSecond)
                 || Math.abs(getState().Speeds.omegaRadiansPerSecond)
                         > DegreesPerSecond.of(5.0).in(RadiansPerSecond);
     }

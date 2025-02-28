@@ -54,7 +54,7 @@ public class Tusks extends TalonSRXArm {
                     new ArmSlotConfig(0.44, 0.16, 0.02, 0.0, 0.00, 0.87),
                     new ArmSlotConfig(0.44, 0.75, 0.02, 0.0, 0.00, 0.87));
 
-            setMMConfigs(RotationsPerSecond.of(1.5), RotationsPerSecondPerSecond.of(8.0), 2);
+            setMMConfigs(RotationsPerSecond.of(1.5), RotationsPerSecondPerSecond.of(4.0), 2);
         }
 
         public TusksConfig enableMotionMagic() {
