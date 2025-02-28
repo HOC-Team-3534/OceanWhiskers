@@ -12,6 +12,7 @@ import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.robot.swerve.Swerve;
 
 public class Logging extends DogLog {
 
@@ -48,7 +49,7 @@ public class Logging extends DogLog {
         log(key, (TalonSRXMechanism) arm);
     }
 
-    public static void log(String key, SwerveDrivetrain<?, ?, ?> swerve) {
+    public static void log(String key, Swerve swerve) {
         log(key + "/Speed X", swerve.getState().Speeds.vxMetersPerSecond);
         log(key + "/Speed Y", swerve.getState().Speeds.vyMetersPerSecond);
         log(key + "/Speed Rotation", swerve.getState().Speeds.omegaRadiansPerSecond);
