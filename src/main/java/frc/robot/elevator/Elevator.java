@@ -219,7 +219,7 @@ public class Elevator extends TalonFXMechanism {
                 .until(() -> getHeight().lt(Inches.of(15.0)))
                 .andThen(
                         runEnd(
-                                () -> setVoltageOut(Volts.of(-3)),
+                                () -> setVoltageOut(Volts.of(-4.5)),
                                 () -> setVoltageOut(Volts.zero())));
     }
 
