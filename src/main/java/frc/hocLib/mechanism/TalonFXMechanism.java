@@ -11,7 +11,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.talon.TalonFXFactory;
 import frc.hocLib.util.CanDeviceId;
@@ -44,10 +43,6 @@ public abstract class TalonFXMechanism extends Mechanism {
 
             setInstantiated(true);
         }
-    }
-
-    void telemetryInit() {
-        SmartDashboard.putData(this);
     }
 
     @Override

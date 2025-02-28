@@ -1,7 +1,6 @@
 package frc.hocLib.camera;
 
 import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.Seconds;
 
@@ -18,7 +17,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.hocLib.Logging;
 import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -107,8 +106,7 @@ public class PhotonCameraPlus {
             poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
         }
 
-        // TODO: validate isConnected is updating properly and catching connection issues
-        logConnected();
+        Logging.log(camera.getName(), this);
 
         if (isConnected()) {
 
@@ -187,33 +185,5 @@ public class PhotonCameraPlus {
                                         new Translation3d(), new Rotation3d(Rotation2d.k180deg)));
 
         return Optional.of(robotToTarget.toPose2d().minus(new Pose2d()));
-    }
-
-    void logConnected() {
-        putBoolean("isConnected", isConnected());
-    }
-
-    void logTrackedTarget(PhotonTrackedTarget target) {
-        if (target == null) return;
-
-        var position = target.bestCameraToTarget.getTranslation();
-        var rotation = target.bestCameraToTarget.getRotation();
-
-        putNumber("Target ID", target.fiducialId);
-
-        putNumber("To Target X", position.getMeasureX().in(Inches));
-        putNumber("To Target Y", position.getMeasureY().in(Inches));
-        putNumber("To Target Z", position.getMeasureZ().in(Inches));
-        putNumber("To Target Roll", rotation.getMeasureX().in(Degrees));
-        putNumber("To Target Pitch", rotation.getMeasureY().in(Degrees));
-        putNumber("To Target Yaw", rotation.getMeasureZ().in(Degrees));
-    }
-
-    void putNumber(String key, double value) {
-        SmartDashboard.putNumber(subsystemName + "/" + getName() + "/" + key, value);
-    }
-
-    void putBoolean(String key, boolean value) {
-        SmartDashboard.putBoolean(subsystemName + "/" + getName() + "/" + key, value);
     }
 }
