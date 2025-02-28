@@ -25,10 +25,10 @@ public class SwerveStates {
         SwerveDynamicForward.whileTrue(swerve.sysIdDynamic(Direction.kForward));
         SwerveDynamicBackward.whileTrue(swerve.sysIdDynamic(Direction.kReverse));
 
-        var fwd = new ChassisSpeeds(0.7, 0.0, 0.0);
-        var back = new ChassisSpeeds(-0.7, 0.0, 0.0);
-        var left = new ChassisSpeeds(0.0, 0.7, 0.0);
-        var right = new ChassisSpeeds(0.0, -0.7, 0.0);
+        var fwd = new ChassisSpeeds(0.45, 0.0, 0.0);
+        var back = new ChassisSpeeds(-0.45, 0.0, 0.0);
+        var left = new ChassisSpeeds(0.0, 0.45, 0.0);
+        var right = new ChassisSpeeds(0.0, -0.45, 0.0);
 
         RobotCentricForward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(fwd)));
         RobotCentricBackward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(back)));
