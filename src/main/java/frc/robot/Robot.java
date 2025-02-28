@@ -46,6 +46,8 @@ import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
 import frc.robot.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
+
+import dev.doglog.DogLogOptions;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
