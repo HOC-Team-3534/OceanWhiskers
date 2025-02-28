@@ -6,6 +6,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
@@ -45,8 +46,6 @@ import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
 import frc.robot.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
-
-import dev.doglog.DogLogOptions;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
