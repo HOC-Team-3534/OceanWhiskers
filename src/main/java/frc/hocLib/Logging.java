@@ -52,5 +52,6 @@ public class Logging extends DogLog {
         log(key + "/Speed X", swerve.getState().Speeds.vxMetersPerSecond);
         log(key + "/Speed Y", swerve.getState().Speeds.vyMetersPerSecond);
         log(key + "/Speed Rotation", swerve.getState().Speeds.omegaRadiansPerSecond);
+        log(key + "/Pose", swerve.getState().Pose);
     }
 }
