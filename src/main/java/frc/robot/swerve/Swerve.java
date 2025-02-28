@@ -122,6 +122,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
 
         registerTelemetry(logger::telemeterize);
+
+        Logging.log("Swerve", this);
     }
 
     @Override
@@ -423,11 +425,11 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
 
     public boolean isMoving() {
         return Math.abs(getState().Speeds.vxMetersPerSecond)
-                        > InchesPerSecond.of(1.5).in(MetersPerSecond)
+                        > InchesPerSecond.of(8.0).in(MetersPerSecond)
                 || Math.abs(getState().Speeds.vyMetersPerSecond)
-                        > InchesPerSecond.of(1.5).in(MetersPerSecond)
+                        > InchesPerSecond.of(8.0).in(MetersPerSecond)
                 || Math.abs(getState().Speeds.omegaRadiansPerSecond)
-                        > DegreesPerSecond.of(1.5).in(RadiansPerSecond);
+                        > DegreesPerSecond.of(5.0).in(RadiansPerSecond);
     }
 
     public Command driveToPose(Pose2d targetPose) {

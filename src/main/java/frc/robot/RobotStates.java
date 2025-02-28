@@ -43,12 +43,12 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
+    public static final Trigger SwerveMoving = new Trigger(() -> swerve.isMoving());
+
     public static final Trigger AlignedWithReef =
             new Trigger(dtm::isBumperToReefAligned)
                     .debounce(0.2)
-                    .and(
-                            () -> swerve.getAdditionalState().isPushedUpOnWall(),
-                            () -> !swerve.isMoving());
+                    .and(() -> swerve.getAdditionalState().isPushedUpOnWall(), SwerveMoving.not());
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();

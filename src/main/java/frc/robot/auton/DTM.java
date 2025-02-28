@@ -58,7 +58,7 @@ public class DTM {
         Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
 
         Pose2d dtmAlignTolerance =
-                new Pose2d(Inches.of(3.25), Inches.of(0.8), Rotation2d.fromDegrees(4.0));
+                new Pose2d(Inches.of(3.25), Inches.of(1.0), Rotation2d.fromDegrees(4.0));
 
         Time pushAgainstWallTimeReef = Seconds.of(0.40);
         Time pushAgainstWallTimePickup = Seconds.of(0.5);
