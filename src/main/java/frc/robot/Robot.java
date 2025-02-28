@@ -6,10 +6,10 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StructPublisher;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -45,8 +45,6 @@ import frc.robot.tusks.Tusks.TusksConfig;
 import frc.robot.vision.VisionSystem;
 import frc.robot.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
-
-import dev.doglog.DogLogOptions;
 import lombok.Getter;
 
 public class Robot extends HocRobot {
@@ -90,9 +88,6 @@ public class Robot extends HocRobot {
             Logging.setOptions(new DogLogOptions().withCaptureDs(true));
 
             SmartDashboard.putData("CommandScheduler", CommandScheduler.getInstance());
-
-            SmartDashboard.putString(
-                    "Rio Serial Number", isReal() ? RobotController.getSerialNumber() : "");
 
             /** Set up the config */
             switch (Rio.id) {
@@ -187,42 +182,36 @@ public class Robot extends HocRobot {
             alignBumperToReefPosePublisher.set(
                     getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
 
-            SmartDashboard.putBoolean(
+            Logging.log(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
-            SmartDashboard.putBoolean(
-                    "Tusks Ready for Deploy", RobotStates.TusksReadyToDeploy.getAsBoolean());
-            SmartDashboard.putBoolean(
-                    "Tusks Voltage Up Trigger", RobotStates.TusksVoltageUp.getAsBoolean());
-            SmartDashboard.putBoolean("Driver Configured", getDriver().isConfigured());
+            Logging.log("Tusks Ready for Deploy", RobotStates.TusksReadyToDeploy.getAsBoolean());
+            Logging.log("Tusks Voltage Up Trigger", RobotStates.TusksVoltageUp.getAsBoolean());
+            Logging.log("Driver Configured", getDriver().isConfigured());
 
-            SmartDashboard.putBoolean(
-                    "Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
+            Logging.log("Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
 
-            SmartDashboard.putBoolean(
-                    "Aligned With Reef", RobotStates.AlignedWithReef.getAsBoolean());
+            Logging.log("Aligned With Reef", RobotStates.AlignedWithReef.getAsBoolean());
 
-            SmartDashboard.putBoolean(
-                    "Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
+            Logging.log("Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
-            SmartDashboard.putNumber(
-                    "Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
+            Logging.log("Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
 
-            SmartDashboard.putBoolean("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
+            Logging.log("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 
-            SmartDashboard.putNumber(
+            Logging.log(
                     "Align Fwd (In.)",
                     getDtm().getAlignReefFinalTransform().getMeasureX().in(Inches));
-            SmartDashboard.putNumber(
+            Logging.log(
                     "Align Left Right (In.)",
                     getDtm().getAlignReefFinalTransform().getMeasureY().in(Inches));
-            SmartDashboard.putNumber(
+            Logging.log(
                     "Align Angle (Deg.)",
                     getDtm().getAlignReefFinalTransform().getRotation().getDegrees());
 
-            SmartDashboard.putBoolean(
+            Logging.log(
                     "Align is Pushed Forward", getSwerve().getAdditionalState().isPushedUpOnWall());
 
-            SmartDashboard.putBoolean(
+            Logging.log(
                     "Bumper Reef Alignment Transform Present",
                     getDtm().getBumperToReefAlignment().isPresent());
 

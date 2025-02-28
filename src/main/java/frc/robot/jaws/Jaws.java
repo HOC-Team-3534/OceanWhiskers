@@ -1,13 +1,12 @@
 package frc.robot.jaws;
 
-import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,9 +37,7 @@ public class Jaws extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Jaws/Power (Watts)", getPower().in(Watts));
-        SmartDashboard.putNumber("Jaws/Voltage", getVoltage().in(Volts));
-        SmartDashboard.putNumber("Jaws/Current", getCurrent().in(Amps));
+        Logging.log("Jaws", this);
     }
 
     private boolean isPowerSpikeExceeded() {
