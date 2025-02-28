@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.util.CachedValue;
 import frc.robot.Robot;
@@ -98,15 +99,7 @@ public class Tusks extends TalonSRXArm {
             stillTimer.restart();
         }
 
-        SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
-        SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
-        SmartDashboard.putNumber("Tusks/Velocity (Deg. per s)", getVelocity().in(DegreesPerSecond));
-        SmartDashboard.putNumber(
-                "Tusks/Setpoint (Degrees)", getActiveTrajectoryPosition().in(Degrees));
-
-        SmartDashboard.putNumber(
-                "Tusks/Setpoint Velocity (Deg. per s)",
-                getActiveTrajectoryVelocity().in(DegreesPerSecond));
+        Logging.log("Tusks", this);
     }
 
     public enum Side {

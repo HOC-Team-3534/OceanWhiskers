@@ -130,11 +130,15 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
     }
 
     private double updateActiveTrajectoryPosition() {
-        return motor.getActiveTrajectoryPosition();
+        return getControlMode().equals(ControlMode.MotionMagic)
+                ? motor.getActiveTrajectoryPosition()
+                : 0.0;
     }
 
     private double updateActiveTrajectoryVelocity() {
-        return motor.getActiveTrajectoryVelocity();
+        return getControlMode().equals(ControlMode.MotionMagic)
+                ? motor.getActiveTrajectoryVelocity()
+                : 0.0;
     }
 
     public Angle getClosedLoopTarget() {

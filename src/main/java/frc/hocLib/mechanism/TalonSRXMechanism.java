@@ -16,7 +16,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.hocLib.HocSubsystem;
 import frc.hocLib.talon.TalonSRXFactory;
 import frc.hocLib.util.CachedValue;
@@ -62,10 +61,6 @@ public abstract class TalonSRXMechanism extends Mechanism {
         cachedControlMode = createCache(this::updateControlMode, ControlMode.Disabled);
     }
 
-    void telemetryInit() {
-        SmartDashboard.putData(this);
-    }
-
     private Integer updateDutyCycleOut() {
         return (int) Math.round(motor.getMotorOutputPercent() * 1023);
     }
@@ -74,7 +69,7 @@ public abstract class TalonSRXMechanism extends Mechanism {
         return motor.getControlMode();
     }
 
-    protected ControlMode getControlMode() {
+    public ControlMode getControlMode() {
         return cachedControlMode.get();
     }
 
