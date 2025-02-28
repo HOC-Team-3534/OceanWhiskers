@@ -18,7 +18,7 @@ import lombok.Setter;
 public abstract class Mechanism extends HocSubsystem {
     private final CachedValue<Voltage> cachedVoltage;
     private final CachedValue<Voltage> cachedSupplyVoltage;
-    private final CachedValue<Current> cachedCurrent;
+    private final CachedValue<Current> cachedStatorCurrent;
     private final CachedValue<Angle> cachedPosition;
     private final CachedValue<AngularVelocity> cachedVelocity;
     private final CachedValue<Double> cachedPercentage;
@@ -34,7 +34,7 @@ public abstract class Mechanism extends HocSubsystem {
 
         cachedVoltage = createCache(this::updateVoltage, Volts.zero());
         cachedSupplyVoltage = createCache(this::updateSupplyVoltage, Volts.zero());
-        cachedCurrent = createCache(this::updateCurrent, Amps.zero());
+        cachedStatorCurrent = createCache(this::updateCurrent, Amps.zero());
         cachedPosition = createCache(this::updatePosition, Rotations.zero());
         cachedVelocity = createCache(this::updateVelocity, RotationsPerSecond.zero());
         cachedPercentage = createCache(this::updatePercentage, 0.0);
@@ -68,12 +68,12 @@ public abstract class Mechanism extends HocSubsystem {
         return cachedSupplyVoltage.get();
     }
 
-    public Current getCurrent() {
-        return cachedCurrent.get();
+    public Current getStatorCurrent() {
+        return cachedStatorCurrent.get();
     }
 
     public Power getPower() {
-        return getVoltage().times(getCurrent());
+        return getVoltage().times(getStatorCurrent());
     }
 
     public Angle getPosition() {

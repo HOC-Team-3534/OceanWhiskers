@@ -1,6 +1,5 @@
 package frc.robot.elevator;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -23,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
+import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonFXMechanism;
 import lombok.Getter;
 import lombok.Setter;
@@ -130,12 +130,8 @@ public class Elevator extends TalonFXMechanism {
 
     @Override
     public void periodic() {
-        SmartDashboard.putNumber("Elevator/Stats/Angle (Deg)", getPosition().in(Degrees));
-        SmartDashboard.putNumber("Elevator/Stats/Height (In.)", getHeight().in(Inches));
-        SmartDashboard.putBoolean("Elevator/Stats/Near Target Height", state.isNearTargetHeight());
-        SmartDashboard.putNumber("Elevator/Stats/Voltage Output", getVoltage().in(Volts));
-        SmartDashboard.putNumber(
-                "Elevator/Stats/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
+        Logging.log("Elevator", this);
+        Logging.log("Elevator/Near Target Height", state.isNearTargetHeight());
     }
 
     @Override
