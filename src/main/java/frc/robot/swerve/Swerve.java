@@ -378,7 +378,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                             }
                             driveWithSpeeds(
                                     new ChassisSpeeds(
-                                            InchesPerSecond.of(10.0).in(MetersPerSecond),
+                                            InchesPerSecond.of(35.0).in(MetersPerSecond),
                                             0.0,
                                             0.0));
                             return;
