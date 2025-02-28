@@ -94,6 +94,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                 TalonFX::new,
                 CANcoder::new,
                 config.getDrivetrainConstants(),
+                100.0,
                 config.getSwerveModuleConstants());
         this.config = config;
 
