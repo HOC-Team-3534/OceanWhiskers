@@ -50,10 +50,10 @@ public class Tusks extends TalonSRXArm {
                     1.0,
                     Degrees.of(90),
                     true,
-                    new ArmSlotConfig(0.74, 0.16, 0.5, 0.0, 0.0, 0.87),
-                    new ArmSlotConfig(0.44, 0.75, 0.5, 0.0, 0.0, 0.87));
+                    new ArmSlotConfig(0.44, 0.16, 0.02, 0.0, 0.00, 0.87),
+                    new ArmSlotConfig(0.44, 0.75, 0.02, 0.0, 0.00, 0.87));
 
-            setMMConfigs(RotationsPerSecond.of(1.0), RotationsPerSecondPerSecond.of(4.0), 2);
+            setMMConfigs(RotationsPerSecond.of(1.5), RotationsPerSecondPerSecond.of(8.0), 2);
         }
 
         public TusksConfig enableMotionMagic() {
@@ -100,12 +100,12 @@ public class Tusks extends TalonSRXArm {
 
         SmartDashboard.putNumber("Tusks/Angle (Deg.)", getPosition().in(Degrees));
         SmartDashboard.putNumber("Tusks/Output Voltage", getVoltage().in(Volts));
-        SmartDashboard.putNumber("Tusks/Velocity (RPS)", getVelocity().in(RotationsPerSecond));
+        SmartDashboard.putNumber("Tusks/Velocity (Deg. per s)", getVelocity().in(DegreesPerSecond));
         SmartDashboard.putNumber(
                 "Tusks/Setpoint (Degrees)", getActiveTrajectoryPosition().in(Degrees));
 
         SmartDashboard.putNumber(
-                "Tusks/Setpoint Velocity (deg/s)",
+                "Tusks/Setpoint Velocity (Deg. per s)",
                 getActiveTrajectoryVelocity().in(DegreesPerSecond));
     }
 
@@ -130,25 +130,29 @@ public class Tusks extends TalonSRXArm {
     private Trigger RobotIsStill =
             new Trigger(() -> Robot.getSwerve().getRobotDriveDirection().isEmpty()).debounce(0.25);
 
+    private boolean isNearPositionAndStill(Angle angle) {
+        return getPosition().isNear(angle, Degrees.of(1.5))
+                && Math.abs(getVelocity().in(DegreesPerSecond)) < 0.25;
+    }
+
+    private Trigger ReadyToDetectPickup =
+            new Trigger(() -> isNearPositionAndStill(config.pickup)).debounce(0.1);
+
     public Command pickup() {
         return goToAngle(config.pickup)
-                .alongWith(
-                        Commands.waitUntil(
-                                        () ->
-                                                getPosition().isNear(config.pickup, Degrees.of(1.0))
-                                                        && Math.abs(
-                                                                        getVelocity()
-                                                                                .in(
-                                                                                        DegreesPerSecond))
-                                                                < 0.25)
-                                .andThen(
-                                        Commands.run(
-                                                () -> {
-                                                    if (getVelocity().lt(DegreesPerSecond.of(-3.0))
-                                                            && RobotIsStill.getAsBoolean()) {
-                                                        state.setHoldingCoral(true);
-                                                    }
-                                                })))
+                .until(() -> ReadyToDetectPickup.getAsBoolean())
+                .andThen(
+                        voltageOut(
+                                        () -> {
+                                            if (getVelocity().lte(DegreesPerSecond.of(-7.5))
+                                                    && RobotIsStill.getAsBoolean()) {
+                                                state.setHoldingCoral(true);
+                                            }
+
+                                            return Volts.of(calculateArbitaryFeedforwardVolts(-1));
+                                        })
+                                .until(state::isHoldingCoral)
+                                .andThen(goToAngle(config.pickup)))
                 .withName("Tusks.Pickup");
     }
 

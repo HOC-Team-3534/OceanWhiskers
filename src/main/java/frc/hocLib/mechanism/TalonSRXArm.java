@@ -143,10 +143,14 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
         return velocityInSensorTicksPer100msToVelocity(cachedActiveTrajectoryVelocity.get());
     }
 
-    private double calculateArbitaryFeedforwardVolts() {
+    protected double calculateArbitaryFeedforwardVolts(double directionValue) {
         var currentSlotConfig = config.getSlotConfigs().get(currentSlot);
         return currentSlotConfig.kG * Math.cos(getPosition().in(Radians))
-                + currentSlotConfig.kS * Math.signum(getError().magnitude());
+                + currentSlotConfig.kS * Math.signum(directionValue);
+    }
+
+    protected double calculateArbitaryFeedforwardVolts() {
+        return calculateArbitaryFeedforwardVolts(getError().magnitude());
     }
 
     protected void setTargetPosition(Angle angle) {
