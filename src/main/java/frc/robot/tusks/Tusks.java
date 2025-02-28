@@ -29,7 +29,7 @@ public class Tusks extends TalonSRXArm {
         @Getter private boolean motionMagicEnabled;
 
         @Getter private Angle up = Degrees.of(91);
-        @Getter private Angle pickup = Degrees.of(42);
+        @Getter private Angle pickup = Degrees.of(40);
         @Getter private Angle preDeploy = Degrees.of(40);
         @Getter private Angle l4Deploy = Degrees.of(-45);
         @Getter private Angle l2l3Deploy = Degrees.of(-35);
@@ -157,23 +157,23 @@ public class Tusks extends TalonSRXArm {
 
     public Command deployl4() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(10.0)))
-                        .andThen(Commands.waitSeconds(0.25)),
+                Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(25.0)))
+                        .andThen(Commands.waitSeconds(0.75)),
                 goToAngle(config.l4Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }
 
     public Command deployl2l3() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(10.0)))
-                        .andThen(Commands.waitSeconds(0.25)),
+                Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(20.0)))
+                        .andThen(Commands.waitSeconds(0.75)),
                 goToAngle(config.l2l3Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }
 
     public Command deployl1() {
         return Commands.deadline(
-                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.of(10.0)))
+                Commands.waitUntil(() -> getPosition().isNear(config.l1Deploy, Degrees.of(20.0)))
                         .andThen(Commands.waitSeconds(0.5)),
                 goToAngle(config.l1Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
