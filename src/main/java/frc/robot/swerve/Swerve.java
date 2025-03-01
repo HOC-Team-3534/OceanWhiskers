@@ -146,6 +146,15 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             additionalState.setPushedUpOnWall(false);
         }
 
+        if (alignedState.getFullyAlignedTimer().hasElapsed(1.0)) {
+            alignedState.updateTranslationSinceAligned(getRobotRelativeSpeeds());
+            if (alignedState.translationSinceFullyAligned.getNorm() > Inches.of(0.5).in(Meters)) {
+                alignedState.resetFullyAligned();
+            }
+        } else {
+            alignedState.setTranslationSinceFullyAligned(new Translation2d());
+        }
+
         Logging.log("Swerve", this);
     }
 
@@ -287,10 +296,38 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     @Getter
+    public static class AlignedState {
+        private Timer fullyAlignedTimer = new Timer();
+        @Setter private Translation2d translationSinceFullyAligned = new Translation2d();
+
+        public boolean isFullyAligned() {
+            return fullyAlignedTimer.isRunning();
+        }
+
+        public void setFullyAligned() {
+            fullyAlignedTimer.restart();
+        }
+
+        private void resetFullyAligned() {
+            fullyAlignedTimer.stop();
+            fullyAlignedTimer.reset();
+        }
+
+        private void updateTranslationSinceAligned(ChassisSpeeds speeds) {
+            var displacement = speeds.toTwist2d(0.020);
+            translationSinceFullyAligned =
+                    translationSinceFullyAligned.plus(
+                            new Translation2d(displacement.dx, displacement.dy));
+        }
+    }
+
+    @Getter private AlignedState alignedState = new AlignedState();
+
+    @Getter
     @Setter
     public static class AdditionalState {
         private boolean pushedUpOnWall;
-        private Distance xSincePushedUpOnWall;
+        private Distance xSincePushedUpOnWall = Meters.zero();
 
         private void updateXSincePushedUpOnWall(LinearVelocity xVelocity) {
             setXSincePushedUpOnWall(xSincePushedUpOnWall.plus(xVelocity.times(Seconds.of(0.020))));
@@ -298,6 +335,11 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     @Getter private AdditionalState additionalState = new AdditionalState();
+
+    public Command driveStraightForward(LinearVelocity velocity) {
+        return run(
+                () -> driveWithSpeeds(new ChassisSpeeds(velocity.in(MetersPerSecond), 0.0, 0.0)));
+    }
 
     public Command driveAgainstWallAlign(
             Supplier<Transform2d> errorTransform, Pose2d errorTolerance, Time pushForwardTime) {

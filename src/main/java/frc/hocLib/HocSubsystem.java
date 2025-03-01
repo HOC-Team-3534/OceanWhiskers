@@ -17,9 +17,7 @@ public abstract class HocSubsystem extends SubsystemBase {
         return config.isAttached();
     }
 
-    public boolean isTesting() {
-        return config.isTesting();
-    }
+    public Trigger isTesting = new Trigger(() -> config.isTesting());
 
     public abstract void setupBindings();
 

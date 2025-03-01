@@ -2,6 +2,7 @@ package frc.robot.auton;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
@@ -171,14 +172,22 @@ public class DTM {
                         config.getDtmAlignTolerance(),
                         config.getPushAgainstWallTimeReef())
                 .asProxy()
-                .until(() -> RobotStates.AlignedWithReef.getAsBoolean())
+                .until(() -> RobotStates.AlignedWithReefBeforeFinalDriveForward.getAsBoolean())
                 .withTimeout(0.5)
                 .andThen(
                         Commands.deferredProxy(
                                 () -> {
-                                    if (!RobotStates.AlignedWithReef.getAsBoolean())
-                                        return alignLeftRightOnReefWall();
-                                    return Commands.none();
+                                    if (!RobotStates.AlignedWithReefBeforeFinalDriveForward
+                                            .getAsBoolean()) return alignLeftRightOnReefWall();
+                                    return Robot.getSwerve()
+                                            .driveStraightForward(InchesPerSecond.of(40.0))
+                                            .withTimeout(0.5)
+                                            .andThen(
+                                                    Commands.runOnce(
+                                                            () ->
+                                                                    Robot.getSwerve()
+                                                                            .getAlignedState()
+                                                                            .setFullyAligned()));
                                 }));
     }
 

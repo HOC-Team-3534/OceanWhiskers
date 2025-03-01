@@ -190,7 +190,13 @@ public class Robot extends HocRobot {
 
             Logging.log("Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
 
-            Logging.log("Aligned With Reef", RobotStates.AlignedWithReef.getAsBoolean());
+            Logging.log(
+                    "Aligned With Reef Before Final Drive Forward",
+                    RobotStates.AlignedWithReefBeforeFinalDriveForward.getAsBoolean());
+
+            Logging.log(
+                    "Swerve Fully Aligned for Deployment",
+                    RobotStates.SwerveFullyAligned.getAsBoolean());
 
             Logging.log("Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 

@@ -24,7 +24,7 @@ public class RobotStates {
     // SWERVE
     private static final Swerve swerve = Robot.getSwerve();
 
-    public static final Trigger SwerveIsTesting = new Trigger(swerve::isTesting);
+    public static final Trigger SwerveIsTesting = swerve.isTesting;
     public static final Trigger SwerveNotTesting = SwerveIsTesting.not();
 
     public static final Trigger RobotCentricForward =
@@ -45,7 +45,7 @@ public class RobotStates {
 
     public static final Trigger SwerveMoving = new Trigger(() -> swerve.isMoving());
 
-    public static final Trigger AlignedWithReef =
+    public static final Trigger AlignedWithReefBeforeFinalDriveForward =
             new Trigger(dtm::isBumperToReefAligned)
                     .debounce(0.2)
                     .and(() -> swerve.getAdditionalState().isPushedUpOnWall(), SwerveMoving.not());
@@ -53,8 +53,7 @@ public class RobotStates {
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
 
-    public static final Trigger ElevatorIsTesting =
-            new Trigger(elevator::isTesting).and(SwerveNotTesting);
+    public static final Trigger ElevatorIsTesting = elevator.isTesting.and(SwerveNotTesting);
 
     public static final Trigger ElevatorQuasiasticUp =
             codriver.QuasiasticUp_UDP.and(ElevatorIsTesting);
@@ -82,7 +81,7 @@ public class RobotStates {
     private static final Tusks tusks = Robot.getTusks();
 
     public static final Trigger TusksIsTesting =
-            new Trigger(tusks::isTesting).and(SwerveIsTesting.not(), ElevatorIsTesting.not());
+            tusks.isTesting.and(SwerveIsTesting.not(), ElevatorIsTesting.not());
 
     public static final Trigger TusksQuasiasticUp = codriver.QuasiasticUp_UDP.and(TusksIsTesting);
     public static final Trigger TusksQuasiasticDown =
@@ -133,9 +132,12 @@ public class RobotStates {
     public static final Trigger PreClimb = codriver.PreClimb_Select;
     public static final Trigger Climb = codriver.Climb_Start;
 
+    public static final Trigger SwerveFullyAligned =
+            new Trigger(() -> swerve.getAlignedState().isFullyAligned());
+
     public static final Trigger Deploy =
             ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
-                            .and(codriver.Deploy_LS.or(AlignedWithReef)))
+                            .and(codriver.Deploy_LS.or(SwerveFullyAligned)))
                     .debounce(0.15)
                     .latchWithReset(TusksHoldingCoral.not());
 
