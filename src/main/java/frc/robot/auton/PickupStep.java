@@ -3,7 +3,9 @@ package frc.robot.auton;
 import static frc.robot.auton.AutonChoosers.*;
 
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot;
 import frc.robot.tusks.Tusks;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +13,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PickupStep extends AutonStep {
     final ReefBranch prevBranch, branch;
+
+    private Timer leavePickupTimeout = new Timer();
 
     @Override
     public PathPlannerPath getPath() {
@@ -21,7 +25,7 @@ public class PickupStep extends AutonStep {
 
     @Override
     public boolean isStepComplete() {
-        return Robot.getTusks().getState().isHoldingCoral();
+        return Robot.getTusks().getState().isHoldingCoral() || leavePickupTimeout.hasElapsed(2.0);
     }
 
     public Tusks.Side getTusksSide() {
@@ -31,6 +35,8 @@ public class PickupStep extends AutonStep {
     @Override
     public Command alignWithGoalPose() {
         return super.alignWithGoalPose()
-                .andThen(Robot.getDtm().pushForwardAgainstWallPickup().asProxy().withTimeout(0.5));
+                .andThen(
+                        Commands.runOnce(() -> leavePickupTimeout.restart()),
+                        Robot.getDtm().pushForwardAgainstWallPickup().asProxy().withTimeout(0.5));
     }
 }
