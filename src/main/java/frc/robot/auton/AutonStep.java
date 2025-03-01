@@ -58,7 +58,7 @@ public abstract class AutonStep {
 
     public boolean isDeployTimedOut() {
         if (this instanceof DeployStep) {
-            return ((DeployStep) this).getDeployTimeout().hasElapsed(3.0);
+            return ((DeployStep) this).getDeployTimeout().hasElapsed(2.0);
         }
         return false;
     }
