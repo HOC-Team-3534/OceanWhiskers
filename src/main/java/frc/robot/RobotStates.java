@@ -1,6 +1,8 @@
 package frc.robot;
 
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.hocLib.dashboard.Elastic;
 import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
@@ -161,11 +163,16 @@ public class RobotStates {
         driver.DTMToReef_A.and(
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef());
+                .whileTrue(dtm.dtmToReef())
+                .onTrue(Commands.runOnce(() -> Elastic.selectTab("DTM Reef")))
+                .onFalse(Commands.runOnce(() -> Elastic.selectTab("Teleop")));
         driver.DTMToHumanPlayerStation_B.and(
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToHumanPlayerStation());
+
+        Util.autoMode.onTrue(Commands.runOnce(() -> Elastic.selectTab("Autonomous")));
+        Util.teleop.onTrue(Commands.runOnce(()-> Elastic.selectTab("Teleop")));
     }
 
     private RobotStates() {
