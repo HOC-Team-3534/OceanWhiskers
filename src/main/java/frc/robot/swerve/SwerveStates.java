@@ -27,8 +27,8 @@ public class SwerveStates {
 
         var fwd = new ChassisSpeeds(0.7, 0.0, 0.0);
         var back = new ChassisSpeeds(-0.7, 0.0, 0.0);
-        var left = new ChassisSpeeds(0.0, 0.35, 0.0);
-        var right = new ChassisSpeeds(0.0, -0.35, 0.0);
+        var left = new ChassisSpeeds(0.0, 0.3, 0.0);
+        var right = new ChassisSpeeds(0.0, -0.3, 0.0);
 
         RobotCentricForward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(fwd)));
         RobotCentricBackward.whileTrue(swerve.run(() -> swerve.driveWithSpeeds(back)));
