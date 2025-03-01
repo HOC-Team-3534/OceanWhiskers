@@ -1,5 +1,6 @@
 package frc.robot.elevator;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
@@ -24,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonFXMechanism;
+import frc.robot.Robot;
+import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -182,31 +185,38 @@ public class Elevator extends TalonFXMechanism {
         return run(() -> {}).withName("Elevator.Do Nothing");
     }
 
-    public Command goToLevel(Level level) {
+    public Command goToLevel(Supplier<Level> levelSupplier) {
         if (!isAttached()) return doNothing();
 
         if (!config.isMotionMagicEnabled()) return safelyLowerToBottom();
 
         return Commands.either(
-                        startRun(
+                        run(
                                 () -> {
-                                    state.setTargetLevel(level);
-                                },
-                                () -> {
-                                    if (state.isNearTargetHeight()
-                                            && state.getTargetLevel()
-                                                    .getHeight(config)
-                                                    .lt(Inches.of(0.5)))
-                                        setVoltageOut(Volts.zero());
-                                    else
-                                        motor.setControl(
-                                                motionMagicVoltage.withPosition(
-                                                        linearPositionToPosition(
-                                                                level.getHeight(config))));
+                                    if (Robot.getTusks().getPosition().gt(Degrees.of(10))) {
+                                        var level = levelSupplier.get();
+                                        state.setTargetLevel(level);
+                                        if (state.isNearTargetHeight()
+                                                && state.getTargetLevel()
+                                                        .getHeight(config)
+                                                        .lt(Inches.of(0.5)))
+                                            setVoltageOut(Volts.zero());
+                                        else
+                                            motor.setControl(
+                                                    motionMagicVoltage.withPosition(
+                                                            linearPositionToPosition(
+                                                                    level.getHeight(config))));
+                                    }
                                 }),
                         run(() -> setVoltageOut(Volts.zero())),
                         () -> !state.isClimbing())
-                .withName("Elevator.Go To " + level.name());
+                .alongWith(
+                        Commands.run(
+                                () ->
+                                        this.getCurrentCommand()
+                                                .setName(
+                                                        "Elevator.Go To "
+                                                                + state.getTargetLevel())));
     }
 
     // TODO: add climb command and climb level for pre climb, then lockout go to height once

@@ -19,17 +19,14 @@ public class ElevatorStates {
     }
 
     public static void setupBindings() {
-        GoToL1Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L1Pre));
-        GoToL1Coral.and(Deploy).whileTrue(goToLevel(Level.L1));
-
-        GoToL2Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L2Pre));
-        GoToL2Coral.and(Deploy).whileTrue(goToLevel(Level.L2));
-
-        GoToL3Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L3Pre));
-        GoToL3Coral.and(Deploy).whileTrue(goToLevel(Level.L3));
-
-        GoToL4Coral.and(Deploy.not()).whileTrue(goToLevel(Level.L4Pre));
-        GoToL4Coral.and(Deploy).whileTrue(goToLevel(Level.L4));
+        GoToL1Coral.whileTrue(
+                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L1Pre : Level.L1));
+        GoToL2Coral.whileTrue(
+                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L2Pre : Level.L2));
+        GoToL3Coral.whileTrue(
+                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L3Pre : Level.L3));
+        GoToL4Coral.whileTrue(
+                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L4Pre : Level.L4));
 
         GoToL2Algae.whileTrue(goToLevel(Level.L2Algae));
         GoToL3Algae.whileTrue(goToLevel(Level.L3Algae));
@@ -76,7 +73,11 @@ public class ElevatorStates {
     }
 
     static Command goToLevel(Level level) {
-        return elevator.goToLevel(level);
+        return goToLevel(() -> level);
+    }
+
+    static Command goToLevel(Supplier<Level> levelSupplier) {
+        return elevator.goToLevel(levelSupplier);
     }
 
     static Command voltageOut(Supplier<Voltage> volts) {
