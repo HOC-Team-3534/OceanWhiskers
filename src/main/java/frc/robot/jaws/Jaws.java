@@ -37,6 +37,10 @@ public class Jaws extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
+        if(state.isClosed()){
+            setVoltageOut(config.openAndCloseVoltage.times(0.25));
+        }
+
         Logging.log("Jaws", this);
     }
 
