@@ -7,9 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 
 import dev.doglog.DogLogOptions;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
@@ -169,18 +167,16 @@ public class Robot extends HocRobot {
         RobotStates.setupStates();
     }
 
-    private StructPublisher<Pose2d> alignBumperToReefPosePublisher =
-            NetworkTableInstance.getDefault()
-                    .getStructTopic("Align Bumper to Reef Pose", Pose2d.struct)
-                    .publish();
-
     @Override
     public void robotPeriodic() {
         FieldAndTags2025.updateMasking();
 
         try {
-            alignBumperToReefPosePublisher.set(
+            Logging.log(
+                    "Align Bumper to Reef Pose",
                     getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
+
+            Logging.log("Match Time", DriverStation.getMatchTime());
 
             Logging.log(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
