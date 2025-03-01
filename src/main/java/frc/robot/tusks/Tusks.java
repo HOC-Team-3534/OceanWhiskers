@@ -108,7 +108,7 @@ public class Tusks extends TalonSRXArm {
     }
 
     public void autonInit() {
-        //setPosition(Degrees.of(77.5));
+        // setPosition(Degrees.of(77.5));
     }
 
     private void logMotor(SysIdRoutineLog log) {
