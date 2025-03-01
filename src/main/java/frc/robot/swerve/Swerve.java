@@ -150,6 +150,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
             alignedState.updateTranslationSinceAligned(getRobotRelativeSpeeds());
             if (alignedState.translationSinceFullyAligned.getNorm() > Inches.of(0.5).in(Meters)) {
                 alignedState.resetFullyAligned();
+                additionalState.setPushedUpOnWall(false);
             }
         } else {
             alignedState.setTranslationSinceFullyAligned(new Translation2d());
@@ -475,6 +476,15 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
     }
 
     public Command driveToPose(Pose2d targetPose) {
+        return driveToPose(
+                targetPose,
+                new Pose2d(
+                        Inches.of(3.0).in(Meters),
+                        Inches.of(3.0).in(Meters),
+                        Rotation2d.fromDegrees(3.0)));
+    }
+
+    public Command driveToPose(Pose2d targetPose, Pose2d tolerance) {
         // TODO: for push against wall and adjust right and left, just calculate the target pose
         // do until error left and right good and bottom of tag at certain height on center camera
         // screen within tolerance
@@ -498,8 +508,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                                                         config.getKMaxAngularRate()
                                                                         .in(RadiansPerSecond)
                                                                 * 0.75)));
-                        holonomicDriveController.setTolerance(
-                                new Pose2d(0.025, 0.025, Rotation2d.fromDegrees(1)));
+                        holonomicDriveController.setTolerance(tolerance);
                     }
 
                     @Override

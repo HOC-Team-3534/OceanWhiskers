@@ -194,7 +194,7 @@ public class DTM {
     protected Command pushForwardAgainstWallPickup() {
         return Robot.getSwerve()
                 .driveAgainstWallAlign(
-                        () -> new Transform2d(Inches.of(2.0), Inches.zero(), new Rotation2d()),
+                        () -> new Transform2d(Inches.of(8.0), Inches.zero(), new Rotation2d()),
                         new Pose2d(),
                         config.getPushAgainstWallTimePickup());
     }
