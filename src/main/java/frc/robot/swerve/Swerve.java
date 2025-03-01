@@ -321,8 +321,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
                     }
 
                     private HolonomicDriveController createHolonomicController() {
-                        var xPID = new PIDController(1.5, 0.00, 0.0);
-                        var yPID = new PIDController(1.5, 0.00, 0.0);
+                        var xPID = new PIDController(2.5, 0.00, 0.0);
+                        var yPID = new PIDController(2.5, 0.00, 0.0);
 
                         xPID.setIZone(Inches.of(2.0).in(Meters));
                         yPID.setIZone(Inches.of(2.0).in(Meters));
