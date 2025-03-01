@@ -122,8 +122,6 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
 
         registerTelemetry(logger::telemeterize);
-
-        Logging.log("Swerve", this);
     }
 
     @Override
@@ -147,6 +145,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         if (additionalState.getXSincePushedUpOnWall().lt(Inches.of(-0.5))) {
             additionalState.setPushedUpOnWall(false);
         }
+
+        Logging.log("Swerve", this);
     }
 
     @Override
@@ -163,7 +163,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder> {
         }
     }
 
-    private CachedValue<SwerveDriveState> cachedState = new CachedValue<>(super::getState);
+    private CachedValue<SwerveDriveState> cachedState = new CachedValue<>(() -> super.getState());
 
     @Override
     public SwerveDriveState getState() {
