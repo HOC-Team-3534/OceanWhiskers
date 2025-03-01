@@ -172,7 +172,7 @@ public class RobotStates {
                 .whileTrue(dtm.dtmToHumanPlayerStation());
 
         Util.autoMode.onTrue(Commands.runOnce(() -> Elastic.selectTab("Autonomous")));
-        Util.teleop.onTrue(Commands.runOnce(()-> Elastic.selectTab("Teleop")));
+        Util.teleop.onTrue(Commands.runOnce(() -> Elastic.selectTab("Teleop")));
     }
 
     private RobotStates() {

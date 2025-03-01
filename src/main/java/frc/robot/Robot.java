@@ -7,6 +7,7 @@ package frc.robot;
 import static edu.wpi.first.units.Units.Inches;
 
 import dev.doglog.DogLogOptions;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -216,6 +217,12 @@ public class Robot extends HocRobot {
             Logging.log(
                     "Bumper Reef Alignment Transform Present",
                     getDtm().getBumperToReefAlignment().isPresent());
+
+            Logging.log(
+                    "Current Auton Step Goal Pose",
+                    AutonStep.getCurrentStep()
+                            .map((step) -> step.getGoalPose())
+                            .orElse(new Pose2d()));
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

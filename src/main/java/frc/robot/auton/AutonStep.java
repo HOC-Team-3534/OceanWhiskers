@@ -27,8 +27,9 @@ public abstract class AutonStep {
     }
 
     public Pose2d getGoalPose() {
-        var poses = getPath().getPathPoses();
-        return poses.get(poses.size() - 1);
+        var points = getPath().getAllPathPoints();
+        var lastPoint = points.get(points.size() - 1);
+        return new Pose2d(lastPoint.position, lastPoint.rotationTarget.rotation());
     }
 
     public Command alignWithGoalPose() {
