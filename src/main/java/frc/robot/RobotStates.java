@@ -7,6 +7,7 @@ import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.algaeWheel.AlgaeWheel;
 import frc.robot.auton.Auton;
+import frc.robot.auton.AutonStep;
 import frc.robot.auton.DTM;
 import frc.robot.codriver.Codriver;
 import frc.robot.driver.Driver;
@@ -137,9 +138,18 @@ public class RobotStates {
     public static final Trigger SwerveFullyAligned =
             new Trigger(() -> swerve.getAlignedState().isFullyAligned());
 
+    public static final Trigger AutonDeployTimeoutForceDeploy =
+            Util.autoMode.and(
+                    () ->
+                            AutonStep.getCurrentStep()
+                                    .map(AutonStep::isDeployTimedOut)
+                                    .orElse(false));
+
     public static final Trigger Deploy =
             ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
-                            .and(codriver.Deploy_LS.or(SwerveFullyAligned)))
+                            .and(
+                                    codriver.Deploy_LS.or(
+                                            SwerveFullyAligned, AutonDeployTimeoutForceDeploy)))
                     .debounce(0.15)
                     .latchWithReset(TusksHoldingCoral.not());
 

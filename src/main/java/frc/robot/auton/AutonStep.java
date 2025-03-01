@@ -56,6 +56,13 @@ public abstract class AutonStep {
                         () -> RobotStates.setDrivingAutonomously(false)));
     }
 
+    public boolean isDeployTimedOut() {
+        if (this instanceof DeployStep) {
+            return ((DeployStep) this).getDeployTimeout().hasElapsed(3.0);
+        }
+        return false;
+    }
+
     public boolean isLevel(int level) {
         if (this instanceof DeployStep) {
             return ((DeployStep) this).getLevel() == level;

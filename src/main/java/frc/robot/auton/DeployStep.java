@@ -3,7 +3,9 @@ package frc.robot.auton;
 import static frc.robot.auton.AutonChoosers.*;
 
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.Robot;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,8 @@ public class DeployStep extends AutonStep {
     final int level;
 
     final ReefBranch branch;
+
+    @Getter private Timer deployTimeout = new Timer();
 
     @Override
     public PathPlannerPath getPath() {
@@ -35,6 +39,7 @@ public class DeployStep extends AutonStep {
 
     @Override
     public Command alignWithGoalPose() {
-        return Robot.getDtm().alignLeftRightOnReefWall().asProxy();
+        return Commands.runOnce(() -> deployTimeout.restart())
+                .andThen(Robot.getDtm().alignLeftRightOnReefWall().asProxy());
     }
 }
