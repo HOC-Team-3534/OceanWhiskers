@@ -31,8 +31,8 @@ public class Tusks extends TalonSRXArm {
         @Getter private Angle up = Degrees.of(91);
         @Getter private Angle pickup = Degrees.of(40);
         @Getter private Angle preDeploy = Degrees.of(40);
-        @Getter private Angle l4Deploy = Degrees.of(-45);
-        @Getter private Angle l2l3Deploy = Degrees.of(-35);
+        @Getter private Angle l4Deploy = Degrees.of(-42);
+        @Getter private Angle l2l3Deploy = Degrees.of(-30);
         @Getter private Angle l1Deploy = Degrees.of(-30);
 
         // spotless:off
@@ -162,7 +162,7 @@ public class Tusks extends TalonSRXArm {
     public Command deployl4() {
         return Commands.deadline(
                 Commands.waitUntil(() -> getPosition().isNear(config.l4Deploy, Degrees.of(25.0)))
-                        .andThen(Commands.waitSeconds(0.75)),
+                        .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l4Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }
@@ -170,7 +170,7 @@ public class Tusks extends TalonSRXArm {
     public Command deployl2l3() {
         return Commands.deadline(
                 Commands.waitUntil(() -> getPosition().isNear(config.l2l3Deploy, Degrees.of(20.0)))
-                        .andThen(Commands.waitSeconds(0.75)),
+                        .andThen(Commands.waitSeconds(0.25)),
                 goToAngle(config.l2l3Deploy),
                 Commands.startEnd(() -> {}, () -> state.setHoldingCoral(false)));
     }
