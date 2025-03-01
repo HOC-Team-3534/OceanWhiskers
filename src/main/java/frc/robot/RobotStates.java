@@ -136,7 +136,8 @@ public class RobotStates {
     public static final Trigger Deploy =
             ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
                             .and(codriver.Deploy_LS.or(AlignedWithReef)))
-                    .debounce(0.15);
+                    .debounce(0.15)
+                    .latchWithReset(TusksHoldingCoral.not());
 
     public static final Trigger GoToL3Algae = codriver.GoToL3Algae_X;
     public static final Trigger GoToL2Algae = codriver.GoToL2Algae_B;

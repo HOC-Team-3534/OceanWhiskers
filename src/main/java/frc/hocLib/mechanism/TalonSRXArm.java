@@ -115,7 +115,7 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
 
             Timer.delay(0.02);
 
-            motor.setSelectedSensorPosition(positionToPositionInSensorTicks(config.startingAngle));
+            setPosition(config.startingAngle);
 
             motor.selectProfileSlot(requestedCurrentSlot, 0);
         }
@@ -123,6 +123,12 @@ public abstract class TalonSRXArm extends TalonSRXMechanism {
         cachedClosedLoopTargetPosition = createCache(this::updateClosedLoopTargetPosition, 0.0);
         cachedActiveTrajectoryPosition = createCache(this::updateActiveTrajectoryPosition, 0.0);
         cachedActiveTrajectoryVelocity = createCache(this::updateActiveTrajectoryVelocity, 0.0);
+    }
+
+    protected void setPosition(Angle angle) {
+        if (isAttached()) {
+            motor.setSelectedSensorPosition(positionToPositionInSensorTicks(angle));
+        }
     }
 
     private double updateClosedLoopTargetPosition() {

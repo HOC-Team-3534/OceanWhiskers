@@ -107,6 +107,10 @@ public class Tusks extends TalonSRXArm {
         Right
     }
 
+    public void autonInit() {
+        setPosition(Degrees.of(77.5));
+    }
+
     private void logMotor(SysIdRoutineLog log) {
         log.motor("tusks")
                 .voltage(getVoltage())

@@ -238,6 +238,7 @@ public class Robot extends HocRobot {
     @Override
     public void autonomousInit() {
         clearCommandsAndButtons();
+        tusks.autonInit();
         auton.init();
     }
 

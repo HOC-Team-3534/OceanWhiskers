@@ -6,7 +6,6 @@ import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Volts;
 
-import com.ctre.phoenix6.swerve.SwerveDrivetrain;
 import dev.doglog.DogLog;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.mechanism.Mechanism;
