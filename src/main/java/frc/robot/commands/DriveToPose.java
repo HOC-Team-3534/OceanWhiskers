@@ -29,6 +29,7 @@ import frc.hocLib.swerve.RobotPoseSupplier;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.robot.Robot;
+import java.util.function.Consumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -107,9 +108,13 @@ public class DriveToPose<
     private Supplier<Translation2d> linearFF = () -> Translation2d.kZero;
     private DoubleSupplier omegaFF = () -> 0.0;
 
+    private Consumer<ChassisSpeeds> output;
+
     public DriveToPose(T drive, Supplier<Pose2d> target) {
         this.drive = drive;
         this.target = target;
+
+        this.output = drive::driveWithSpeeds;
 
         // Enable continuous input for theta controller
         thetaController.enableContinuousInput(-Math.PI, Math.PI);
@@ -143,6 +148,19 @@ public class DriveToPose<
         this(drive, target, robot);
         this.linearFF = linearFF;
         this.omegaFF = omegaFF;
+    }
+
+    private DriveToPose(
+            T drive,
+            Supplier<Pose2d> target,
+            Supplier<Pose2d> robot,
+            Consumer<ChassisSpeeds> output,
+            Supplier<Translation2d> linearFF,
+            DoubleSupplier omegaFF) {
+        this(drive, target, robot);
+        this.linearFF = linearFF;
+        this.omegaFF = omegaFF;
+        this.output = output;
     }
 
     @Override
@@ -263,7 +281,7 @@ public class DriveToPose<
                         thetaS);
 
         // Command speeds
-        drive.driveWithSpeeds(
+        output.accept(
                 ChassisSpeeds.fromFieldRelativeSpeeds(
                         driveVelocity.getX(),
                         driveVelocity.getY(),
@@ -304,5 +322,9 @@ public class DriveToPose<
         return running
                 && Math.abs(driveErrorAbs) < driveTolerance
                 && Math.abs(thetaErrorAbs) < thetaTolerance.getRadians();
+    }
+
+    public DriveToPose<T> withOutput(Consumer<ChassisSpeeds> output) {
+        return new DriveToPose<>(drive, target, robot, output, linearFF, omegaFF);
     }
 }
