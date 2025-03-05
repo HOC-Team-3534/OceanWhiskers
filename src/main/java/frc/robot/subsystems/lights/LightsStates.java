@@ -1,0 +1,20 @@
+package frc.robot.subsystems.lights;
+
+import static frc.robot.RobotStates.*;
+
+import frc.robot.Robot;
+
+public class LightsStates {
+    private static Lights lights = Robot.getLights();
+
+    public static void setupDefaultCommand() {
+        lights.setDefaultCommand(lights.normal());
+    }
+
+    public static void setupBindings() {
+        PickupCoralLeft.whileTrue(lights.pickUpLeft());
+        PickupCoralRight.whileTrue(lights.pickUpRight());
+        DrivingAutonomously.and(PickupCoralLeft.or(PickupCoralRight).not())
+                .whileTrue(lights.drivingAutonomously());
+    }
+}

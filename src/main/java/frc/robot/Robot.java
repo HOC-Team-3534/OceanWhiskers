@@ -5,9 +5,12 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Seconds;
 
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -16,33 +19,34 @@ import frc.hocLib.HocRobot;
 import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
+import frc.hocLib.util.LoggedTunableNumber;
 import frc.reefscape.FieldAndTags2025;
-import frc.robot.algaeWheel.AlgaeWheel;
-import frc.robot.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
-import frc.robot.auton.Auton;
-import frc.robot.auton.Auton.AutonConfig;
-import frc.robot.auton.AutonStep;
-import frc.robot.auton.DTM;
-import frc.robot.auton.DTM.DTMConfig;
-import frc.robot.codriver.Codriver;
-import frc.robot.codriver.Codriver.CodriverConfig;
+import frc.robot.commands.auton.Auton;
+import frc.robot.commands.auton.Auton.AutonConfig;
+import frc.robot.commands.auton.AutonStep;
+import frc.robot.commands.auton.DTM;
+import frc.robot.commands.auton.DTM.DTMConfig;
 import frc.robot.configs.CBOT_2025;
 import frc.robot.configs.PBOT_2025;
 import frc.robot.configs.TBOT_2025;
-import frc.robot.driver.Driver;
-import frc.robot.driver.Driver.DriverConfig;
-import frc.robot.elevator.Elevator;
-import frc.robot.elevator.Elevator.ElevatorConfig;
-import frc.robot.jaws.Jaws;
-import frc.robot.jaws.Jaws.JawsConfig;
-import frc.robot.lights.Lights;
-import frc.robot.lights.Lights.LightsConfig;
-import frc.robot.swerve.Swerve;
-import frc.robot.swerve.SwerveConfig;
-import frc.robot.tusks.Tusks;
-import frc.robot.tusks.Tusks.TusksConfig;
-import frc.robot.vision.VisionSystem;
-import frc.robot.vision.VisionSystem.VisionConfig;
+import frc.robot.controllers.Codriver;
+import frc.robot.controllers.Codriver.CodriverConfig;
+import frc.robot.controllers.Driver;
+import frc.robot.controllers.Driver.DriverConfig;
+import frc.robot.subsystems.algaeWheel.AlgaeWheel;
+import frc.robot.subsystems.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
+import frc.robot.subsystems.elevator.Elevator;
+import frc.robot.subsystems.elevator.Elevator.ElevatorConfig;
+import frc.robot.subsystems.jaws.Jaws;
+import frc.robot.subsystems.jaws.Jaws.JawsConfig;
+import frc.robot.subsystems.lights.Lights;
+import frc.robot.subsystems.lights.Lights.LightsConfig;
+import frc.robot.subsystems.swerve.Swerve;
+import frc.robot.subsystems.swerve.SwerveConfig;
+import frc.robot.subsystems.tusks.Tusks;
+import frc.robot.subsystems.tusks.Tusks.TusksConfig;
+import frc.robot.subsystems.vision.VisionSystem;
+import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
 import lombok.Getter;
 
@@ -63,6 +67,10 @@ public class Robot extends HocRobot {
         public DTMConfig dtm = new DTMConfig();
         public VisionConfig vision = new VisionConfig();
         public LightsConfig lights = new LightsConfig();
+
+        public Time LoopPeriod = Seconds.of(0.020);
+        public boolean Tuning = true;
+        public boolean EnableElasticTabSwitching = false;
     }
 
     @Getter private static Driver driver;
@@ -104,6 +112,10 @@ public class Robot extends HocRobot {
                 default: // SIM and UNKNOWN
                     config = new CBOT_2025();
                     break;
+            }
+
+            if (config.Tuning) {
+                LoggedTunableNumber.TUNING_MODE = true;
             }
 
             /**
@@ -223,6 +235,14 @@ public class Robot extends HocRobot {
                     AutonStep.getCurrentStep()
                             .map((step) -> step.getGoalPose())
                             .orElse(new Pose2d()));
+
+            Logging.log(
+                    "Components Offsets",
+                    new Pose3d[] {
+                        getElevator().getState().getStage1Displacement(),
+                        getElevator().getState().getStage2Displacement(),
+                        getTusks().getState().getTusksDisplacement()
+                    });
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

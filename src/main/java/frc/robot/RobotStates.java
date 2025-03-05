@@ -5,16 +5,16 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.dashboard.Elastic;
 import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025;
-import frc.robot.algaeWheel.AlgaeWheel;
-import frc.robot.auton.Auton;
-import frc.robot.auton.AutonStep;
-import frc.robot.auton.DTM;
-import frc.robot.codriver.Codriver;
-import frc.robot.driver.Driver;
-import frc.robot.elevator.Elevator;
-import frc.robot.jaws.Jaws;
-import frc.robot.swerve.Swerve;
-import frc.robot.tusks.Tusks;
+import frc.robot.commands.auton.Auton;
+import frc.robot.commands.auton.AutonStep;
+import frc.robot.commands.auton.DTM;
+import frc.robot.controllers.Codriver;
+import frc.robot.controllers.Driver;
+import frc.robot.subsystems.algaeWheel.AlgaeWheel;
+import frc.robot.subsystems.elevator.Elevator;
+import frc.robot.subsystems.jaws.Jaws;
+import frc.robot.subsystems.swerve.Swerve;
+import frc.robot.subsystems.tusks.Tusks;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -174,15 +174,21 @@ public class RobotStates {
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToReef())
-                .onTrue(Commands.runOnce(() -> Elastic.selectTab("DTM Reef")))
-                .onFalse(Commands.runOnce(() -> Elastic.selectTab("Teleop")));
+                .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
+                .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         driver.DTMToHumanPlayerStation_B.and(
                         () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToHumanPlayerStation());
 
-        Util.autoMode.onTrue(Commands.runOnce(() -> Elastic.selectTab("Autonomous")));
-        Util.teleop.onTrue(Commands.runOnce(() -> Elastic.selectTab("Teleop")));
+        Util.autoMode.onTrue(Commands.runOnce(() -> selectTab("Autonomous")));
+        Util.teleop.onTrue(Commands.runOnce(() -> selectTab("Teleop")));
+    }
+
+    static void selectTab(String tabName) {
+        if (Robot.getConfig().EnableElasticTabSwitching) {
+            Elastic.selectTab(tabName);
+        }
     }
 
     private RobotStates() {

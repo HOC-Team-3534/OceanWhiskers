@@ -11,7 +11,7 @@ import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
-import frc.robot.swerve.Swerve;
+import frc.robot.subsystems.swerve.Swerve;
 
 public class Logging extends DogLog {
 

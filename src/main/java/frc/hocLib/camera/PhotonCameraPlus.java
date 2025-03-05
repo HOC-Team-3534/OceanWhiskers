@@ -16,9 +16,11 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.units.measure.Time;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.Logging;
-import frc.robot.Robot;
+import frc.hocLib.swerve.RobotPoseSupplier;
+import frc.hocLib.swerve.VisionMeasurementAdder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -54,10 +56,20 @@ public class PhotonCameraPlus {
     @Getter private List<PhotonTrackedTarget> latestEstimateTargets = new ArrayList<>();
     private Timer latestEstimateTimer = new Timer();
 
-    public PhotonCameraPlus(String name, Transform3d robotToCamera) {
+    private final VisionMeasurementAdder visionMeasurementAdder;
+    private final RobotPoseSupplier robotPoseSupplier;
+
+    public PhotonCameraPlus(
+            String name,
+            Transform3d robotToCamera,
+            VisionMeasurementAdder visionMeasurementAdder,
+            RobotPoseSupplier robotPoseSupplier) {
         camera = new PhotonCamera(name);
 
-        if (Robot.isSimulation()) {
+        this.visionMeasurementAdder = visionMeasurementAdder;
+        this.robotPoseSupplier = robotPoseSupplier;
+
+        if (RobotBase.isSimulation()) {
 
             cameraProp.setFPS(90);
             cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
@@ -82,7 +94,7 @@ public class PhotonCameraPlus {
     }
 
     public void addToVisionSim(VisionSystemSim visionSim) {
-        if (Robot.isSimulation()) {
+        if (RobotBase.isSimulation()) {
             visionSim.addCamera(cameraSim, robotToCamera);
         }
         latestEstimateTimer.restart();
@@ -120,7 +132,7 @@ public class PhotonCameraPlus {
                             var poseDifference =
                                     estmt.estimatedPose
                                             .toPose2d()
-                                            .relativeTo(Robot.getSwerve().getState().Pose)
+                                            .relativeTo(robotPoseSupplier.getPose())
                                             .getTranslation()
                                             .getNorm();
 
@@ -148,11 +160,10 @@ public class PhotonCameraPlus {
                             var visionMeasurementStdDevs =
                                     VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
-                            Robot.getSwerve()
-                                    .addVisionMeasurement(
-                                            estmt.estimatedPose.toPose2d(),
-                                            Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                            visionMeasurementStdDevs);
+                            visionMeasurementAdder.addVisionMeasurement(
+                                    estmt.estimatedPose.toPose2d(),
+                                    Utils.fpgaToCurrentTime(estmt.timestampSeconds),
+                                    visionMeasurementStdDevs);
 
                             latestEstimateTargets.clear();
                             latestEstimateTargets.addAll(estmt.targetsUsed);
