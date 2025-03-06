@@ -48,6 +48,9 @@ public final class FieldAndTags2025 {
         @Getter final ReefSide reefSide;
     }
 
+    private static final BiMap<Integer, ReefSide> reefSideBlueMap = new BiMap<>(),
+            reefSideRedMap = new BiMap<>();
+
     public enum ReefSide {
         AB(18, 7),
         CD(17, 8),
@@ -56,22 +59,12 @@ public final class FieldAndTags2025 {
         IJ(20, 11),
         KL(19, 6);
         @Getter final int blueTag, redTag;
-        @Getter
-        static final BiMap<Integer, ReefSide> blueMap = new BiMap<>(), redMap = new BiMap<>();
 
         ReefSide(int blueTag, int redTag) {
             this.blueTag = blueTag;
             this.redTag = redTag;
-            putBlueMap(blueTag);
-            putRedMap(redTag);
-        }
-
-        void putBlueMap(int tag) {
-            blueMap.put(tag, this);
-        }
-
-        void putRedMap(int tag) {
-            redMap.put(tag, this);
+            reefSideBlueMap.put(blueTag, this);
+            reefSideRedMap.put(blueTag, this);
         }
 
         public int getTagId() {
@@ -80,7 +73,7 @@ public final class FieldAndTags2025 {
 
         public static Optional<ReefSide> getSide(int tagId) {
             return Optional.ofNullable(
-                    Util.isRedAlliance() ? redMap.get(tagId) : blueMap.get(tagId));
+                    Util.isRedAlliance() ? reefSideRedMap.get(tagId) : reefSideBlueMap.get(tagId));
         }
 
         public Optional<SideOfField> getSideOfField() {
@@ -96,26 +89,19 @@ public final class FieldAndTags2025 {
         }
     }
 
+    private static final BiMap<Integer, LoadingStation> loadingStationBlueMap = new BiMap<>(),
+            loadingStationRedMap = new BiMap<>();
+
     public enum LoadingStation {
         Left(13, 1),
         Right(12, 2);
         @Getter final int blueTag, redTag;
-        @Getter
-        static final BiMap<Integer, LoadingStation> blueMap = new BiMap<>(), redMap = new BiMap<>();
 
         LoadingStation(int blueTag, int redTag) {
             this.blueTag = blueTag;
             this.redTag = redTag;
-            putBlueMap(blueTag);
-            putRedMap(redTag);
-        }
-
-        void putBlueMap(int tag) {
-            blueMap.put(tag, this);
-        }
-
-        void putRedMap(int tag) {
-            redMap.put(tag, this);
+            loadingStationBlueMap.put(blueTag, this);
+            loadingStationRedMap.put(redTag, this);
         }
 
         public int getTagId() {
@@ -124,7 +110,9 @@ public final class FieldAndTags2025 {
 
         public static Optional<LoadingStation> getStation(int tagId) {
             return Optional.ofNullable(
-                    Util.isRedAlliance() ? redMap.get(tagId) : blueMap.get(tagId));
+                    Util.isRedAlliance()
+                            ? loadingStationRedMap.get(tagId)
+                            : loadingStationBlueMap.get(tagId));
         }
 
         public static LoadingStation fromSide(SideOfField sideOfField) {
