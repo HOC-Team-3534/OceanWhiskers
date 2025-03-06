@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import lombok.Getter;
 import lombok.experimental.Delegate;
-
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
@@ -143,37 +142,38 @@ public class PhotonCameraPlus {
         }
     }
 
-    private void processResult(PhotonPipelineResult result){
+    private void processResult(PhotonPipelineResult result) {
         var estimate = poseEstimator.update(result);
 
-                estimate.ifPresent(
-                        estmt -> {
-                            var visionMeasurementStdDevs = calcStandardDevs(estmt, robotPoseSupplier.getPose());
-                            var avgTargetArea = calcAvgTargetArea(estmt);
+        estimate.ifPresent(
+                estmt -> {
+                    var visionMeasurementStdDevs =
+                            calcStandardDevs(estmt, robotPoseSupplier.getPose());
+                    var avgTargetArea = calcAvgTargetArea(estmt);
 
-                            ArrayList<Integer> closerTagIds = new ArrayList<>();
+                    ArrayList<Integer> closerTagIds = new ArrayList<>();
 
-                            for (var tag : estmt.targetsUsed) {
-                                if (tag.area >= avgTargetArea && tag.area > 0.1)
-                                    closerTagIds.add(tag.getFiducialId());
-                            }
+                    for (var tag : estmt.targetsUsed) {
+                        if (tag.area >= avgTargetArea && tag.area > 0.1)
+                            closerTagIds.add(tag.getFiducialId());
+                    }
 
-                            visionMeasurementAdder.addVisionMeasurement(
-                                    estmt.estimatedPose.toPose2d(),
-                                    Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                    visionMeasurementStdDevs,
-                                    closerTagIds);
+                    visionMeasurementAdder.addVisionMeasurement(
+                            estmt.estimatedPose.toPose2d(),
+                            Utils.fpgaToCurrentTime(estmt.timestampSeconds),
+                            visionMeasurementStdDevs,
+                            closerTagIds);
 
-                            Logging.log(camera.getName(), estmt);
+                    Logging.log(camera.getName(), estmt);
 
-                            latestEstimateTargets.clear();
-                            latestEstimateTargets.addAll(estmt.targetsUsed);
+                    latestEstimateTargets.clear();
+                    latestEstimateTargets.addAll(estmt.targetsUsed);
 
-                            latestEstimateTimer.restart();
-                        });
+                    latestEstimateTimer.restart();
+                });
     }
 
-    private static double calcAvgTargetArea(EstimatedRobotPose estmt){
+    private static double calcAvgTargetArea(EstimatedRobotPose estmt) {
         double sumTargetArea = 0.0;
         for (var tg : estmt.targetsUsed) {
             sumTargetArea += tg.getArea();
@@ -181,34 +181,33 @@ public class PhotonCameraPlus {
         return sumTargetArea / estmt.targetsUsed.size();
     }
 
-    private static Vector<N3> calcStandardDevs(EstimatedRobotPose estmt, Pose2d currentRobotPose){
+    private static Vector<N3> calcStandardDevs(EstimatedRobotPose estmt, Pose2d currentRobotPose) {
         var poseDifference =
-                                    estmt.estimatedPose
-                                            .toPose2d()
-                                            .relativeTo(currentRobotPose)
-                                            .getTranslation()
-                                            .getNorm();
+                estmt.estimatedPose
+                        .toPose2d()
+                        .relativeTo(currentRobotPose)
+                        .getTranslation()
+                        .getNorm();
 
-                            boolean hasHighUpTags = false;
-                            for (var tg : estmt.targetsUsed) {
-                                if (HIGH_TAGS.contains(tg.fiducialId)) {
-                                    hasHighUpTags = true;
-                                    break;
-                                }
-                            }
+        boolean hasHighUpTags = false;
+        for (var tg : estmt.targetsUsed) {
+            if (HIGH_TAGS.contains(tg.fiducialId)) {
+                hasHighUpTags = true;
+                break;
+            }
+        }
 
-                            var avgTargetArea = calcAvgTargetArea(estmt);
+        var avgTargetArea = calcAvgTargetArea(estmt);
 
-                            double xyStds = 2.0;
-                            // TODO: consider modifying weights to help with center camera and
-                            // alignment
-                            if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
-                            else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
-                            else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
-                            else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
-                            else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
+        double xyStds = 2.0;
+        // TODO: consider modifying weights to help with center camera and
+        // alignment
+        if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
+        else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
+        else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
+        else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
+        else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
 
-                            return 
-                                    VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
+        return VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
     }
 }
