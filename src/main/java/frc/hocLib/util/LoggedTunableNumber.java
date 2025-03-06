@@ -38,6 +38,7 @@ public class LoggedTunableNumber implements DoubleSupplier, Subsystem {
         this.key = tableKey + "/" + dashboardKey;
         this.entry = NetworkTableInstance.getDefault().getDoubleTopic(key).getEntry(0.0);
         this.value = defaultValue;
+        this.register();
     }
 
     /**
