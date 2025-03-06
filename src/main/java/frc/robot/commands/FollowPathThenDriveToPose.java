@@ -113,6 +113,6 @@ public class FollowPathThenDriveToPose<
 
     @Override
     public boolean isFinished() {
-        return followPathCommand.isFinished() && driveToPoseCommand.isFinished();
+        return driveToPoseCommand.isFinished();
     }
 }

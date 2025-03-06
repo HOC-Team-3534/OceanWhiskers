@@ -304,7 +304,7 @@ public class DriveToPose<
 
     @Override
     public void end(boolean interrupted) {
-        drive.driveWithSpeeds(new ChassisSpeeds());
+        output.driveWithSpeeds(new ChassisSpeeds());
         running = false;
         // Clear logs
         Logging.log("DriveToPose/Setpoint", new Pose2d[] {});
