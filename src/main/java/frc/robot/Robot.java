@@ -182,8 +182,6 @@ public class Robot extends HocRobot {
 
     @Override
     public void robotPeriodic() {
-        FieldAndTags2025.updateMasking();
-
         try {
             Logging.log(
                     "Align Bumper to Reef Pose",

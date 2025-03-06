@@ -9,7 +9,6 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.Util;
@@ -36,52 +35,6 @@ public final class FieldAndTags2025 {
     public static final List<AprilTag> BLUE_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(16, 22);
 
     public static final List<AprilTag> RED_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(5, 11);
-
-    public static boolean masked;
-
-    static {
-        updateMasking();
-    }
-
-    public static boolean needsMaskingUpdate() {
-        return (masked && DriverStation.isFMSAttached())
-                || (!masked && !DriverStation.isFMSAttached());
-    }
-
-    public static void updateMasking() {
-        if (needsMaskingUpdate()) {
-            var defaultField = AprilTagFieldLayout.loadField(APRIL_TAG_FIELD);
-            if (!DriverStation.isFMSAttached()) {
-                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 13, 18);
-                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 18, 17);
-                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 17, 22);
-                // maskAprilTag(defaultField, APRIL_TAG_FIELD_LAYOUT, 11, 21);
-
-                masked = true;
-            } else {
-                APRIL_TAG_FIELD_LAYOUT.getTags().stream()
-                        .forEach(
-                                tag -> {
-                                    tag.pose = defaultField.getTagPose(tag.ID).orElse(tag.pose);
-                                });
-
-                masked = false;
-            }
-        }
-    }
-
-    static void maskAprilTag(
-            AprilTagFieldLayout defaultLayout,
-            AprilTagFieldLayout maskedLayout,
-            int realId,
-            int fakeId) {
-        var tag = maskedLayout.getTags().stream().filter(t -> t.ID == realId).findFirst();
-        var newPose = defaultLayout.getTagPose(fakeId);
-
-        if (tag.isEmpty() || newPose.isEmpty()) return;
-
-        tag.get().pose = newPose.get();
-    }
 
     @RequiredArgsConstructor
     public enum AllianceValues {
