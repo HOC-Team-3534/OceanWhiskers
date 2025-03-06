@@ -3,18 +3,18 @@ package frc.robot.commands.auton;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
-import static frc.reefscape.FieldAndTags2025.*;
+import static frc.reefscape.FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT;
+import static frc.reefscape.FieldAndTags2025.FIELD_WIDTH;
+import static frc.reefscape.FieldAndTags2025.getAllianceReefTags;
 
 import com.pathplanner.lib.path.PathConstraints;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -26,7 +26,8 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.Util;
-import frc.reefscape.FieldAndTags2025;
+import frc.reefscape.FieldAndTags2025.LoadingStation;
+import frc.reefscape.FieldAndTags2025.ReefSide;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
 import frc.robot.commands.DriveToPose;
@@ -76,10 +77,15 @@ public class DTM {
     private final Driver driver = Robot.getDriver();
 
     public Command driveToPose(Supplier<Pose2d> target) {
+        return driveToPose(target, () -> Robot.getSwerve().getPose());
+    }
+
+    public Command driveToPose(Supplier<Pose2d> target, Supplier<Pose2d> robot) {
         return Commands.deadline(
                 new DriveToPose<Swerve>(
                                 Robot.getSwerve(),
                                 target,
+                                robot,
                                 () -> {
                                     var input =
                                             new Translation2d(
@@ -113,122 +119,39 @@ public class DTM {
     }
 
     public Command dtmToReef() {
+        return Commands.deferredProxy(
+                () -> getClosestReefID().map(this::dtmToReef).orElse(Commands.none()));
+    }
+
+    public Command dtmToReef(int tagId) {
+        var goalPose = findGoalPoseInFrontOfTag(tagId);
+
+        if (goalPose.isEmpty()) return Commands.none();
+
         var command =
-                driveToPose(() -> Robot.getSwerve().getPose().plus(getAlignReefFinalTransform()));
+                driveToPose(
+                                goalPose::get,
+                                () ->
+                                        Robot.getVisionSystem()
+                                                .getPoseEstimateByTag(tagId)
+                                                .orElseGet(() -> Robot.getSwerve().getPose()))
+                        .andThen(
+                                Commands.runOnce(
+                                        () -> RobotStates.setAlignedWithReefForDeployment(true)));
 
         command.setName("DTM TO REEF");
 
         return command;
     }
 
-    protected Command alignLeftRightOnReefWall() {
-        return Robot.getSwerve()
-                .driveAgainstWallAlign(
-                        this::getAlignReefFinalTransform,
-                        config.getDtmAlignTolerance(),
-                        config.getPushAgainstWallTimeReef())
-                .asProxy()
-                .until(() -> RobotStates.AlignedWithReefBeforeFinalDriveForward.getAsBoolean())
-                .withTimeout(0.5)
-                .andThen(
-                        Commands.deferredProxy(
-                                () -> {
-                                    if (!RobotStates.AlignedWithReefBeforeFinalDriveForward
-                                            .getAsBoolean()) return alignLeftRightOnReefWall();
-                                    return Robot.getSwerve()
-                                            .driveStraightForward(InchesPerSecond.of(40.0))
-                                            .withTimeout(0.5)
-                                            .andThen(
-                                                    Commands.runOnce(
-                                                            () ->
-                                                                    Robot.getSwerve()
-                                                                            .getAlignedState()
-                                                                            .setFullyAligned()));
-                                }));
-    }
-
-    protected Command pushForwardAgainstWallPickup() {
-        return Robot.getSwerve()
-                .driveAgainstWallAlign(
-                        () -> new Transform2d(Inches.of(8.0), Inches.zero(), new Rotation2d()),
-                        new Pose2d(),
-                        config.getPushAgainstWallTimePickup());
-    }
-
-    private CachedValue<Optional<Transform2d>> cachedBumperToReefAlignment =
-            new CachedValue<>(this::updateBumperToReefAlignment);
-
-    public Optional<Transform2d> updateBumperToReefAlignment() {
-        return Robot.getVisionSystem()
-                .getRobotToReefAlignment()
-                .flatMap(
-                        (robotToReef) -> {
-                            if (getClosestReefID().isEmpty()) return Optional.empty();
-
-                            var reefId = getClosestReefID().get();
-                            var reefTargetPose =
-                                    FieldAndTags2025.APRIL_TAG_FIELD_LAYOUT
-                                            .getTagPose(reefId)
-                                            .map(Pose3d::toPose2d);
-
-                            if (reefTargetPose.isEmpty()) return Optional.empty();
-
-                            var backedUpFromReef =
-                                    new Transform2d(
-                                            new Translation2d(
-                                                    config.getOffsetFromWallToCenterDTM(),
-                                                    Inches.of(0)),
-                                            new Rotation2d());
-
-                            var bumperToCenterOfRobotAwayFromReef =
-                                    robotToReef.plus(backedUpFromReef);
-
-                            return Optional.of(bumperToCenterOfRobotAwayFromReef);
-                        });
-    }
-
-    public Optional<Transform2d> getBumperToReefAlignment() {
-        return cachedBumperToReefAlignment.get();
-    }
-
-    public boolean isBumperToReefAligned() {
-        var bumperToReef = getAlignReefFinalTransform();
-
-        var tolerance = config.getDtmAlignTolerance();
-
-        return getBumperToReefAlignment().isPresent()
-                && bumperToReef.getMeasureY().abs(Meters)
-                        < tolerance.getY() + Inches.of(0.25).in(Meters)
-                && bumperToReef.getRotation().getMeasure().abs(Degrees)
-                        <= tolerance.getRotation().getMeasure().in(Degrees) * 1.1;
-    }
-
-    public Optional<Pose2d> getDTMToReefGoal() {
-        return getClosestReefID().flatMap(this::findGoalPoseInFrontOfTag);
-    }
-
-    private CachedValue<Transform2d> cachedAlignReefFinalTransform =
-            new CachedValue<>(this::updateAlignReefFinalTransform);
-
-    private Transform2d updateAlignReefFinalTransform() {
-        return getBumperToReefAlignment()
-                .orElseGet(
-                        () ->
-                                getDTMToReefGoal()
-                                        .map(
-                                                (reefGoalPose) ->
-                                                        new Transform2d(
-                                                                Robot.getSwerve().getPose(),
-                                                                reefGoalPose))
-                                        .orElse(new Transform2d()));
-    }
-
-    public Transform2d getAlignReefFinalTransform() {
-        return cachedAlignReefFinalTransform.get();
-    }
-
-    public Pose2d getAlignReefPose() {
-        return Robot.getSwerve().getPose().transformBy(getAlignReefFinalTransform());
+    public DriveToPose<Swerve> driveToReefSide(ReefSide reefSide) {
+        return new DriveToPose<Swerve>(
+                Robot.getSwerve(),
+                () -> findGoalPoseInFrontOfTag(reefSide.getTagId()).get(),
+                () ->
+                        Robot.getVisionSystem()
+                                .getPoseEstimateByTag(reefSide.getTagId())
+                                .orElseGet(() -> Robot.getSwerve().getPose()));
     }
 
     private Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {

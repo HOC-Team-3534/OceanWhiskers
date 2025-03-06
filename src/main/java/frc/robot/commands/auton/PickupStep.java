@@ -1,5 +1,6 @@
 package frc.robot.commands.auton;
 
+import static edu.wpi.first.units.Units.Feet;
 import static frc.robot.commands.auton.AutonChoosers.*;
 
 import com.pathplanner.lib.path.PathPlannerPath;
@@ -38,6 +39,6 @@ public class PickupStep extends AutonStep {
         return super.alignWithGoalPose()
                 .andThen(
                         Commands.runOnce(() -> leavePickupTimeout.restart()),
-                        Robot.getDtm().pushForwardAgainstWallPickup().asProxy().withTimeout(0.5));
+                        Robot.getAuton().driveForward(Feet.of(1.0)).withTimeout(0.5));
     }
 }

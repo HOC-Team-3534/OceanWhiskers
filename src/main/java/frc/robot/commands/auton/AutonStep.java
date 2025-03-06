@@ -10,6 +10,8 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.hocLib.util.Util;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
+import frc.robot.commands.DriveToPose;
+import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.subsystems.tusks.Tusks;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +37,7 @@ public abstract class AutonStep {
     }
 
     public Command alignWithGoalPose() {
-        return Robot.getSwerve().driveToPose(getGoalPose());
+        return new DriveToPose<Swerve>(Robot.getSwerve(), this::getGoalPose);
     }
 
     public abstract boolean isStepComplete();

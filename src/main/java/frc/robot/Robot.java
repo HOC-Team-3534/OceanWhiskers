@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Seconds;
 
 import dev.doglog.DogLogOptions;
@@ -182,10 +181,6 @@ public class Robot extends HocRobot {
     @Override
     public void robotPeriodic() {
         try {
-            Logging.log(
-                    "Align Bumper to Reef Pose",
-                    getSwerve().getState().Pose.transformBy(getDtm().getAlignReefFinalTransform()));
-
             Logging.log("Match Time", DriverStation.getMatchTime());
 
             Logging.log(
@@ -196,36 +191,19 @@ public class Robot extends HocRobot {
 
             Logging.log("Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
 
-            Logging.log(
-                    "Aligned With Reef Before Final Drive Forward",
-                    RobotStates.AlignedWithReefBeforeFinalDriveForward.getAsBoolean());
-
-            Logging.log(
-                    "Swerve Fully Aligned for Deployment",
-                    RobotStates.SwerveFullyAligned.getAsBoolean());
-
             Logging.log("Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
             Logging.log("Closest Reef Tag ID", DTM.getClosestReefID().orElse(0));
 
             Logging.log("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 
-            Logging.log(
-                    "Align Fwd (In.)",
-                    getDtm().getAlignReefFinalTransform().getMeasureX().in(Inches));
-            Logging.log(
-                    "Align Left Right (In.)",
-                    getDtm().getAlignReefFinalTransform().getMeasureY().in(Inches));
-            Logging.log(
-                    "Align Angle (Deg.)",
-                    getDtm().getAlignReefFinalTransform().getRotation().getDegrees());
+            Logging.log("Deploying", RobotStates.Deploy.getAsBoolean());
 
             Logging.log(
-                    "Align is Pushed Forward", getSwerve().getAdditionalState().isPushedUpOnWall());
-
-            Logging.log(
-                    "Bumper Reef Alignment Transform Present",
-                    getDtm().getBumperToReefAlignment().isPresent());
+                    "Current Reef Tag Pose Estimate",
+                    DTM.getClosestReefID()
+                            .flatMap(tagId -> getVisionSystem().getPoseEstimateByTag(tagId))
+                            .orElse(new Pose2d()));
 
             Logging.log(
                     "Current Auton Step Goal Pose",

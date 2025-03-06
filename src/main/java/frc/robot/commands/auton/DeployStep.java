@@ -2,12 +2,16 @@ package frc.robot.commands.auton;
 
 import static frc.robot.commands.auton.AutonChoosers.*;
 
+import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
+import frc.robot.commands.FollowPathThenDriveToPose;
+import frc.robot.subsystems.swerve.Swerve;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -33,13 +37,20 @@ public class DeployStep extends AutonStep {
     }
 
     @Override
+    public Command followPath() {
+        return new FollowPathThenDriveToPose<Swerve>(
+                        (FollowPathCommand) super.followPath(),
+                        Robot.getDtm().driveToReefSide(branch.getReefSide()))
+                .andThen(Commands.runOnce(() -> RobotStates.setAlignedWithReefForDeployment(true)));
+    }
+
+    @Override
     public boolean isStepComplete() {
         return !Robot.getTusks().getState().isHoldingCoral();
     }
 
     @Override
     public Command alignWithGoalPose() {
-        return Commands.runOnce(() -> deployTimeout.restart())
-                .andThen(Robot.getDtm().alignLeftRightOnReefWall().asProxy());
+        return Commands.none();
     }
 }

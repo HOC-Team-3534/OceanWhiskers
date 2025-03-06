@@ -2,29 +2,22 @@ package frc.hocLib.camera;
 
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Radians;
-import static edu.wpi.first.units.Units.Seconds;
 
 import com.ctre.phoenix6.Utils;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.Logging;
 import frc.hocLib.swerve.RobotPoseSupplier;
 import frc.hocLib.swerve.VisionMeasurementAdder;
+import frc.hocLib.swerve.VisionMeasurementWithIdsAdder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import lombok.Getter;
 import lombok.experimental.Delegate;
 import org.photonvision.PhotonCamera;
@@ -56,13 +49,27 @@ public class PhotonCameraPlus {
     @Getter private List<PhotonTrackedTarget> latestEstimateTargets = new ArrayList<>();
     private Timer latestEstimateTimer = new Timer();
 
-    private final VisionMeasurementAdder visionMeasurementAdder;
+    private final VisionMeasurementWithIdsAdder visionMeasurementAdder;
     private final RobotPoseSupplier robotPoseSupplier;
 
     public PhotonCameraPlus(
             String name,
             Transform3d robotToCamera,
             VisionMeasurementAdder visionMeasurementAdder,
+            RobotPoseSupplier robotPoseSupplier) {
+        this(
+                name,
+                robotToCamera,
+                (visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs, tagIds) ->
+                        visionMeasurementAdder.addVisionMeasurement(
+                                visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs),
+                robotPoseSupplier);
+    }
+
+    public PhotonCameraPlus(
+            String name,
+            Transform3d robotToCamera,
+            VisionMeasurementWithIdsAdder visionMeasurementAdder,
             RobotPoseSupplier robotPoseSupplier) {
         camera = new PhotonCamera(name);
 
@@ -160,10 +167,18 @@ public class PhotonCameraPlus {
                             var visionMeasurementStdDevs =
                                     VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
 
+                            ArrayList<Integer> closerTagIds = new ArrayList<>();
+
+                            for (var tag : estmt.targetsUsed) {
+                                if (tag.area >= avgTargetArea && tag.area > 0.1)
+                                    closerTagIds.add(tag.getFiducialId());
+                            }
+
                             visionMeasurementAdder.addVisionMeasurement(
                                     estmt.estimatedPose.toPose2d(),
                                     Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                                    visionMeasurementStdDevs);
+                                    visionMeasurementStdDevs,
+                                    closerTagIds);
 
                             latestEstimateTargets.clear();
                             latestEstimateTargets.addAll(estmt.targetsUsed);
@@ -172,29 +187,5 @@ public class PhotonCameraPlus {
                         });
             }
         }
-    }
-
-    public Optional<Transform2d> getRobotToTarget(
-            int targetOfInterestId, Time timeLimitSinceLastDetected) {
-
-        if (latestEstimateTimer.hasElapsed(timeLimitSinceLastDetected.in(Seconds)))
-            return Optional.empty();
-
-        var targetOfInterest =
-                latestEstimateTargets.stream()
-                        .filter((t) -> t.fiducialId == targetOfInterestId)
-                        .findFirst();
-
-        if (targetOfInterest.isEmpty()) return Optional.empty();
-
-        var robotToTarget =
-                new Pose3d()
-                        .transformBy(robotToCamera)
-                        .transformBy(targetOfInterest.get().bestCameraToTarget)
-                        .transformBy(
-                                new Transform3d(
-                                        new Translation3d(), new Rotation3d(Rotation2d.k180deg)));
-
-        return Optional.of(robotToTarget.toPose2d().minus(new Pose2d()));
     }
 }

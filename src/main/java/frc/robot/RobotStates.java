@@ -46,12 +46,10 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
-    public static final Trigger SwerveMoving = new Trigger(() -> swerve.isMoving());
-
-    public static final Trigger AlignedWithReefBeforeFinalDriveForward =
-            new Trigger(dtm::isBumperToReefAligned)
-                    .debounce(0.2)
-                    .and(() -> swerve.getAdditionalState().isPushedUpOnWall(), SwerveMoving.not());
+    public static final Trigger SwerveMoving =
+            new Trigger(() -> swerve.isMoving())
+                    .debounce(0.5)
+                    .onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
@@ -135,9 +133,6 @@ public class RobotStates {
     public static final Trigger PreClimb = codriver.PreClimb_Select;
     public static final Trigger Climb = codriver.Climb_Start;
 
-    public static final Trigger SwerveFullyAligned =
-            new Trigger(() -> swerve.getAlignedState().isFullyAligned());
-
     public static final Trigger AutonDeployTimeoutForceDeploy =
             Util.autoMode.and(
                     () ->
@@ -145,13 +140,17 @@ public class RobotStates {
                                     .map(AutonStep::isDeployTimedOut)
                                     .orElse(false));
 
+    @Setter @Getter private static boolean alignedWithReefForDeployment;
+
     public static final Trigger Deploy =
             ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
                             .and(
                                     codriver.Deploy_LS.or(
-                                            SwerveFullyAligned, AutonDeployTimeoutForceDeploy)))
+                                            RobotStates::isAlignedWithReefForDeployment,
+                                            AutonDeployTimeoutForceDeploy)))
                     .debounce(0.15)
-                    .latchWithReset(TusksHoldingCoral.not());
+                    .latchWithReset(TusksHoldingCoral.not())
+                    .onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
 
     public static final Trigger GoToL3Algae = codriver.GoToL3Algae_X;
     public static final Trigger GoToL2Algae = codriver.GoToL2Algae_B;
