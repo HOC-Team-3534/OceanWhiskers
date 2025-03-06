@@ -35,20 +35,31 @@ public final class FieldAndTags2025 {
 
     @RequiredArgsConstructor
     public enum ReefBranch {
-        A(ReefSide.AB),
-        B(ReefSide.AB),
-        C(ReefSide.CD),
-        D(ReefSide.CD),
-        E(ReefSide.EF),
-        F(ReefSide.EF),
-        G(ReefSide.GH),
-        H(ReefSide.GH),
-        I(ReefSide.IJ),
-        J(ReefSide.IJ),
-        K(ReefSide.KL),
-        L(ReefSide.KL);
+        A,
+        B,
+        C,
+        D,
+        E,
+        F,
+        G,
+        H,
+        I,
+        J,
+        K,
+        L;
 
-        @Getter final ReefSide reefSide;
+        @Getter ReefSide reefSide;
+
+        static {
+            for (var branch : ReefBranch.values()) {
+                for (var reefSide : ReefSide.values()) {
+                    if (reefSide.name().contains(branch.name())) {
+                        branch.reefSide = reefSide;
+                        break;
+                    }
+                }
+            }
+        }
 
         public enum Side {
             Left,
@@ -64,26 +75,28 @@ public final class FieldAndTags2025 {
         }
     }
 
-    private static final BiMap<Integer, ReefSide> reefSideBlueMap = new BiMap<>(),
-            reefSideRedMap = new BiMap<>();
+    private static BiMap<Integer, ReefSide> reefSideBlueMap, reefSideRedMap;
 
+    @RequiredArgsConstructor
     public enum ReefSide {
-        AB(18, 7, ReefBranch.A, ReefBranch.B),
-        CD(17, 8, ReefBranch.C, ReefBranch.D),
-        EF(22, 9, ReefBranch.E, ReefBranch.F),
-        GH(21, 10, ReefBranch.G, ReefBranch.H),
-        IJ(20, 11, ReefBranch.I, ReefBranch.J),
-        KL(19, 6, ReefBranch.K, ReefBranch.L);
+        AB(18, 7),
+        CD(17, 8),
+        EF(22, 9),
+        GH(21, 10),
+        IJ(20, 11),
+        KL(19, 6);
         @Getter final int blueTag, redTag;
-        @Getter final ReefBranch leftBranch, rightBranch;
+        @Getter ReefBranch leftBranch, rightBranch;
 
-        ReefSide(int blueTag, int redTag, ReefBranch leftBranch, ReefBranch rightBranch) {
-            this.blueTag = blueTag;
-            this.redTag = redTag;
-            this.leftBranch = leftBranch;
-            this.rightBranch = rightBranch;
-            reefSideBlueMap.put(blueTag, this);
-            reefSideRedMap.put(blueTag, this);
+        static {
+            reefSideBlueMap = new BiMap<>();
+            reefSideRedMap = new BiMap<>();
+            for (var reefSide : ReefSide.values()) {
+                reefSide.leftBranch = ReefBranch.valueOf(reefSide.name().substring(0, 1));
+                reefSide.rightBranch = ReefBranch.valueOf(reefSide.name().substring(1, 2));
+                reefSideBlueMap.put(reefSide.blueTag, reefSide);
+                reefSideRedMap.put(reefSide.redTag, reefSide);
+            }
         }
 
         public ReefBranch getBranch(ReefBranch.Side side) {
@@ -112,23 +125,25 @@ public final class FieldAndTags2025 {
         }
     }
 
-    private static final BiMap<Integer, LoadingStation> loadingStationBlueMap = new BiMap<>(),
-            loadingStationRedMap = new BiMap<>();
+    private static BiMap<Integer, LoadingStation> loadingStationBlueMap, loadingStationRedMap;
 
+    @RequiredArgsConstructor
     public enum LoadingStation {
         Left(13, 1),
         Right(12, 2);
         @Getter final int blueTag, redTag;
 
-        LoadingStation(int blueTag, int redTag) {
-            this.blueTag = blueTag;
-            this.redTag = redTag;
-            loadingStationBlueMap.put(blueTag, this);
-            loadingStationRedMap.put(redTag, this);
-        }
-
         public int getTagId() {
             return Util.isRedAlliance() ? redTag : blueTag;
+        }
+
+        static {
+            loadingStationBlueMap = new BiMap<>();
+            loadingStationRedMap = new BiMap<>();
+            for (var station : LoadingStation.values()) {
+                loadingStationBlueMap.put(station.blueTag, station);
+                loadingStationRedMap.put(station.redTag, station);
+            }
         }
 
         public static Optional<LoadingStation> getStation(int tagId) {
