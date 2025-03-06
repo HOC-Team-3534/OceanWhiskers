@@ -19,7 +19,7 @@ public class PickupStep extends AutonStep {
 
     @Override
     public PathPlannerPath getPath() {
-        var paths = Paths.getReefSidePaths(branch.getReefSide());
+        var paths = Paths.getReefSidePaths(prevBranch.getReefSide());
         if (isLeftSideOfFieldSelected()) return paths.getToLeft();
         else return paths.getToRight();
     }
