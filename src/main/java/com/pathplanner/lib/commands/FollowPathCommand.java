@@ -41,7 +41,7 @@ public class FollowPathCommand extends Command {
     private final EventScheduler eventScheduler;
 
     private PathPlannerPath path;
-    private PathPlannerTrajectory trajectory;
+    @Getter private PathPlannerTrajectory trajectory;
 
     /**
      * Construct a base path following command

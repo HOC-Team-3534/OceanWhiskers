@@ -34,7 +34,7 @@ public class FollowPathThenDriveToPose<
     private static final LoggedTunableNumber mergeDuration =
             new LoggedTunableNumber("FollowPathThenDriveToPose/MergeDuration");
 
-    private boolean driveToPoseInitialized;
+    private boolean driveToPoseInitialized, followPathEnded;
 
     public FollowPathThenDriveToPose(
             FollowPathCommand followPathCommand, DriveToPose<T> driveToPoseCommand) {
@@ -50,32 +50,38 @@ public class FollowPathThenDriveToPose<
 
         secondsToStartMerge.initDefault(0.75);
         mergeDuration.initDefault(0.25);
+
+        addRequirements(followPathCommand.getRequirements());
     }
 
     @Override
     public void initialize() {
         followPathCommand.initialize();
         driveToPoseInitialized = false;
+        followPathEnded = false;
     }
 
     @Override
     public void execute() {
 
-        var isFinishedFollowingPath = followPathCommand.isFinished();
+        var secondsIntoMerge =
+                Math.min(
+                                secondsToStartMerge.get(),
+                                followPathCommand.getTrajectory().getTotalTimeSeconds() / 2.0)
+                        - followPathCommand.timeUntilDone().in(Seconds);
+
+        var isFinishedFollowingPath =
+                followPathCommand.isFinished() || secondsIntoMerge > mergeDuration.get();
+
+        if (isFinishedFollowingPath && !followPathEnded) {
+            followPathCommand.end(false);
+            followPathEnded = true;
+        }
 
         if (!isFinishedFollowingPath) followPathCommand.execute();
 
-        var secondsIntoMerge =
-                secondsToStartMerge.get() - followPathCommand.timeUntilDone().in(Seconds);
-
-        var speeds =
-                isFinishedFollowingPath || secondsIntoMerge > mergeDuration.get()
-                        ? new ChassisSpeeds()
-                        : latestFollowPathCommandOutput.getFirst();
-        var feedforwards =
-                isFinishedFollowingPath || secondsIntoMerge > mergeDuration.get()
-                        ? DriveFeedforwards.zeros(4)
-                        : latestFollowPathCommandOutput.getSecond();
+        var speeds = latestFollowPathCommandOutput.getFirst();
+        var feedforwards = latestFollowPathCommandOutput.getSecond();
 
         if (secondsIntoMerge >= 0) {
             if (!driveToPoseInitialized) {
@@ -94,5 +100,19 @@ public class FollowPathThenDriveToPose<
         }
 
         mainOutput.accept(speeds, feedforwards);
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        if (!followPathEnded) {
+            followPathCommand.end(true);
+        }
+        driveToPoseCommand.end(interrupted);
+        mainOutput.accept(new ChassisSpeeds(), DriveFeedforwards.zeros(4));
+    }
+
+    @Override
+    public boolean isFinished() {
+        return followPathCommand.isFinished() && driveToPoseCommand.isFinished();
     }
 }

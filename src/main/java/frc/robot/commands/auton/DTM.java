@@ -76,36 +76,36 @@ public class DTM {
     private final Driver driver = Robot.getDriver();
 
     public Command driveToPose(Supplier<Pose2d> target) {
-        return new DriveToPose<Swerve>(
-                        Robot.getSwerve(),
-                        target,
-                        () -> {
-                            var input =
-                                    new Translation2d(
-                                            driver.getDriveFwdPositive(),
-                                            driver.getDriveLeftPositive());
+        return Commands.deadline(
+                new DriveToPose<Swerve>(
+                                Robot.getSwerve(),
+                                target,
+                                () -> {
+                                    var input =
+                                            new Translation2d(
+                                                    driver.getDriveFwdPositive(),
+                                                    driver.getDriveLeftPositive());
 
-                            return Util.isRedAlliance() ? input.unaryMinus() : input;
-                        },
-                        () -> {
-                            var input = driver.getDriveCCWPositive();
+                                    return Util.isRedAlliance() ? input.unaryMinus() : input;
+                                },
+                                () -> {
+                                    var input = driver.getDriveCCWPositive();
 
-                            return Util.isRedAlliance() ? -input : input;
-                        })
-                .asProxy();
+                                    return Util.isRedAlliance() ? -input : input;
+                                })
+                        .asProxy(),
+                Commands.startEnd(
+                        () -> RobotStates.setDrivingAutonomously(true),
+                        () -> RobotStates.setDrivingAutonomously(false)));
     }
 
     public Command dtmToHumanPlayerStation() {
         var command =
-                Commands.deadline(
-                        driveToPose(
-                                () ->
-                                        FieldAndTags2025.getClosestHumanPlayerStationID()
-                                                .flatMap(this::findGoalPoseInFrontOfTag)
-                                                .orElseGet(() -> Robot.getSwerve().getPose())),
-                        Commands.startEnd(
-                                () -> RobotStates.setDrivingAutonomously(true),
-                                () -> RobotStates.setDrivingAutonomously(false)));
+                driveToPose(
+                        () ->
+                                getClosestHumanPlayerStationID()
+                                        .flatMap(this::findGoalPoseInFrontOfTag)
+                                        .orElseGet(() -> Robot.getSwerve().getPose()));
 
         command.setName("DTM TO PICKUP STATION");
 
@@ -114,15 +114,7 @@ public class DTM {
 
     public Command dtmToReef() {
         var command =
-                Commands.deadline(
-                        driveToPose(
-                                () ->
-                                        Robot.getSwerve()
-                                                .getPose()
-                                                .plus(getAlignReefFinalTransform())),
-                        Commands.startEnd(
-                                () -> RobotStates.setDrivingAutonomously(true),
-                                () -> RobotStates.setDrivingAutonomously(false)));
+                driveToPose(() -> Robot.getSwerve().getPose().plus(getAlignReefFinalTransform()));
 
         command.setName("DTM TO REEF");
 
@@ -233,6 +225,10 @@ public class DTM {
 
     public Transform2d getAlignReefFinalTransform() {
         return cachedAlignReefFinalTransform.get();
+    }
+
+    public Pose2d getAlignReefPose() {
+        return Robot.getSwerve().getPose().transformBy(getAlignReefFinalTransform());
     }
 
     private Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {
