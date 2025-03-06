@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.dashboard.Elastic;
 import frc.hocLib.util.Util;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.AutonStep;
 import frc.robot.commands.auton.DTM;
@@ -121,14 +122,14 @@ public class RobotStates {
     public static final Trigger GoToL3Coral = codriver.GoToL3Coral_X.or(isAutonLevel(3));
     public static final Trigger GoToL4Coral = codriver.GoToL4Coral_Y.or(isAutonLevel(4));
 
-    static Trigger isAutonTusksPickupSide(Tusks.Side side) {
-        return Auton.isTusksSide(side).latchWithReset(TusksHoldingCoral.or(Util.teleop));
+    static Trigger isAutonPickupSide(ReefBranch.Side side) {
+        return Auton.isReefBranchSide(side).latchWithReset(TusksHoldingCoral.or(Util.teleop));
     }
 
     public static final Trigger PickupCoralLeft =
-            codriver.PickupCoralLeft_LT.or(isAutonTusksPickupSide(Tusks.Side.Left));
+            codriver.PickupCoralLeft_LT.or(isAutonPickupSide(ReefBranch.Side.Left));
     public static final Trigger PickupCoralRight =
-            codriver.PickupCoralRight_RT.or(isAutonTusksPickupSide(Tusks.Side.Right));
+            codriver.PickupCoralRight_RT.or(isAutonPickupSide(ReefBranch.Side.Right));
 
     public static final Trigger PreClimb = codriver.PreClimb_Select;
     public static final Trigger Climb = codriver.Climb_Start;
@@ -169,10 +170,16 @@ public class RobotStates {
             new Trigger(RobotStates::isDrivingAutonomously);
 
     public static void setupStates() {
-        driver.DTMToReef_A.and(
+        driver.DTMToReefLeft_LT.and(
                         () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef())
+                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
+                .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
+                .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
+        driver.DTMToReefRight_RT.and(
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> !Robot.getElevator().getState().isClimbing())
+                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         driver.DTMToHumanPlayerStation_B.and(

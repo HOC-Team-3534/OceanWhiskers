@@ -9,7 +9,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
-import frc.robot.subsystems.tusks.Tusks;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -30,8 +29,8 @@ public class PickupStep extends AutonStep {
         return Robot.getTusks().getState().isHoldingCoral() || leavePickupTimeout.hasElapsed(2.0);
     }
 
-    public Tusks.Side getTusksSide() {
-        return Tusks.Side.getTusksSide(branch);
+    public ReefBranch.Side getSide() {
+        return branch.getSide();
     }
 
     @Override

@@ -1,5 +1,6 @@
 package frc.reefscape;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.apriltag.AprilTag;
@@ -30,6 +31,8 @@ public final class FieldAndTags2025 {
 
     public static final List<AprilTag> RED_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(5, 11);
 
+    public static final Distance ReefBranchBetweenBranches = Inches.of(13.5);
+
     @RequiredArgsConstructor
     public enum ReefBranch {
         A(ReefSide.AB),
@@ -46,25 +49,45 @@ public final class FieldAndTags2025 {
         L(ReefSide.KL);
 
         @Getter final ReefSide reefSide;
+
+        public enum Side {
+            Left,
+            Right
+        }
+
+        public Side getSide() {
+            return this.name().charAt(0) % 2 == 0 ? Side.Right : Side.Left;
+        }
+
+        public Distance getOffset() {
+            return ReefBranchBetweenBranches.div(2).times(getSide().equals(Side.Left) ? 1 : -1);
+        }
     }
 
     private static final BiMap<Integer, ReefSide> reefSideBlueMap = new BiMap<>(),
             reefSideRedMap = new BiMap<>();
 
     public enum ReefSide {
-        AB(18, 7),
-        CD(17, 8),
-        EF(22, 9),
-        GH(21, 10),
-        IJ(20, 11),
-        KL(19, 6);
+        AB(18, 7, ReefBranch.A, ReefBranch.B),
+        CD(17, 8, ReefBranch.C, ReefBranch.D),
+        EF(22, 9, ReefBranch.E, ReefBranch.F),
+        GH(21, 10, ReefBranch.G, ReefBranch.H),
+        IJ(20, 11, ReefBranch.I, ReefBranch.J),
+        KL(19, 6, ReefBranch.K, ReefBranch.L);
         @Getter final int blueTag, redTag;
+        @Getter final ReefBranch leftBranch, rightBranch;
 
-        ReefSide(int blueTag, int redTag) {
+        ReefSide(int blueTag, int redTag, ReefBranch leftBranch, ReefBranch rightBranch) {
             this.blueTag = blueTag;
             this.redTag = redTag;
+            this.leftBranch = leftBranch;
+            this.rightBranch = rightBranch;
             reefSideBlueMap.put(blueTag, this);
             reefSideRedMap.put(blueTag, this);
+        }
+
+        public ReefBranch getBranch(ReefBranch.Side side) {
+            return side.equals(ReefBranch.Side.Left) ? leftBranch : rightBranch;
         }
 
         public int getTagId() {

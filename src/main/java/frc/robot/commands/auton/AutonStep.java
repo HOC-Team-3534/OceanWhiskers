@@ -8,11 +8,11 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.hocLib.util.Util;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
 import frc.robot.commands.DriveToPose;
 import frc.robot.subsystems.swerve.Swerve;
-import frc.robot.subsystems.tusks.Tusks;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
@@ -72,9 +72,9 @@ public abstract class AutonStep {
         return false;
     }
 
-    public boolean isTusksSide(Tusks.Side side) {
+    public boolean isSide(ReefBranch.Side side) {
         if (this instanceof PickupStep) {
-            return ((PickupStep) this).getTusksSide().equals(side);
+            return ((PickupStep) this).getSide().equals(side);
         }
         return false;
     }

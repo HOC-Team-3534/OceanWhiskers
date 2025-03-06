@@ -27,8 +27,8 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
-import frc.robot.subsystems.tusks.Tusks;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -49,11 +49,11 @@ public class Auton {
                 .and(autonDeploy);
     }
 
-    public static Trigger isTusksSide(Tusks.Side side) {
+    public static Trigger isReefBranchSide(ReefBranch.Side side) {
         return new Trigger(
                         () ->
                                 AutonStep.getCurrentStep()
-                                        .map(step -> step.isTusksSide(side))
+                                        .map(step -> step.isSide(side))
                                         .orElse(false))
                 .and(autonPickup);
     }
