@@ -316,6 +316,11 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
+    @Override
+    public boolean isFinished() {
+        return atGoal();
+    }
+
     /** Checks if the robot pose is within the allowed drive and theta tolerances. */
     public boolean withinTolerance(double driveTolerance, Rotation2d thetaTolerance) {
         return running
