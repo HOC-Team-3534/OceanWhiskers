@@ -12,6 +12,7 @@ import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import frc.robot.subsystems.swerve.Swerve;
+import org.photonvision.EstimatedRobotPose;
 
 public class Logging extends DogLog {
 
@@ -19,6 +20,10 @@ public class Logging extends DogLog {
         log(key + "/Connected", camera.isConnected());
 
         if (!camera.isConnected()) logFault("Camera Disconnected");
+    }
+
+    public static void log(String key, EstimatedRobotPose estimatedRobotPose) {
+        log(key + "/EstimatedRobotPose", estimatedRobotPose.estimatedPose.toPose2d());
     }
 
     public static void log(String key, Mechanism mechanism) {

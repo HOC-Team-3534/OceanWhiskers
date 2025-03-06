@@ -7,8 +7,11 @@ import com.ctre.phoenix6.Utils;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.Vector;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.Logging;
@@ -20,12 +23,15 @@ import java.util.HashSet;
 import java.util.List;
 import lombok.Getter;
 import lombok.experimental.Delegate;
+
+import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
 import org.photonvision.PhotonPoseEstimator;
 import org.photonvision.PhotonPoseEstimator.PoseStrategy;
 import org.photonvision.simulation.PhotonCameraSim;
 import org.photonvision.simulation.SimCameraProperties;
 import org.photonvision.simulation.VisionSystemSim;
+import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraPlus {
@@ -132,40 +138,18 @@ public class PhotonCameraPlus {
             var results = camera.getAllUnreadResults();
 
             for (var result : results) {
-                var estimate = poseEstimator.update(result);
+                processResult(result);
+            }
+        }
+    }
+
+    private void processResult(PhotonPipelineResult result){
+        var estimate = poseEstimator.update(result);
 
                 estimate.ifPresent(
                         estmt -> {
-                            var poseDifference =
-                                    estmt.estimatedPose
-                                            .toPose2d()
-                                            .relativeTo(robotPoseSupplier.getPose())
-                                            .getTranslation()
-                                            .getNorm();
-
-                            double sumTargetArea = 0.0;
-                            boolean hasHighUpTags = false;
-                            for (var tg : estmt.targetsUsed) {
-                                sumTargetArea += tg.getArea();
-                                if (HIGH_TAGS.contains(tg.fiducialId)) {
-                                    hasHighUpTags = true;
-                                    break;
-                                }
-                            }
-
-                            var avgTargetArea = sumTargetArea / estmt.targetsUsed.size();
-
-                            double xyStds = 2.0;
-                            // TODO: consider modifying weights to help with center camera and
-                            // alignment
-                            if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
-                            else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
-                            else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
-                            else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
-                            else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
-
-                            var visionMeasurementStdDevs =
-                                    VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
+                            var visionMeasurementStdDevs = calcStandardDevs(estmt, robotPoseSupplier.getPose());
+                            var avgTargetArea = calcAvgTargetArea(estmt);
 
                             ArrayList<Integer> closerTagIds = new ArrayList<>();
 
@@ -180,12 +164,51 @@ public class PhotonCameraPlus {
                                     visionMeasurementStdDevs,
                                     closerTagIds);
 
+                            Logging.log(camera.getName(), estmt);
+
                             latestEstimateTargets.clear();
                             latestEstimateTargets.addAll(estmt.targetsUsed);
 
                             latestEstimateTimer.restart();
                         });
-            }
+    }
+
+    private static double calcAvgTargetArea(EstimatedRobotPose estmt){
+        double sumTargetArea = 0.0;
+        for (var tg : estmt.targetsUsed) {
+            sumTargetArea += tg.getArea();
         }
+        return sumTargetArea / estmt.targetsUsed.size();
+    }
+
+    private static Vector<N3> calcStandardDevs(EstimatedRobotPose estmt, Pose2d currentRobotPose){
+        var poseDifference =
+                                    estmt.estimatedPose
+                                            .toPose2d()
+                                            .relativeTo(currentRobotPose)
+                                            .getTranslation()
+                                            .getNorm();
+
+                            boolean hasHighUpTags = false;
+                            for (var tg : estmt.targetsUsed) {
+                                if (HIGH_TAGS.contains(tg.fiducialId)) {
+                                    hasHighUpTags = true;
+                                    break;
+                                }
+                            }
+
+                            var avgTargetArea = calcAvgTargetArea(estmt);
+
+                            double xyStds = 2.0;
+                            // TODO: consider modifying weights to help with center camera and
+                            // alignment
+                            if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
+                            else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
+                            else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
+                            else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
+                            else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
+
+                            return 
+                                    VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
     }
 }
