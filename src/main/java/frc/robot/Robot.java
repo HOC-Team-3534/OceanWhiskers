@@ -20,7 +20,6 @@ import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.LoggedTunableNumber;
-import frc.reefscape.FieldAndTags2025;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.Auton.AutonConfig;
 import frc.robot.commands.auton.AutonStep;
@@ -207,7 +206,7 @@ public class Robot extends HocRobot {
 
             Logging.log("Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
 
-            Logging.log("Closest Reef Tag ID", FieldAndTags2025.getClosestReefID().orElse(0));
+            Logging.log("Closest Reef Tag ID", DTM.getClosestReefID().orElse(0));
 
             Logging.log("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
 

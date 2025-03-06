@@ -3,6 +3,7 @@ package frc.robot.commands.auton;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.hocLib.util.CachedSendableChooser;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.reefscape.FieldAndTags2025.SideOfField;
 
 public class AutonChoosers {
@@ -71,7 +72,10 @@ public class AutonChoosers {
         chooser.setDefaultOption("None", null);
 
         for (var branch : ReefBranch.values()) {
-            branch.addToChooser(chooser, sideOfField);
+            var reefSideOfField = branch.getReefSide().getSideOfField();
+            if (reefSideOfField.isEmpty() || reefSideOfField.get().equals(sideOfField)) {
+                chooser.addOption(branch.name(), branch);
+            }
         }
     }
 

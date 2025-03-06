@@ -1,21 +1,15 @@
 package frc.reefscape;
 
-import static edu.wpi.first.units.Units.Feet;
 import static edu.wpi.first.units.Units.Meters;
 
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.units.measure.Distance;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import frc.hocLib.util.CachedValue;
+import frc.hocLib.util.BiMap;
 import frc.hocLib.util.Util;
-import frc.robot.Robot;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -37,32 +31,105 @@ public final class FieldAndTags2025 {
     public static final List<AprilTag> RED_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(5, 11);
 
     @RequiredArgsConstructor
-    public enum AllianceValues {
-        Blue(13, 12, pose -> pose.getMeasureX(), pose -> pose.getMeasureY()),
-        Red(
-                1,
-                2,
-                pose -> FIELD_LENGTH.minus(pose.getMeasureX()),
-                pose -> FIELD_WIDTH.minus(pose.getMeasureY()));
-        @Getter final int leftPickupId, rightPickupId;
-        final Function<Pose2d, Distance> distanceFromAllianceWall, distanceFromRightWall;
+    public enum ReefBranch {
+        A(ReefSide.AB),
+        B(ReefSide.AB),
+        C(ReefSide.CD),
+        D(ReefSide.CD),
+        E(ReefSide.EF),
+        F(ReefSide.EF),
+        G(ReefSide.GH),
+        H(ReefSide.GH),
+        I(ReefSide.IJ),
+        J(ReefSide.IJ),
+        K(ReefSide.KL),
+        L(ReefSide.KL);
 
-        public Distance getDistanceFromAllianceWall(Pose2d blueOriginPose) {
-            return distanceFromAllianceWall.apply(blueOriginPose);
+        @Getter final ReefSide reefSide;
+    }
+
+    public enum ReefSide {
+        AB(18, 7),
+        CD(17, 8),
+        EF(22, 9),
+        GH(21, 10),
+        IJ(20, 11),
+        KL(19, 6);
+        @Getter final int blueTag, redTag;
+        @Getter
+        static final BiMap<Integer, ReefSide> blueMap = new BiMap<>(), redMap = new BiMap<>();
+
+        ReefSide(int blueTag, int redTag) {
+            this.blueTag = blueTag;
+            this.redTag = redTag;
+            putBlueMap(blueTag);
+            putRedMap(redTag);
         }
 
-        public Distance getDistanceFromRightWall(Pose2d blueOriginPose) {
-            return distanceFromRightWall.apply(blueOriginPose);
+        void putBlueMap(int tag) {
+            blueMap.put(tag, this);
         }
 
-        public static AllianceValues fromAlliance(Alliance alliance) {
-            return alliance.equals(Alliance.Blue) ? Blue : Red;
+        void putRedMap(int tag) {
+            redMap.put(tag, this);
+        }
+
+        public int getTagId() {
+            return Util.isRedAlliance() ? redTag : blueTag;
+        }
+
+        public static Optional<ReefSide> getSide(int tagId) {
+            return Optional.ofNullable(
+                    Util.isRedAlliance() ? redMap.get(tagId) : blueMap.get(tagId));
+        }
+
+        public Optional<SideOfField> getSideOfField() {
+            switch (this) {
+                case AB, GH:
+                    return Optional.empty();
+                case CD, EF:
+                    return Optional.of(SideOfField.Right);
+                case IJ, KL:
+                    return Optional.of(SideOfField.Left);
+            }
+            throw new RuntimeException();
         }
     }
 
-    public static Optional<AllianceValues> getAllianceValues() {
-        return Optional.of(
-                AllianceValues.fromAlliance(Util.isRedAlliance() ? Alliance.Red : Alliance.Blue));
+    public enum LoadingStation {
+        Left(13, 1),
+        Right(12, 2);
+        @Getter final int blueTag, redTag;
+        @Getter
+        static final BiMap<Integer, LoadingStation> blueMap = new BiMap<>(), redMap = new BiMap<>();
+
+        LoadingStation(int blueTag, int redTag) {
+            this.blueTag = blueTag;
+            this.redTag = redTag;
+            putBlueMap(blueTag);
+            putRedMap(redTag);
+        }
+
+        void putBlueMap(int tag) {
+            blueMap.put(tag, this);
+        }
+
+        void putRedMap(int tag) {
+            redMap.put(tag, this);
+        }
+
+        public int getTagId() {
+            return Util.isRedAlliance() ? redTag : blueTag;
+        }
+
+        public static Optional<LoadingStation> getStation(int tagId) {
+            return Optional.ofNullable(
+                    Util.isRedAlliance() ? redMap.get(tagId) : blueMap.get(tagId));
+        }
+
+        public static LoadingStation fromSide(SideOfField sideOfField) {
+            return sideOfField.equals(SideOfField.Left) ? Left : Right;
+        }
     }
 
     public enum SideOfField {
@@ -72,82 +139,9 @@ public final class FieldAndTags2025 {
         public SideOfField opposite() {
             return this.equals(Left) ? Right : Left;
         }
-
-        public Optional<Integer> getPickUpID() {
-            return getAllianceValues()
-                    .map(a -> this.equals(Left) ? a.getLeftPickupId() : a.getRightPickupId());
-        }
-
-        public static Optional<SideOfField> getCurrentSide(Pose2d blueOriginCurrentPose) {
-            return getAllianceValues()
-                    .map(values -> values.getDistanceFromRightWall(blueOriginCurrentPose))
-                    .map(
-                            distance ->
-                                    distance.gt(FIELD_WIDTH.div(2))
-                                            ? SideOfField.Left
-                                            : SideOfField.Right);
-        }
     }
 
     public static List<AprilTag> getAllianceReefTags() {
         return Util.isRedAlliance() ? RED_REEF_APRIL_TAGS : BLUE_REEF_APRIL_TAGS;
-    }
-
-    public static boolean isRobotOnOurSide(Pose2d robotPose2d) {
-        return isRobotOnOurSide(robotPose2d, Feet.of(1));
-    }
-
-    public static boolean isRobotOnOurSide(Pose2d robotPose, Distance tolerance) {
-        var values = getAllianceValues();
-        if (values.isEmpty()) return false;
-        return values.get()
-                .getDistanceFromAllianceWall(robotPose)
-                .lte(FIELD_LENGTH.div(2).plus(tolerance));
-    }
-
-    private static CachedValue<Optional<Integer>> cachedClosestHumanPlayerStation =
-            new CachedValue<>(FieldAndTags2025::updateClosestHumanPlayerStationID);
-    private static CachedValue<Optional<Integer>> cachedClosestReef =
-            new CachedValue<>(FieldAndTags2025::updateClosestReefID);
-
-    private static Pose2d getPose() {
-        return Robot.getSwerve().getState().Pose;
-    }
-
-    private static Optional<Integer> updateClosestHumanPlayerStationID() {
-        if (getPose().getMeasureY().isNear(FIELD_WIDTH.div(2), Feet.of(1))
-                || !isRobotOnOurSide(getPose())) return Optional.empty();
-
-        return SideOfField.getCurrentSide(getPose()).flatMap(SideOfField::getPickUpID);
-    }
-
-    public static Optional<Integer> getClosestHumanPlayerStationID() {
-        return cachedClosestHumanPlayerStation.get();
-    }
-
-    private static Distance findDistanceFromRobot(Pose3d tag) {
-        return Meters.of(
-                tag.getTranslation().toTranslation2d().getDistance(getPose().getTranslation()));
-    }
-
-    private static Optional<Integer> updateClosestReefID() {
-        if (!isRobotOnOurSide(getPose()) || getAllianceReefTags().isEmpty())
-            return Optional.empty();
-
-        return Optional.of(
-                getAllianceReefTags().stream()
-                        .min(
-                                (t1, t2) -> {
-                                    var dist1 = findDistanceFromRobot(t1.pose);
-                                    var dist2 = findDistanceFromRobot(t2.pose);
-
-                                    return (int) Math.round(dist1.minus(dist2).in(Meters) * 1000);
-                                })
-                        .get()
-                        .ID);
-    }
-
-    public static Optional<Integer> getClosestReefID() {
-        return cachedClosestReef.get();
     }
 }

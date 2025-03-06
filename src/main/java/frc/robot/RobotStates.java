@@ -4,7 +4,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.dashboard.Elastic;
 import frc.hocLib.util.Util;
-import frc.reefscape.FieldAndTags2025;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.AutonStep;
 import frc.robot.commands.auton.DTM;
@@ -15,6 +14,7 @@ import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.jaws.Jaws;
 import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.subsystems.tusks.Tusks;
+import frc.robot.util.FieldUtil;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -171,13 +171,13 @@ public class RobotStates {
 
     public static void setupStates() {
         driver.DTMToReef_A.and(
-                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToReef())
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         driver.DTMToHumanPlayerStation_B.and(
-                        () -> FieldAndTags2025.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToHumanPlayerStation());
 

@@ -22,6 +22,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.util.CachedValue;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -108,7 +109,11 @@ public class Tusks extends TalonSRXArm {
 
     public enum Side {
         Left,
-        Right
+        Right;
+
+        public static Side getTusksSide(ReefBranch reefBranch) {
+            return reefBranch.name().charAt(0) % 2 == 0 ? Tusks.Side.Right : Tusks.Side.Left;
+        }
     }
 
     public void autonInit() {

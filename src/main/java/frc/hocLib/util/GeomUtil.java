@@ -7,6 +7,8 @@
 
 package frc.hocLib.util;
 
+import static edu.wpi.first.units.Units.Meters;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -15,6 +17,7 @@ import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.units.measure.Distance;
 
 /** Geometry utilities for working with translations, rotations, transforms, and poses. */
 public class GeomUtil {
@@ -159,5 +162,10 @@ public class GeomUtil {
      */
     public static Pose2d withRotation(Pose2d pose, Rotation2d rotation) {
         return new Pose2d(pose.getTranslation(), rotation);
+    }
+
+    public static Distance calc2dDistance(Pose2d original, Pose3d other) {
+        return Meters.of(
+                other.getTranslation().toTranslation2d().getDistance(original.getTranslation()));
     }
 }

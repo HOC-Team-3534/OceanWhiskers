@@ -6,6 +6,7 @@ import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
 import frc.robot.subsystems.tusks.Tusks;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,9 @@ public class PickupStep extends AutonStep {
 
     @Override
     public PathPlannerPath getPath() {
-        var reefSide = prevBranch.getReefSide();
-        if (isLeftSideOfFieldSelected()) return reefSide.getToLeft();
-        else return reefSide.getToRight();
+        var paths = Paths.getReefSidePaths(branch.getReefSide());
+        if (isLeftSideOfFieldSelected()) return paths.getToLeft();
+        else return paths.getToRight();
     }
 
     @Override
@@ -29,7 +30,7 @@ public class PickupStep extends AutonStep {
     }
 
     public Tusks.Side getTusksSide() {
-        return branch.getTusksSide();
+        return Tusks.Side.getTusksSide(branch);
     }
 
     @Override

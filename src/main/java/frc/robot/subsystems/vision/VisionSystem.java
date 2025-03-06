@@ -16,6 +16,8 @@ import frc.hocLib.HocSubsystem;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.reefscape.FieldAndTags2025;
 import frc.robot.Robot;
+import frc.robot.commands.auton.DTM;
+
 import java.util.Optional;
 import lombok.Setter;
 import org.photonvision.simulation.VisionSystemSim;
@@ -114,9 +116,9 @@ public class VisionSystem extends HocSubsystem {
     }
 
     public Optional<Transform2d> getRobotToReefAlignment() {
-        if (FieldAndTags2025.getClosestReefID().isEmpty()) return Optional.empty();
+        if (DTM.getClosestReefID().isEmpty()) return Optional.empty();
 
-        var reefId = FieldAndTags2025.getClosestReefID().get();
+        var reefId = DTM.getClosestReefID().get();
 
         var fromLeft = fl_camera.getRobotToTarget(reefId, Seconds.of(0.50));
         var fromRight = fr_camera.getRobotToTarget(reefId, Seconds.of(0.50));
