@@ -1,11 +1,15 @@
 package frc.robot.subsystems.elevator;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
 import static edu.wpi.first.units.Units.Second;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -17,9 +21,15 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -28,6 +38,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonFXMechanism;
+import frc.robot.Robot;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -108,6 +119,8 @@ public class Elevator extends TalonFXMechanism {
                     new SysIdRoutine.Config(Volts.of(0.25).per(Second), Volts.of(0.5), null),
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
+    private ElevatorSim elevatorSim;
+
     public Elevator(ElevatorConfig config) {
         super(config);
         this.config = config;
@@ -119,6 +132,21 @@ public class Elevator extends TalonFXMechanism {
             for (var follower : followerMotors) {
                 follower.setNeutralMode(NeutralModeValue.Brake);
             }
+
+            if (RobotBase.isSimulation()) {
+                elevatorSim =
+                        new ElevatorSim(
+                                DCMotor.getFalcon500(2),
+                                5,
+                                Pounds.of(30).in(Kilograms),
+                                Inches.of(1.83).in(Meters),
+                                0.0,
+                                config.getMaxLinearPosition().in(Meters),
+                                true,
+                                0.0,
+                                0.01,
+                                0.0);
+            }
         }
 
         SmartDashboard.putNumber("Elevator/Voltage Up Command", 1.55);
@@ -126,9 +154,66 @@ public class Elevator extends TalonFXMechanism {
     }
 
     @Override
+    protected Voltage updateVoltage() {
+        if (RobotBase.isSimulation()) return Volts.of(-motor.getSimState().getMotorVoltage());
+        return super.updateVoltage();
+    }
+
+    @Override
+    protected Voltage updateSupplyVoltage() {
+        if (RobotBase.isSimulation()) return Volts.of(12.0);
+        return super.updateSupplyVoltage();
+    }
+
+    @Override
+    protected Current updateCurrent() {
+        if (RobotBase.isSimulation()) return Amps.of(elevatorSim.getCurrentDrawAmps());
+        return super.updateCurrent();
+    }
+
+    @Override
+    protected Angle updatePosition() {
+        if (RobotBase.isSimulation())
+            return linearPositionToPosition(Meters.of(elevatorSim.getPositionMeters()));
+        return super.updatePosition();
+    }
+
+    @Override
+    protected AngularVelocity updateVelocity() {
+        if (RobotBase.isSimulation())
+            return linearPositionToPosition(Meters.of(elevatorSim.getVelocityMetersPerSecond()))
+                    .per(Second);
+        return super.updateVelocity();
+    }
+
+    @Override
+    protected Double updatePercentage() {
+        return super.updatePercentage();
+    }
+
+    @Override
+    protected Distance updateLinearPosition() {
+        if (RobotBase.isSimulation()) return Meters.of(elevatorSim.getPositionMeters());
+        return super.updateLinearPosition();
+    }
+
+    @Override
     public void periodic() {
         Logging.log("Elevator", this);
         Logging.log("Elevator/Near Target Height", state.isNearTargetHeight());
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        if (isAttached()) {
+            double motorVoltage = -motor.getSimState().getMotorVoltage();
+            elevatorSim.setInput(motorVoltage);
+
+            elevatorSim.update(Robot.getConfig().LoopPeriod.in(Seconds));
+
+            motor.getSimState().setRawRotorPosition(updatePosition());
+            motor.getSimState().setRotorVelocity(updateVelocity());
+        }
     }
 
     @Override
