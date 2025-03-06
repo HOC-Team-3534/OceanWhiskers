@@ -41,6 +41,7 @@ public class DeployStep extends AutonStep {
         return new FollowPathThenDriveToPose<Swerve>(
                         (FollowPathCommand) super.followPath(),
                         Robot.getDtm().driveToReefBranch(branch))
+                .asProxy()
                 .andThen(Commands.runOnce(() -> RobotStates.setAlignedWithReefForDeployment(true)));
     }
 
