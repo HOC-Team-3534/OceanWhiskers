@@ -15,12 +15,22 @@ public class CachedValue<T> implements Supplier<T>, Subsystem {
     private Supplier<T> canCall;
 
     public CachedValue(Supplier<T> canCall) {
+        this(canCall, true);
+    }
+
+    public CachedValue(Supplier<T> canCall, boolean periodicallyClear) {
         this.canCall = canCall;
-        this.register();
+        if (periodicallyClear) {
+            this.register();
+        }
     }
 
     @Override
     public void periodic() {
+        clear();
+    }
+
+    public void clear() {
         isCached = false;
     }
 

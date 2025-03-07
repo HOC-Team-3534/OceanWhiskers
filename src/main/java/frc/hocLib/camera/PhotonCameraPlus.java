@@ -3,11 +3,15 @@ package frc.hocLib.camera;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.Logging;
+import frc.hocLib.util.GeomUtil;
+import frc.hocLib.util.LoggedTunableNumber;
+import frc.hocLib.util.TuningCommand;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -25,6 +29,34 @@ import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
 public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
+    private static final LoggedTunableNumber calibrationMinTagArea =
+            new LoggedTunableNumber("PhotonCameraPlus/MinTagArea");
+
+    private static final LoggedTunableNumber calibrationKnownX =
+            new LoggedTunableNumber("PhotonCameraPlus/Known/X");
+    private static final LoggedTunableNumber calibrationKnownY =
+            new LoggedTunableNumber("PhotonCameraPlus/Known/Y");
+    private static final LoggedTunableNumber calibrationKnownOmegaDegrees =
+            new LoggedTunableNumber("PhotonCameraPlus/Known/OmegaDegrees");
+
+    private static final List<Transform3d> calibrationRobotToCameras = new ArrayList<>();
+
+    private static final List<PhotonCameraPlus<?>> allInstances = new ArrayList<>();
+
+    static {
+        TuningCommand.create(
+                "PhotonCameraPlus/Calibrate",
+                () -> allInstances.forEach(PhotonCameraPlus::calibrateWithLatestResult));
+        TuningCommand.create(
+                "PhotonCameraPlus/Clear Calibrations",
+                () -> allInstances.forEach(PhotonCameraPlus::clearCalibration));
+
+        calibrationMinTagArea.initDefault(0.2);
+
+        calibrationKnownX.initDefault(0.0);
+        calibrationKnownY.initDefault(0.0);
+        calibrationKnownOmegaDegrees.initDefault(0.0);
+    }
 
     @Getter
     @With
@@ -80,8 +112,7 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
     final PhotonPoseEstimator poseEstimator;
     private PhotonCameraSim cameraSim;
 
-    @Getter private List<PhotonTrackedTarget> latestEstimateTargets = new ArrayList<>();
-    private Timer latestEstimateTimer = new Timer();
+    @Getter private PhotonPipelineResult latestResultWithTargets;
 
     public static <TT extends Enum<TT> & StdDevCategory<TT>> PhotonCameraPlus<TT> create(
             Config<TT> config) {
@@ -101,13 +132,14 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
                 new PhotonPoseEstimator(
                         config.aprilTagFieldLayout, config.poseStrategy, config.robotToCamera);
         poseEstimator.setMultiTagFallbackStrategy(config.multiTagFallbackPoseStrategy);
+
+        allInstances.add(this);
     }
 
     public void addToVisionSim(VisionSystemSim visionSim) {
         if (RobotBase.isSimulation()) {
             visionSim.addCamera(cameraSim, config.robotToCamera);
         }
-        latestEstimateTimer.restart();
     }
 
     public void update(Pose2d robot, VisionEstimateConsumer<T> visionOutput) {
@@ -122,6 +154,16 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
                 processResult(result, robot, visionOutput);
             }
         }
+        if (calibrationKnownX.hasChanged(100)
+                || calibrationKnownY.hasChanged(100)
+                || calibrationKnownOmegaDegrees.hasChanged(100))
+            Logging.log(
+                    "Tuning/PhotonCameraPlus/FieldToRobot",
+                    new Pose3d(
+                            new Pose2d(
+                                    calibrationKnownX.get(),
+                                    calibrationKnownY.get(),
+                                    Rotation2d.fromDegrees(calibrationKnownOmegaDegrees.get()))));
     }
 
     private void processResult(
@@ -130,8 +172,8 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
 
         estimate.ifPresent(
                 estmt -> {
-                    // var visionMeasurementStdDevs =
-                    //         calcStandardDevs(estmt, robot);
+                    latestResultWithTargets = result;
+
                     var avgTargetArea = calcAvgTargetArea(estmt);
 
                     var poseDifference =
@@ -155,11 +197,6 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
                     visionOutput.accept(estmt, stdDevCategory, closerTagIds);
 
                     Logging.log(camera.getName(), estmt, stdDevCategory);
-
-                    latestEstimateTargets.clear();
-                    latestEstimateTargets.addAll(estmt.targetsUsed);
-
-                    latestEstimateTimer.restart();
                 });
     }
 
@@ -169,5 +206,42 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
             sumTargetArea += tg.getArea();
         }
         return sumTargetArea / estmt.targetsUsed.size();
+    }
+
+    private void calibrateWithLatestResult() {
+        if (latestResultWithTargets == null
+                || Timer.getFPGATimestamp() - latestResultWithTargets.getTimestampSeconds() > 0.250)
+            return;
+
+        PhotonTrackedTarget bestTarget = latestResultWithTargets.getBestTarget();
+
+        if (calibrationMinTagArea.get() < 0.2 || bestTarget.poseAmbiguity > 0.2) return;
+
+        Pose3d fieldToRobot =
+                new Pose3d(
+                        new Pose2d(
+                                calibrationKnownX.get(),
+                                calibrationKnownY.get(),
+                                Rotation2d.fromDegrees(calibrationKnownOmegaDegrees.get())));
+
+        Pose3d fieldToTag = config.aprilTagFieldLayout.getTagPose(bestTarget.fiducialId).get();
+
+        Transform3d cameraToTag = bestTarget.bestCameraToTarget;
+
+        Transform3d tagToCamera = cameraToTag.inverse();
+
+        Pose3d fieldToCamera = fieldToTag.transformBy(tagToCamera);
+
+        Transform3d robotToCamera = new Transform3d(fieldToRobot, fieldToCamera);
+
+        calibrationRobotToCameras.add(robotToCamera);
+
+        Logging.log(
+                camera.getName() + "/Calibration Robot To Camera",
+                GeomUtil.averageTransform(calibrationRobotToCameras));
+    }
+
+    private void clearCalibration() {
+        calibrationRobotToCameras.clear();
     }
 }

@@ -19,6 +19,7 @@ import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.LoggedTunableNumber;
+import frc.hocLib.util.TuningCommand;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.Auton.AutonConfig;
 import frc.robot.commands.auton.AutonStep;
@@ -114,6 +115,7 @@ public class Robot extends HocRobot {
 
             if (config.Tuning) {
                 LoggedTunableNumber.TUNING_MODE = true;
+                TuningCommand.TUNING_MODE = true;
             }
 
             /**

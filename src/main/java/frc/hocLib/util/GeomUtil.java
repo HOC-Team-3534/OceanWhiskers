@@ -12,12 +12,14 @@ import static edu.wpi.first.units.Units.Meters;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
+import java.util.List;
 
 /** Geometry utilities for working with translations, rotations, transforms, and poses. */
 public class GeomUtil {
@@ -167,5 +169,20 @@ public class GeomUtil {
     public static Distance calc2dDistance(Pose2d original, Pose3d other) {
         return Meters.of(
                 other.getTranslation().toTranslation2d().getDistance(original.getTranslation()));
+    }
+
+    public static Transform3d averageTransform(List<Transform3d> transforms) {
+        var n = transforms.size();
+        if (n < 1) return new Transform3d();
+        double x = 0.0, y = 0.0, z = 0.0, xRot = 0.0, yRot = 0.0, zRot = 0.0;
+        for (var robotToCamera : transforms) {
+            x += robotToCamera.getX();
+            y += robotToCamera.getY();
+            z += robotToCamera.getZ();
+            xRot += robotToCamera.getRotation().getX();
+            yRot += robotToCamera.getRotation().getY();
+            zRot += robotToCamera.getRotation().getZ();
+        }
+        return new Transform3d(x / n, y / n, z / n, new Rotation3d(xRot / n, yRot / n, zRot / n));
     }
 }
