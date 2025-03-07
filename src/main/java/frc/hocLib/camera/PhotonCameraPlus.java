@@ -1,27 +1,18 @@
 package frc.hocLib.camera;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Radians;
-
-import com.ctre.phoenix6.Utils;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
-import edu.wpi.first.math.VecBuilder;
-import edu.wpi.first.math.Vector;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform3d;
-import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
 import frc.hocLib.Logging;
-import frc.hocLib.swerve.RobotPoseSupplier;
-import frc.hocLib.swerve.VisionMeasurementAdder;
-import frc.hocLib.swerve.VisionMeasurementWithIdsAdder;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.With;
 import lombok.experimental.Delegate;
 import org.photonvision.EstimatedRobotPose;
 import org.photonvision.PhotonCamera;
@@ -33,102 +24,93 @@ import org.photonvision.simulation.VisionSystemSim;
 import org.photonvision.targeting.PhotonPipelineResult;
 import org.photonvision.targeting.PhotonTrackedTarget;
 
-public class PhotonCameraPlus {
+public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
 
-    final String subsystemName = "Vision";
+    @Getter
+    @With
+    @RequiredArgsConstructor
+    public static class Config<T> {
+        final String name;
+        final Transform3d robotToCamera;
+
+        final double maxCloseTagArea;
+        final AprilTagFieldLayout aprilTagFieldLayout;
+        final PoseStrategy poseStrategy;
+        final PoseStrategy multiTagFallbackPoseStrategy;
+        final Class<T> categoryClass;
+
+        private Config(String name, Transform3d robotToCamera, Config<T> baseConfig) {
+            this(
+                    name,
+                    robotToCamera,
+                    baseConfig.maxCloseTagArea,
+                    baseConfig.aprilTagFieldLayout,
+                    baseConfig.poseStrategy,
+                    baseConfig.multiTagFallbackPoseStrategy,
+                    baseConfig.categoryClass);
+        }
+
+        public static <T extends Enum<T> & StdDevCategory<T>> Config<T> defaults(
+                Class<T> categoryClass) {
+            return new Config<>(
+                    null,
+                    null,
+                    0.1,
+                    AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField),
+                    PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR,
+                    PoseStrategy.LOWEST_AMBIGUITY,
+                    categoryClass);
+        }
+
+        public Config<T> withCameraSpecifics(String name, Transform3d robotToCamera) {
+            return new Config<>(name, robotToCamera, this);
+        }
+
+        public SimCameraProperties getSimCameraProperties() {
+            var cameraProp = new SimCameraProperties();
+            cameraProp.setFPS(90);
+            cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
+            return cameraProp;
+        }
+    }
+
+    private final Config<T> config;
 
     @Delegate final PhotonCamera camera;
     final PhotonPoseEstimator poseEstimator;
-
-    // The field from AprilTagFields will be different depending on the game.
-    static AprilTagFieldLayout aprilTagFieldLayout =
-            AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
-
-    final Transform3d robotToCamera;
-
-    static HashSet<Integer> HIGH_TAGS = new HashSet<>();
-
-    private SimCameraProperties cameraProp = new SimCameraProperties();
     private PhotonCameraSim cameraSim;
 
     @Getter private List<PhotonTrackedTarget> latestEstimateTargets = new ArrayList<>();
     private Timer latestEstimateTimer = new Timer();
 
-    private final VisionMeasurementWithIdsAdder visionMeasurementAdder;
-    private final RobotPoseSupplier robotPoseSupplier;
-
-    public PhotonCameraPlus(
-            String name,
-            Transform3d robotToCamera,
-            VisionMeasurementAdder visionMeasurementAdder,
-            RobotPoseSupplier robotPoseSupplier) {
-        this(
-                name,
-                robotToCamera,
-                (visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs, tagIds) ->
-                        visionMeasurementAdder.addVisionMeasurement(
-                                visionRobotPoseMeters, timestampSeconds, visionMeasurementStdDevs),
-                robotPoseSupplier);
+    public static <TT extends Enum<TT> & StdDevCategory<TT>> PhotonCameraPlus<TT> create(
+            Config<TT> config) {
+        return new PhotonCameraPlus<>(config);
     }
 
-    public PhotonCameraPlus(
-            String name,
-            Transform3d robotToCamera,
-            VisionMeasurementWithIdsAdder visionMeasurementAdder,
-            RobotPoseSupplier robotPoseSupplier) {
-        camera = new PhotonCamera(name);
+    public PhotonCameraPlus(Config<T> config) {
+        this.config = config;
 
-        this.visionMeasurementAdder = visionMeasurementAdder;
-        this.robotPoseSupplier = robotPoseSupplier;
+        camera = new PhotonCamera(config.name);
 
         if (RobotBase.isSimulation()) {
-
-            cameraProp.setFPS(90);
-            cameraProp.setCalibration(1920, 1200, Rotation2d.fromDegrees(104));
-
-            cameraSim = new PhotonCameraSim(camera, cameraProp);
+            cameraSim = new PhotonCameraSim(camera, config.getSimCameraProperties());
         }
 
-        this.robotToCamera = robotToCamera;
-
-        poseEstimator = createPoseEstimator();
-        poseEstimator.setMultiTagFallbackStrategy(PoseStrategy.LOWEST_AMBIGUITY);
-
-        HIGH_TAGS.add(4);
-        HIGH_TAGS.add(5);
-        HIGH_TAGS.add(14);
-        HIGH_TAGS.add(15);
-
-        HIGH_TAGS.add(1);
-        HIGH_TAGS.add(2);
-        HIGH_TAGS.add(12);
-        HIGH_TAGS.add(13);
+        poseEstimator =
+                new PhotonPoseEstimator(
+                        config.aprilTagFieldLayout, config.poseStrategy, config.robotToCamera);
+        poseEstimator.setMultiTagFallbackStrategy(config.multiTagFallbackPoseStrategy);
     }
 
     public void addToVisionSim(VisionSystemSim visionSim) {
         if (RobotBase.isSimulation()) {
-            visionSim.addCamera(cameraSim, robotToCamera);
+            visionSim.addCamera(cameraSim, config.robotToCamera);
         }
         latestEstimateTimer.restart();
     }
 
-    private PoseStrategy calculateCurrentPoseStrategy() {
-        // return DriverStation.isFMSAttached()
-        //         ? PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR
-        //         : PoseStrategy.LOWEST_AMBIGUITY;
-
-        return PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR;
-    }
-
-    private PhotonPoseEstimator createPoseEstimator() {
-        return new PhotonPoseEstimator(
-                aprilTagFieldLayout, calculateCurrentPoseStrategy(), robotToCamera);
-    }
-
-    public void update() {
-        if (!poseEstimator.getPrimaryStrategy().equals(calculateCurrentPoseStrategy())) {
-            poseEstimator.setPrimaryStrategy(calculateCurrentPoseStrategy());
-        }
+    public void update(Pose2d robot, VisionEstimateConsumer<T> visionOutput) {
 
         Logging.log(camera.getName(), this);
 
@@ -137,19 +119,31 @@ public class PhotonCameraPlus {
             var results = camera.getAllUnreadResults();
 
             for (var result : results) {
-                processResult(result);
+                processResult(result, robot, visionOutput);
             }
         }
     }
 
-    private void processResult(PhotonPipelineResult result) {
+    private void processResult(
+            PhotonPipelineResult result, Pose2d robot, VisionEstimateConsumer<T> visionOutput) {
         var estimate = poseEstimator.update(result);
 
         estimate.ifPresent(
                 estmt -> {
-                    var visionMeasurementStdDevs =
-                            calcStandardDevs(estmt, robotPoseSupplier.getPose());
+                    // var visionMeasurementStdDevs =
+                    //         calcStandardDevs(estmt, robot);
                     var avgTargetArea = calcAvgTargetArea(estmt);
+
+                    var poseDifference =
+                            estmt.estimatedPose
+                                    .toPose2d()
+                                    .relativeTo(robot)
+                                    .getTranslation()
+                                    .getNorm();
+
+                    var stdDevCategory =
+                            StdDevCategoryUtil.selectCategory(
+                                    config.categoryClass, estmt, avgTargetArea, poseDifference);
 
                     ArrayList<Integer> closerTagIds = new ArrayList<>();
 
@@ -158,13 +152,9 @@ public class PhotonCameraPlus {
                             closerTagIds.add(tag.getFiducialId());
                     }
 
-                    visionMeasurementAdder.addVisionMeasurement(
-                            estmt.estimatedPose.toPose2d(),
-                            Utils.fpgaToCurrentTime(estmt.timestampSeconds),
-                            visionMeasurementStdDevs,
-                            closerTagIds);
+                    visionOutput.accept(estmt, stdDevCategory, closerTagIds);
 
-                    Logging.log(camera.getName(), estmt);
+                    Logging.log(camera.getName(), estmt, stdDevCategory);
 
                     latestEstimateTargets.clear();
                     latestEstimateTargets.addAll(estmt.targetsUsed);
@@ -179,35 +169,5 @@ public class PhotonCameraPlus {
             sumTargetArea += tg.getArea();
         }
         return sumTargetArea / estmt.targetsUsed.size();
-    }
-
-    private static Vector<N3> calcStandardDevs(EstimatedRobotPose estmt, Pose2d currentRobotPose) {
-        var poseDifference =
-                estmt.estimatedPose
-                        .toPose2d()
-                        .relativeTo(currentRobotPose)
-                        .getTranslation()
-                        .getNorm();
-
-        boolean hasHighUpTags = false;
-        for (var tg : estmt.targetsUsed) {
-            if (HIGH_TAGS.contains(tg.fiducialId)) {
-                hasHighUpTags = true;
-                break;
-            }
-        }
-
-        var avgTargetArea = calcAvgTargetArea(estmt);
-
-        double xyStds = 2.0;
-        // TODO: consider modifying weights to help with center camera and
-        // alignment
-        if (estmt.targetsUsed.size() >= 2 && avgTargetArea > 0.1) xyStds = 0.2;
-        else if (hasHighUpTags && avgTargetArea > 0.2) xyStds = 0.5;
-        else if (avgTargetArea > 0.8 && poseDifference < 0.5) xyStds = 0.5;
-        else if (avgTargetArea > 0.1 && poseDifference < 0.3) xyStds = 1.0;
-        else if (estmt.targetsUsed.size() > 1) xyStds = 1.2;
-
-        return VecBuilder.fill(xyStds, xyStds, Degrees.of(50).in(Radians));
     }
 }

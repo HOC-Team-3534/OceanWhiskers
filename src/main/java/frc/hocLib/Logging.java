@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import dev.doglog.DogLog;
 import frc.hocLib.camera.PhotonCameraPlus;
+import frc.hocLib.camera.StdDevCategory;
 import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
@@ -16,14 +17,17 @@ import org.photonvision.EstimatedRobotPose;
 
 public class Logging extends DogLog {
 
-    public static void log(String key, PhotonCameraPlus camera) {
+    public static void log(String key, PhotonCameraPlus<?> camera) {
         log(key + "/Connected", camera.isConnected());
 
         if (!camera.isConnected()) logFault("Camera Disconnected");
     }
 
-    public static void log(String key, EstimatedRobotPose estimatedRobotPose) {
+    public static <T extends Enum<T> & StdDevCategory<T>> void log(
+            String key, EstimatedRobotPose estimatedRobotPose, T category) {
         log(key + "/EstimatedRobotPose", estimatedRobotPose.estimatedPose.toPose2d());
+        log(key + "/StdDevCategory", category.name());
+        log(key + "/EstimateStdDevs", category.getStdDevs());
     }
 
     public static void log(String key, Mechanism mechanism) {

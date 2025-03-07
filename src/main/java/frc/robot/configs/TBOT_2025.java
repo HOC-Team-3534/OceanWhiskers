@@ -15,9 +15,10 @@ public class TBOT_2025 extends Config {
 
         dtm.setOffsetFromWallToCenter(Inches.of(17.0));
 
-        vision.setFl_yaw(Degrees.of(45));
-        vision.setFr_yaw(Degrees.of(-45));
-        vision.setFrontYOffset(Inches.of(20.5 / 2.0));
+        vision =
+                vision.withFl_yaw(Degrees.of(45))
+                        .withFr_yaw(Degrees.of(-45))
+                        .withFrontY(Inches.of(20.5 / 2.0));
 
         this.algaeWheel.setAttached(false);
         this.elevator.setAttached(false);
