@@ -39,7 +39,7 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
     private static final LoggedTunableNumber calibrationKnownOmegaDegrees =
             new LoggedTunableNumber("PhotonCameraPlus/Known/OmegaDegrees");
 
-    private static final List<Transform3d> calibrationRobotToCameras = new ArrayList<>();
+    private final List<Transform3d> calibrationRobotToCameras = new ArrayList<>();
 
     private static final List<PhotonCameraPlus<?>> allInstances = new ArrayList<>();
 
@@ -236,9 +236,13 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
 
         calibrationRobotToCameras.add(robotToCamera);
 
-        Logging.log(
-                camera.getName() + "/Calibration Robot To Camera",
-                GeomUtil.averageTransform(calibrationRobotToCameras));
+        var average = GeomUtil.averageTransform(calibrationRobotToCameras);
+
+        Logging.log(camera.getName() + "/Calibration Robot To Camera", average);
+
+        Logging.log(camera.getName() + "/Calibration Roll", average.getRotation().getX());
+        Logging.log(camera.getName() + "/Calibration Pitch", average.getRotation().getY());
+        Logging.log(camera.getName() + "/Calibration Yaw", average.getRotation().getZ());
     }
 
     private void clearCalibration() {
