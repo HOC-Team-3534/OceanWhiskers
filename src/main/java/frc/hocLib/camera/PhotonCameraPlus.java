@@ -5,6 +5,7 @@ import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.Timer;
@@ -39,6 +40,9 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
     private static final LoggedTunableNumber calibrationKnownOmegaDegrees =
             new LoggedTunableNumber("PhotonCameraPlus/Known/OmegaDegrees");
 
+    private static final LoggedTunableNumber calibrationTagId =
+            new LoggedTunableNumber("PhotonCameraPlus/TagId");
+
     private final List<Transform3d> calibrationRobotToCameras = new ArrayList<>();
 
     private static final List<PhotonCameraPlus<?>> allInstances = new ArrayList<>();
@@ -50,12 +54,17 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
         TuningCommand.create(
                 "PhotonCameraPlus/Clear Calibrations",
                 () -> allInstances.forEach(PhotonCameraPlus::clearCalibration));
+        TuningCommand.create(
+                "PhotonCameraPlus/Print Calibrations",
+                () -> allInstances.forEach(PhotonCameraPlus::printCalibration));
 
         calibrationMinTagArea.initDefault(0.2);
 
         calibrationKnownX.initDefault(0.0);
         calibrationKnownY.initDefault(0.0);
         calibrationKnownOmegaDegrees.initDefault(0.0);
+
+        calibrationTagId.initDefault(1.0);
     }
 
     @Getter
@@ -164,6 +173,11 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
                                     calibrationKnownX.get(),
                                     calibrationKnownY.get(),
                                     Rotation2d.fromDegrees(calibrationKnownOmegaDegrees.get()))));
+
+        if (calibrationTagId.hasChanged(100))
+            Logging.log(
+                    "Tuning/PhotonCameraPlus/TagPose",
+                    config.aprilTagFieldLayout.getTagPose((int) calibrationTagId.get()).get());
     }
 
     private void processResult(
@@ -247,5 +261,23 @@ public class PhotonCameraPlus<T extends Enum<T> & StdDevCategory<T>> {
 
     private void clearCalibration() {
         calibrationRobotToCameras.clear();
+    }
+
+    private void printCalibration() {
+        var average = GeomUtil.averageTransform(calibrationRobotToCameras);
+
+        var rotation =
+                new Rotation3d(average.getRotation().getQuaternion()) {
+                    @Override
+                    public String toString() {
+                        return String.format("Rotation3d(%s, %s, %s)", getX(), getY(), getZ());
+                    }
+                };
+
+        System.out.println();
+        System.out.println(camera.getName() + ":");
+        System.out.println(average.getTranslation());
+        System.out.println(rotation);
+        System.out.println();
     }
 }
