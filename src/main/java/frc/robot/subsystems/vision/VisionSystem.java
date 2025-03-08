@@ -15,8 +15,6 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
@@ -65,7 +63,7 @@ public class VisionSystem extends HocSubsystem {
         Angle rr_yaw = Degrees.of(-135);
 
         Distance cameraHeightOffGround = Inches.of(Robot.isReal() ? 10.75 : 13.0);
-        Angle cameraPitch = Degrees.of(15.0);
+        Angle cameraPitch = Degrees.of(-15.0);
 
         static Transform3d calcRobotToCam(Translation2d xy, Distance height, Rotation3d rot) {
             return new Transform3d(new Translation3d(xy.getX(), xy.getY(), height.in(Meters)), rot);
@@ -147,9 +145,7 @@ public class VisionSystem extends HocSubsystem {
                                 .getFirst()
                                 .update(
                                         estimator.getFirst().getEstimatedPosition().getRotation(),
-                                        new SwerveModulePosition[] {
-                                            new SwerveModulePosition(), new SwerveModulePosition()
-                                        });
+                                        Robot.getSwerve().getState().ModulePositions);
                     });
         }
     }
@@ -178,14 +174,11 @@ public class VisionSystem extends HocSubsystem {
                 estimator =
                         new Pair<SwerveDrivePoseEstimator, Timer>(
                                 new SwerveDrivePoseEstimator(
-                                        new SwerveDriveKinematics(
-                                                new Translation2d(), new Translation2d()),
+                                        Robot.getSwerve().getKinematics(),
                                         poseEstimate.getRotation(),
-                                        new SwerveModulePosition[] {
-                                            new SwerveModulePosition(), new SwerveModulePosition()
-                                        },
+                                        Robot.getSwerve().getState().ModulePositions,
                                         poseEstimate,
-                                        VecBuilder.fill(1000.0, 1000.0, 1000.0),
+                                        VecBuilder.fill(1000.0, 1000.0, 0.1),
                                         VecBuilder.fill(0.9, 0.9, 0.9)),
                                 new Timer());
                 poseEstimatorMap.put(tag, estimator);
@@ -200,12 +193,14 @@ public class VisionSystem extends HocSubsystem {
     }
 
     public Optional<Pose2d> getPoseEstimateByTag(int tagId) {
-        return Optional.ofNullable(poseEstimatorMap.get(tagId))
-                .flatMap(
-                        estimator ->
-                                estimator.getSecond().hasElapsed(0.5)
-                                        ? Optional.empty()
-                                        : Optional.of(estimator.getFirst().getEstimatedPosition()));
+        return Optional.of(Robot.getSwerve().getPose());
+        // return Optional.ofNullable(poseEstimatorMap.get(tagId))
+        //         .flatMap(
+        //                 estimator ->
+        //                         estimator.getSecond().hasElapsed(0.5)
+        //                                 ? Optional.empty()
+        //                                 :
+        // Optional.of(estimator.getFirst().getEstimatedPosition()));
     }
 
     static HashSet<Integer> HIGH_TAGS = new HashSet<>();
@@ -234,7 +229,7 @@ public class VisionSystem extends HocSubsystem {
         RelativelyClose(0.5, 0.8),
         RelativelyFarButSmallDifference(1.0, 0.1),
         MultipleTagsButFar(1.2, 0.0),
-        Default(2.0, 0.0);
+        Default(5.0, 0.0);
         final double xyStdDev, minAverageTargetArea;
 
         @Override
