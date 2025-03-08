@@ -20,11 +20,10 @@ public class TBOT_2025 extends Config {
                         .withFr_yaw(Degrees.of(-45))
                         .withFrontY(Inches.of(20.5 / 2.0));
 
-        this.algaeWheel.setAttached(false);
+        this.forbar.setAttached(false);
         this.elevator.setAttached(false);
         this.jaws.setAttached(false);
         this.lights.setAttached(false);
-        this.tusks.setAttached(false);
 
         this.vision.setAttached(true);
         this.swerve.setAttached(true);

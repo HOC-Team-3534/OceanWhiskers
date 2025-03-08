@@ -32,18 +32,16 @@ import frc.robot.controllers.Codriver;
 import frc.robot.controllers.Codriver.CodriverConfig;
 import frc.robot.controllers.Driver;
 import frc.robot.controllers.Driver.DriverConfig;
-import frc.robot.subsystems.algaeWheel.AlgaeWheel;
-import frc.robot.subsystems.algaeWheel.AlgaeWheel.AlgaeWheelConfig;
 import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.elevator.Elevator.ElevatorConfig;
+import frc.robot.subsystems.forbar.Forbar;
+import frc.robot.subsystems.forbar.Forbar.ForbarConfig;
 import frc.robot.subsystems.jaws.Jaws;
 import frc.robot.subsystems.jaws.Jaws.JawsConfig;
 import frc.robot.subsystems.lights.Lights;
 import frc.robot.subsystems.lights.Lights.LightsConfig;
 import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.subsystems.swerve.SwerveConfig;
-import frc.robot.subsystems.tusks.Tusks;
-import frc.robot.subsystems.tusks.Tusks.TusksConfig;
 import frc.robot.subsystems.vision.VisionSystem;
 import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
@@ -58,9 +56,9 @@ public class Robot extends HocRobot {
 
         public SwerveConfig swerve = new SwerveConfig();
         public ElevatorConfig elevator = new ElevatorConfig();
-        public TusksConfig tusks = new TusksConfig();
         public JawsConfig jaws = new JawsConfig();
-        public AlgaeWheelConfig algaeWheel = new AlgaeWheelConfig();
+
+        public ForbarConfig forbar = new ForbarConfig();
 
         public AutonConfig auton = new AutonConfig();
         public DTMConfig dtm = new DTMConfig();
@@ -77,11 +75,11 @@ public class Robot extends HocRobot {
 
     @Getter private static Swerve swerve;
     @Getter private static Elevator elevator;
-    @Getter private static Tusks tusks;
     @Getter private static Jaws jaws;
-    @Getter private static AlgaeWheel algaeWheel;
     @Getter private static VisionSystem visionSystem;
     @Getter private static Lights lights;
+
+    @Getter private static Forbar forbar;
 
     @Getter private static Auton auton;
     @Getter private static DTM dtm;
@@ -97,8 +95,6 @@ public class Robot extends HocRobot {
 
             /** Set up the config */
             switch (Rio.id) {
-                    // TODO: setup config for each robots tunings outside of subsystems, removing
-                    // defaults where confusing
                 case CBOT_2025:
                     config = new CBOT_2025();
                     break;
@@ -132,11 +128,9 @@ public class Robot extends HocRobot {
             Timer.delay(canInitDelay);
             elevator = new Elevator(config.elevator);
             Timer.delay(canInitDelay);
-            tusks = new Tusks(config.tusks);
-            Timer.delay(canInitDelay);
             jaws = new Jaws(config.jaws);
             Timer.delay(canInitDelay);
-            algaeWheel = new AlgaeWheel(config.algaeWheel);
+            forbar = new Forbar(config.forbar);
             Timer.delay(canInitDelay);
             visionSystem = new VisionSystem(config.vision);
             lights = new Lights(config.lights);
@@ -187,19 +181,17 @@ public class Robot extends HocRobot {
 
             Logging.log(
                     "Elevator Ready for Deploy", RobotStates.ElevatorReadyToDeploy.getAsBoolean());
-            Logging.log("Tusks Ready for Deploy", RobotStates.TusksReadyToDeploy.getAsBoolean());
-            Logging.log("Tusks Voltage Up Trigger", RobotStates.TusksVoltageUp.getAsBoolean());
+            Logging.log("Forbar Ready for Deploy", RobotStates.ForbarReadyToDeploy.getAsBoolean());
+
             Logging.log("Driver Configured", getDriver().isConfigured());
 
             Logging.log("Swerve is Testing", RobotStates.SwerveIsTesting.getAsBoolean());
 
-            Logging.log("Holding Coral", RobotStates.TusksHoldingCoral.getAsBoolean());
+            Logging.log("Holding Coral", RobotStates.ForbarHoldingCoral.getAsBoolean());
 
             Logging.log("Closest Reef Tag ID", DTM.getClosestReefID().orElse(0));
 
             Logging.log("Go To L4 Coral", RobotStates.GoToL4Coral.getAsBoolean());
-
-            Logging.log("Deploying", RobotStates.Deploy.getAsBoolean());
 
             Logging.log(
                     "Current Reef Tag Pose Estimate",
@@ -217,8 +209,7 @@ public class Robot extends HocRobot {
                     "Components Offsets",
                     new Pose3d[] {
                         getElevator().getState().getStage1Displacement(),
-                        getElevator().getState().getStage2Displacement(),
-                        getTusks().getState().getTusksDisplacement()
+                        getElevator().getState().getStage2Displacement()
                     });
 
             CommandScheduler.getInstance().run();
@@ -244,7 +235,6 @@ public class Robot extends HocRobot {
     @Override
     public void autonomousInit() {
         clearCommandsAndButtons();
-        tusks.autonInit();
         auton.init();
     }
 

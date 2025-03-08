@@ -31,22 +31,6 @@ public class Lights extends HocSubsystem {
                 .withName("Lights Normal");
     }
 
-    public Command pickUpRight() {
-        return run(() -> {
-                    leftLights.set(0.99); // black/off
-                    rightLights.set(0.91); // violet
-                })
-                .withName("Lights Pick Up Right");
-    }
-
-    public Command pickUpLeft() {
-        return run(() -> {
-                    leftLights.set(0.65); // orange
-                    rightLights.set(0.99); // black/off
-                })
-                .withName("Lights Pick Up Left");
-    }
-
     public Command drivingAutonomously() {
         return run(() -> {
                     leftLights.set(

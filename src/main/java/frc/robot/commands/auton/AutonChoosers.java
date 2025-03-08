@@ -85,7 +85,6 @@ public class AutonChoosers {
         chooser.setDefaultOption("4", 4);
         chooser.addOption("3", 3);
         chooser.addOption("2", 2);
-        chooser.addOption("1", 1);
     }
 
     public static void lockChoosers() {

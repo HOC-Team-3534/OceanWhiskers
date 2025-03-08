@@ -4,7 +4,6 @@ import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Rotations;
 
 import com.ctre.phoenix6.configs.Slot0Configs;
-import frc.hocLib.mechanism.TalonSRXArm.ArmSlotConfig;
 import frc.robot.Robot.Config;
 
 public class PBOT_2025 extends Config {
@@ -38,17 +37,10 @@ public class PBOT_2025 extends Config {
 
         elevator.enableMotionMagic();
 
-        tusks.setSlotConfigs(
-                new ArmSlotConfig(0.6425, 0.14478, 0.5, 0, 0, 0.87),
-                new ArmSlotConfig(0.365, 0.705, 0.5, 0, 0, 0.87));
-
-        tusks.enableMotionMagic();
-
-        this.algaeWheel.setAttached(false);
+        this.forbar.setAttached(false);
         this.elevator.setAttached(true);
         this.jaws.setAttached(false);
         this.lights.setAttached(false);
-        this.tusks.setAttached(true);
 
         this.vision.setAttached(true);
         this.swerve.setAttached(true);

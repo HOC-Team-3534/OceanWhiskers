@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.hocLib.util.Util;
-import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
 import frc.robot.commands.DriveToPose;
@@ -72,15 +71,10 @@ public abstract class AutonStep {
         return false;
     }
 
-    public boolean isSide(ReefBranch.Side side) {
-        if (this instanceof PickupStep) {
-            return ((PickupStep) this).getSide().equals(side);
-        }
-        return false;
-    }
-
     public static Command stepsToCommand(List<AutonStep> steps) {
-        var command = Commands.runOnce(() -> Robot.getTusks().getState().setHoldingCoral(true));
+        var command =
+                Commands.runOnce(
+                        () -> {} /* Shouldn't need to set holding coral to true anymore */);
 
         for (var stepCommand :
                 steps.stream().map(AutonStep::completeStep).map(ProxyCommand::new).toList()) {

@@ -1,6 +1,5 @@
 package frc.robot.subsystems.elevator;
 
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Rotations;
@@ -29,7 +28,6 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonFXMechanism;
-import frc.robot.Robot;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,19 +36,11 @@ public class Elevator extends TalonFXMechanism {
 
     @Getter
     public static class ElevatorConfig extends Config {
-        Distance L1 = Inches.of(0);
-        Distance L1Pre = Inches.of(0);
         Distance L2 = Inches.of(14.5);
-        Distance L2Pre = Inches.of(3.5);
         Distance L3 = Inches.of(30.5);
-        Distance L3Pre = Inches.of(19.5);
         Distance L4 = Inches.of(54.5);
-        Distance L4Pre = Inches.of(54.5);
-        Distance PickUp = Inches.of(0.0);
-        // TODO: tune jaw height
         Distance Jaws = Inches.of(18.0);
         Distance PreClimb = Inches.of(15);
-        // TODO: tune algae heights
         Distance L2Algae = Inches.of(23.0);
         Distance L3Algae = Inches.of(40.0);
 
@@ -197,20 +187,18 @@ public class Elevator extends TalonFXMechanism {
         return Commands.either(
                         run(
                                 () -> {
-                                    if (Robot.getTusks().getPosition().gt(Degrees.of(10))) {
-                                        var level = levelSupplier.get();
-                                        state.setTargetLevel(level);
-                                        if (state.isNearTargetHeight()
-                                                && state.getTargetLevel()
-                                                        .getHeight(config)
-                                                        .lt(Inches.of(0.5)))
-                                            setVoltageOut(Volts.zero());
-                                        else
-                                            motor.setControl(
-                                                    motionMagicVoltage.withPosition(
-                                                            linearPositionToPosition(
-                                                                    level.getHeight(config))));
-                                    }
+                                    var level = levelSupplier.get();
+                                    state.setTargetLevel(level);
+                                    if (state.isNearTargetHeight()
+                                            && state.getTargetLevel()
+                                                    .getHeight(config)
+                                                    .lt(Inches.of(0.5)))
+                                        setVoltageOut(Volts.zero());
+                                    else
+                                        motor.setControl(
+                                                motionMagicVoltage.withPosition(
+                                                        linearPositionToPosition(
+                                                                level.getHeight(config))));
                                 }),
                         run(() -> setVoltageOut(Volts.zero())),
                         () -> !state.isClimbing())
@@ -277,15 +265,9 @@ public class Elevator extends TalonFXMechanism {
 
     public enum Level {
         Bottom,
-        L1Pre,
-        L1,
-        L2Pre,
         L2,
-        L3Pre,
         L3,
-        L4Pre,
         L4,
-        PickUp,
         Jaws,
         PreClimb,
         L2Algae,
@@ -293,24 +275,12 @@ public class Elevator extends TalonFXMechanism {
 
         public Distance getHeight(ElevatorConfig config) {
             switch (this) {
-                case L1:
-                    return config.getL1();
                 case L2:
                     return config.getL2();
                 case L3:
                     return config.getL3();
                 case L4:
                     return config.getL4();
-                case PickUp:
-                    return config.getPickUp();
-                case L1Pre:
-                    return config.getL1Pre();
-                case L2Pre:
-                    return config.getL2Pre();
-                case L3Pre:
-                    return config.getL3Pre();
-                case L4Pre:
-                    return config.getL4Pre();
                 case Jaws:
                     return config.getJaws();
                 case PreClimb:
@@ -326,14 +296,12 @@ public class Elevator extends TalonFXMechanism {
 
         Distance getReadyToDeployHeight(ElevatorConfig config) {
             switch (this) {
-                case L1, L1Pre:
-                    return config.getL1Pre();
-                case L2, L2Pre:
-                    return config.getL2Pre();
-                case L3, L3Pre:
-                    return config.getL3Pre();
-                case L4, L4Pre:
-                    return config.getL4Pre();
+                case L2:
+                    return config.getL2();
+                case L3:
+                    return config.getL3();
+                case L4:
+                    return config.getL4();
                 default:
                     return config.getMaxLinearPosition(); // theoretically never
             }

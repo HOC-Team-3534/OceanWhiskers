@@ -1,4 +1,4 @@
-package frc.robot.subsystems.jaws;
+package frc.robot.subsystems.forbar;
 
 import static edu.wpi.first.units.Units.Volts;
 import static edu.wpi.first.units.Units.Watts;
@@ -6,26 +6,27 @@ import static edu.wpi.first.units.Units.Watts;
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import lombok.Getter;
 import lombok.Setter;
 
-public class Jaws extends TalonSRXMechanism {
-    public static class JawsConfig extends TalonSRXMechanism.Config {
-        @Getter private Power spikeThreshold = Watts.of(60.0);
-        @Getter private Voltage inAndOutVoltage = Volts.of(8.3); // out is positive
+public class Forbar extends TalonSRXMechanism {
+    public static class ForbarConfig extends TalonSRXMechanism.Config {
+        @Getter private Power spikeThreshold = Watts.of(30.0);
+        @Getter private Voltage inAndOutVoltage = Volts.of(1.0); // out is positive
 
-        public JawsConfig() {
-            super("Jaws", 17);
+        public ForbarConfig() {
+            super("Forbar", 16);
         }
     }
 
-    private JawsConfig config;
+    private ForbarConfig config;
 
     @Getter private State state = new State();
 
-    public Jaws(JawsConfig config) {
+    public Forbar(ForbarConfig config) {
         super(config);
         this.config = config;
 
@@ -36,11 +37,7 @@ public class Jaws extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        if (state.isOut()) {
-            setVoltageOut(config.inAndOutVoltage.times(0.25));
-        }
-
-        Logging.log("Jaws", this);
+        Logging.log("Forbar", this);
     }
 
     private boolean isPowerSpikeExceeded() {
@@ -51,12 +48,19 @@ public class Jaws extends TalonSRXMechanism {
         return run(() -> setVoltageOut(Volts.zero()));
     }
 
+    // TODO: validate open and close happen when theya re supposed to and not when elevator is not
+    // raised
+
     protected Command in() {
-        return startRun(
-                        () -> state.setPosition(Position.InBetween),
-                        () -> setVoltageOut(config.getInAndOutVoltage().unaryMinus()))
-                .until(this::isPowerSpikeExceeded)
-                .andThen(runOnce(() -> state.setPosition(Position.In)));
+        return Commands.waitSeconds(0.0)
+                .andThen(
+                        startRun(
+                                        () -> state.setPosition(Position.InBetween),
+                                        () ->
+                                                setVoltageOut(
+                                                        config.getInAndOutVoltage().unaryMinus()))
+                                .until(this::isPowerSpikeExceeded),
+                        runOnce(() -> state.setPosition(Position.In)));
     }
 
     protected Command out() {
@@ -89,11 +93,11 @@ public class Jaws extends TalonSRXMechanism {
 
     @Override
     public void setupBindings() {
-        JawsStates.setupBindings();
+        ForbarStates.setupBindings();
     }
 
     @Override
     public void setupDefaultCommand() {
-        JawsStates.setupDefaultCommand();
+        ForbarStates.setupDefaultCommand();
     }
 }

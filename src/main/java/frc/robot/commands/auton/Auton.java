@@ -27,7 +27,6 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.robot.Robot;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,15 +46,6 @@ public class Auton {
                                         .map(step -> step.isLevel(level))
                                         .orElse(false))
                 .and(autonDeploy);
-    }
-
-    public static Trigger isReefBranchSide(ReefBranch.Side side) {
-        return new Trigger(
-                        () ->
-                                AutonStep.getCurrentStep()
-                                        .map(step -> step.isSide(side))
-                                        .orElse(false))
-                .and(autonPickup);
     }
 
     static {
@@ -112,13 +102,13 @@ public class Auton {
 
             if (secondBranch != null) {
 
-                steps.add(new PickupStep(firstBranch, secondBranch));
+                steps.add(new PickupStep(firstBranch));
                 steps.add(new DeployStep(false, getSecondBranchLevel(), secondBranch));
 
                 var thirdBranch = getThirdBranch();
 
                 if (thirdBranch != null) {
-                    steps.add(new PickupStep(secondBranch, thirdBranch));
+                    steps.add(new PickupStep(secondBranch));
                     steps.add(new DeployStep(false, getThirdBranchLevel(), thirdBranch));
                 }
             }

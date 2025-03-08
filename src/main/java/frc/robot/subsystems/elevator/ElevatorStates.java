@@ -19,14 +19,9 @@ public class ElevatorStates {
     }
 
     public static void setupBindings() {
-        GoToL1Coral.whileTrue(
-                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L1Pre : Level.L1));
-        GoToL2Coral.whileTrue(
-                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L2Pre : Level.L2));
-        GoToL3Coral.whileTrue(
-                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L3Pre : Level.L3));
-        GoToL4Coral.whileTrue(
-                goToLevel(() -> Deploy.not().getAsBoolean() ? Level.L4Pre : Level.L4));
+        GoToL2Coral.whileTrue(goToLevel(() -> Level.L2));
+        GoToL3Coral.whileTrue(goToLevel(() -> Level.L3));
+        GoToL4Coral.whileTrue(goToLevel(() -> Level.L4));
 
         GoToL2Algae.whileTrue(goToLevel(Level.L2Algae));
         GoToL3Algae.whileTrue(goToLevel(Level.L3Algae));
@@ -42,16 +37,14 @@ public class ElevatorStates {
                                         || elevator.getState().isClimbing())
                 .whileTrue(elevator.climb());
 
-        PickupCoralLeft.or(PickupCoralRight).whileTrue(goToLevel(Level.PickUp));
-
-        RequestJawsClosed.not()
-                .and(JawsOpened.not())
+        RequestJawsOut.not()
+                .and(JawsIn.not())
                 // No other command is setting the target height above 0
                 .and(
                         () ->
                                 elevator.getState().getTargetLevel().equals(Level.Bottom)
                                         && !elevator.getState().isClimbing())
-                .onTrue(goToLevel(Level.Jaws).until(JawsOpened));
+                .onTrue(goToLevel(Level.Jaws).until(JawsIn));
 
         ElevatorVoltageUp.whileTrue(
                 voltageOut(

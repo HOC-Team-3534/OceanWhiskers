@@ -8,7 +8,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
-import frc.robot.Robot;
+import frc.robot.RobotStates;
 import frc.robot.commands.DriveToPose;
 import frc.robot.commands.FollowPathThenDriveToPose;
 import frc.robot.subsystems.swerve.Swerve;
@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class PickupStep extends AutonStep {
-    final ReefBranch prevBranch, branch;
+    final ReefBranch prevBranch;
 
     private Timer leavePickupTimeout = new Timer();
 
@@ -37,11 +37,7 @@ public class PickupStep extends AutonStep {
 
     @Override
     public boolean isStepComplete() {
-        return Robot.getTusks().getState().isHoldingCoral() || leavePickupTimeout.hasElapsed(2.0);
-    }
-
-    public ReefBranch.Side getSide() {
-        return branch.getSide();
+        return RobotStates.ForbarHoldingCoral.getAsBoolean() || leavePickupTimeout.hasElapsed(2.0);
     }
 
     @Override

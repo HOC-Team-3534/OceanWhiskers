@@ -10,11 +10,9 @@ import frc.robot.commands.auton.AutonStep;
 import frc.robot.commands.auton.DTM;
 import frc.robot.controllers.Codriver;
 import frc.robot.controllers.Driver;
-import frc.robot.subsystems.algaeWheel.AlgaeWheel;
 import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.jaws.Jaws;
 import frc.robot.subsystems.swerve.Swerve;
-import frc.robot.subsystems.tusks.Tusks;
 import frc.robot.util.FieldUtil;
 import lombok.Getter;
 import lombok.Setter;
@@ -79,57 +77,30 @@ public class RobotStates {
     public static final Trigger ElevatorReadyToDeploy =
             new Trigger(() -> elevator.getState().isReadyToDeploy());
 
-    // TUSKS
-    private static final Tusks tusks = Robot.getTusks();
-
-    public static final Trigger TusksIsTesting =
-            tusks.isTesting.and(SwerveIsTesting.not(), ElevatorIsTesting.not());
-
-    public static final Trigger TusksQuasiasticUp = codriver.QuasiasticUp_UDP.and(TusksIsTesting);
-    public static final Trigger TusksQuasiasticDown =
-            codriver.QuasiasticDown_DDP.and(TusksIsTesting);
-    public static final Trigger TusksDynamicUp = codriver.DynamicUp_UDP.and(TusksIsTesting);
-    public static final Trigger TusksDynamicDown = codriver.DynamicDown_DDP.and(TusksIsTesting);
-
-    public static final Trigger TusksVoltageUp = codriver.VoltageUp_UDP.and(TusksIsTesting);
-    public static final Trigger TusksVoltageDown = codriver.VoltageDown_DDP.and(TusksIsTesting);
-
-    public static final Trigger TusksHoldingCoral =
-            new Trigger(() -> tusks.getState().isHoldingCoral());
-
-    public static final Trigger TusksReadyToDeploy =
-            new Trigger(() -> tusks.getState().isReadyToDeploy());
-
-    // ALGAE WHEEL
-    private static final AlgaeWheel algaeWheel = Robot.getAlgaeWheel();
-    public static final Trigger AlgaeWheelHoldingAlgae =
-            new Trigger(() -> algaeWheel.getState().isHoldingBall());
-
     // JAWS
     private static final Jaws jaws = Robot.getJaws();
 
     public static final Trigger JawsCanMove = ElevatorBelowOrGoingToBelowJawsCanMoveHeight.not();
 
-    public static final Trigger JawsOpened = new Trigger(() -> jaws.getState().isOpened());
-    public static final Trigger JawsClosed = new Trigger(() -> jaws.getState().isClosed());
+    public static final Trigger JawsIn = new Trigger(() -> jaws.getState().isIn());
+    public static final Trigger JawsOut = new Trigger(() -> jaws.getState().isOut());
+
+    // FORBAR
+    public static final Trigger ForbarHoldingCoral = Trigger.kFalse;
+    public static final Trigger ForbarReadyToDeploy = Trigger.kFalse;
+
+    @Setter @Getter private static boolean alignedWithReefForDeployment;
 
     static Trigger isAutonLevel(int level) {
-        return Auton.isLevel(level).latchWithReset(TusksHoldingCoral.not().or(Util.teleop));
+        return Auton.isLevel(level)
+                .latchWithReset(
+                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment))
+                                .or(Util.teleop));
     }
 
-    public static final Trigger GoToL1Coral = codriver.GoToL1Coral_A.or(isAutonLevel(1));
     public static final Trigger GoToL2Coral = codriver.GoToL2Coral_B.or(isAutonLevel(2));
     public static final Trigger GoToL3Coral = codriver.GoToL3Coral_X.or(isAutonLevel(3));
     public static final Trigger GoToL4Coral = codriver.GoToL4Coral_Y.or(isAutonLevel(4));
-
-    static Trigger isAutonPickupSide(ReefBranch.Side side) {
-        return Auton.isReefBranchSide(side).latchWithReset(TusksHoldingCoral.or(Util.teleop));
-    }
-
-    public static final Trigger PickupCoralLeft =
-            codriver.PickupCoralLeft_LT.or(isAutonPickupSide(ReefBranch.Side.Left));
-    public static final Trigger PickupCoralRight =
-            codriver.PickupCoralRight_RT.or(isAutonPickupSide(ReefBranch.Side.Right));
 
     public static final Trigger PreClimb = codriver.PreClimb_Select;
     public static final Trigger Climb = codriver.Climb_Start;
@@ -141,28 +112,13 @@ public class RobotStates {
                                     .map(AutonStep::isDeployTimedOut)
                                     .orElse(false));
 
-    @Setter @Getter private static boolean alignedWithReefForDeployment;
-
-    public static final Trigger Deploy =
-            ((ElevatorReadyToDeploy.and(TusksReadyToDeploy))
-                            .and(
-                                    codriver.Deploy_LS.or(
-                                            RobotStates::isAlignedWithReefForDeployment,
-                                            AutonDeployTimeoutForceDeploy)))
-                    .debounce(0.15)
-                    .latchWithReset(TusksHoldingCoral.not())
-                    .onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
-
     public static final Trigger GoToL3Algae = codriver.GoToL3Algae_X;
     public static final Trigger GoToL2Algae = codriver.GoToL2Algae_B;
 
     public static final Trigger RequestReleaseAlgae = codriver.ReleaseAlgae_LT;
-    public static final Trigger HoldAlgae = AlgaeWheelHoldingAlgae.and(RequestReleaseAlgae.not());
-    public static final Trigger RequestGrabAlgae =
-            (GoToL2Algae.or(GoToL3Algae)).and(HoldAlgae.not());
+    public static final Trigger RequestGrabAlgae = (GoToL2Algae.or(GoToL3Algae));
 
-    public static final Trigger RequestJawsClosed =
-            RequestGrabAlgae.or(HoldAlgae, RequestReleaseAlgae);
+    public static final Trigger RequestJawsOut = RequestGrabAlgae.or(RequestReleaseAlgae);
 
     @Getter @Setter private static boolean drivingAutonomously;
 

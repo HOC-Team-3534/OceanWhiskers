@@ -13,7 +13,7 @@ public class JawsStates {
     }
 
     public static void setupBindings() {
-        RequestJawsClosed.and(JawsCanMove, JawsClosed.not()).onTrue(jaws.close());
-        RequestJawsClosed.not().and(JawsCanMove, JawsOpened.not()).onTrue(jaws.open());
+        RequestJawsOut.and(JawsCanMove, JawsOut.not()).onTrue(jaws.out());
+        RequestJawsOut.not().and(JawsCanMove, JawsIn.not()).onTrue(jaws.in());
     }
 }
