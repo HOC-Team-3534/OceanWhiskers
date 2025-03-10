@@ -1,7 +1,7 @@
 package frc.robot.subsystems.forbar;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Volts;
-import static edu.wpi.first.units.Units.Watts;
 
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Voltage;
@@ -14,8 +14,10 @@ import lombok.Setter;
 
 public class Forbar extends TalonSRXMechanism {
     public static class ForbarConfig extends TalonSRXMechanism.Config {
-        @Getter private Power spikeThreshold = Watts.of(30.0);
-        @Getter private Voltage inAndOutVoltage = Volts.of(1.0); // out is positive
+        @Getter
+        private Voltage inAndOutVoltage = Volts.of(9.6); // out is positive
+        @Getter
+        private Power spikeThreshold = inAndOutVoltage.times(Amps.of(12.0));
 
         public ForbarConfig() {
             super("Forbar", 16);
@@ -24,7 +26,8 @@ public class Forbar extends TalonSRXMechanism {
 
     private ForbarConfig config;
 
-    @Getter private State state = new State();
+    @Getter
+    private State state = new State();
 
     public Forbar(ForbarConfig config) {
         super(config);
@@ -55,18 +58,17 @@ public class Forbar extends TalonSRXMechanism {
         return Commands.waitSeconds(0.0)
                 .andThen(
                         startRun(
-                                        () -> state.setPosition(Position.InBetween),
-                                        () ->
-                                                setVoltageOut(
-                                                        config.getInAndOutVoltage().unaryMinus()))
+                                () -> state.setPosition(Position.InBetween),
+                                () -> setVoltageOut(
+                                        config.getInAndOutVoltage().unaryMinus()))
                                 .until(this::isPowerSpikeExceeded),
                         runOnce(() -> state.setPosition(Position.In)));
     }
 
     protected Command out() {
         return startRun(
-                        () -> state.setPosition(Position.InBetween),
-                        () -> setVoltageOut(config.getInAndOutVoltage()))
+                () -> state.setPosition(Position.InBetween),
+                () -> setVoltageOut(config.getInAndOutVoltage()))
                 .until(this::isPowerSpikeExceeded)
                 .andThen(runOnce(() -> state.setPosition(Position.Out)));
     }

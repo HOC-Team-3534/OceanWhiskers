@@ -37,7 +37,7 @@ public class PBOT_2025 extends Config {
 
         elevator.enableMotionMagic();
 
-        this.forbar.setAttached(false);
+        this.forbar.setAttached(true);
         this.elevator.setAttached(true);
         this.jaws.setAttached(false);
         this.lights.setAttached(false);
