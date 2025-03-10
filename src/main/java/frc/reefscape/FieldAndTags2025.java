@@ -1,15 +1,30 @@
 package frc.reefscape;
 
+import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
 
+import com.pathplanner.lib.util.FlippingUtil;
 import edu.wpi.first.apriltag.AprilTag;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.Distance;
 import frc.hocLib.util.BiMap;
 import frc.hocLib.util.Util;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +46,15 @@ public final class FieldAndTags2025 {
 
     public static final List<AprilTag> RED_REEF_APRIL_TAGS = SORTED_APRIL_TAGS.subList(5, 11);
 
-    public static final Distance ReefBranchBetweenBranches = Inches.of(13.5);
+    public static final Distance ReefBranchBetweenBranches = Inches.of(12.938);
+
+    public static final Distance ReefCenterToBranchTip = Inches.of(30.738);
+
+    public static final Distance InsideDiameterOfCoral = Inches.of(4.25);
+    public static final Distance OutsideDiameterOfBranch = Inches.of(1.66);
+
+    public static final Translation2d CenterOfBlueReef =
+            new Translation2d(Inches.of(176.746), FIELD_WIDTH.div(2));
 
     @RequiredArgsConstructor
     public enum ReefBranch {
@@ -49,14 +72,35 @@ public final class FieldAndTags2025 {
         L;
 
         @Getter ReefSide reefSide;
+        Map<ReefLevel, Pose3d> scoringLocations = new HashMap<>();
 
         static {
             for (var branch : ReefBranch.values()) {
-                for (var reefSide : ReefSide.values()) {
-                    if (reefSide.name().contains(branch.name())) {
-                        branch.reefSide = reefSide;
-                        break;
-                    }
+                var reefSideOrdinal = branch.ordinal() / 2;
+                branch.reefSide = ReefSide.values()[reefSideOrdinal];
+
+                var adjustX = ReefCenterToBranchTip;
+                var adjustY =
+                        ReefBranchBetweenBranches.div(2)
+                                .times(branch.getSide().equals(Side.Left) ? -1 : 1);
+                Pose2d groundScorePose =
+                        new Pose2d(
+                                        CenterOfBlueReef,
+                                        Rotation2d.fromDegrees(-180 + (60 * reefSideOrdinal)))
+                                .transformBy(new Transform2d(adjustX, adjustY, Rotation2d.kZero));
+                for (var level : ReefLevel.values()) {
+                    Pose3d branchPose =
+                            new Pose3d(
+                                    new Translation3d(
+                                            groundScorePose.getMeasureX(),
+                                            groundScorePose.getMeasureY(),
+                                            level.height),
+                                    new Rotation3d(
+                                            0,
+                                            level.pitch.in(Radians),
+                                            groundScorePose.getRotation().getRadians()));
+
+                    branch.scoringLocations.put(level, branchPose);
                 }
             }
         }
@@ -67,12 +111,71 @@ public final class FieldAndTags2025 {
         }
 
         public Side getSide() {
-            return this.name().charAt(0) % 2 == 0 ? Side.Right : Side.Left;
+            return ordinal() % 2 == 0 ? Side.Left : Side.Right;
         }
 
         public Distance getOffset() {
             return ReefBranchBetweenBranches.div(2).times(getSide().equals(Side.Left) ? 1 : -1);
         }
+
+        public Pose3d getScoringLocation(ReefLevel level) {
+            var location = scoringLocations.get(level);
+            var flippedLocation2d =
+                    Util.applyIfRedAlliance(location.toPose2d(), FlippingUtil::flipFieldPose);
+            return new Pose3d(flippedLocation2d)
+                    .transformBy(
+                            new Transform3d(
+                                    0,
+                                    0,
+                                    location.getZ(),
+                                    new Rotation3d(
+                                            location.getRotation().getX(),
+                                            location.getRotation().getY(),
+                                            0)));
+        }
+
+        public Pose3d getScoredCoral(ReefLevel level) {
+            return getScoringLocation(level).transformBy(level.getScoredCoralTransform());
+        }
+    }
+
+    @RequiredArgsConstructor
+    public enum ReefLevel {
+        L1(Inches.of(25.0), Degrees.zero(), new Transform3d()),
+        L2(
+                Inches.of(31.875 - Math.cos(Math.toRadians(35.0)) * 0.625),
+                Degrees.of(-35),
+                new Transform3d(
+                        Units.inchesToMeters(-4.625),
+                        0.0,
+                        InsideDiameterOfCoral.minus(OutsideDiameterOfBranch)
+                                .div(2)
+                                .unaryMinus()
+                                .in(Meters),
+                        Rotation3d.kZero)),
+        L3(
+                Inches.of(47.625 - Math.cos(Math.toRadians(35.0)) * 0.625),
+                Degrees.of(-35),
+                new Transform3d(
+                        Units.inchesToMeters(-4.625),
+                        0.0,
+                        InsideDiameterOfCoral.minus(OutsideDiameterOfBranch)
+                                .div(2)
+                                .unaryMinus()
+                                .in(Meters),
+                        Rotation3d.kZero)),
+        L4(
+                Inches.of(72),
+                Degrees.of(-90),
+                new Transform3d(
+                        Units.inchesToMeters(-5),
+                        0.0,
+                        Units.inchesToMeters(0.5),
+                        new Rotation3d(0.0, Units.degreesToRadians(15), 0.0)));
+
+        @Getter final Distance height;
+        @Getter final Angle pitch;
+        @Getter final Transform3d scoredCoralTransform;
     }
 
     private static BiMap<Integer, ReefSide> reefSideBlueMap, reefSideRedMap;

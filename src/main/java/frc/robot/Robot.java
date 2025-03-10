@@ -20,6 +20,8 @@ import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
+import frc.reefscape.FieldAndTags2025;
+import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.Auton.AutonConfig;
 import frc.robot.commands.auton.AutonStep;
@@ -210,6 +212,14 @@ public class Robot extends HocRobot {
                     new Pose3d[] {
                         getElevator().getState().getStage1Displacement(),
                         getElevator().getState().getStage2Displacement()
+                    });
+
+            Logging.log(
+                    "Scoring/ScoredCoral",
+                    new Pose3d[] {
+                        FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L3),
+                        FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L2),
+                        FieldAndTags2025.ReefBranch.D.getScoredCoral(ReefLevel.L4)
                     });
 
             CommandScheduler.getInstance().run();
