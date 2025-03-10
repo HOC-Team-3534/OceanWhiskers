@@ -45,6 +45,17 @@ public class GeomUtil {
     }
 
     /**
+     * Creates a pure translating transform
+     *
+     * @param x The x coordinate of the translation
+     * @param y The y coordinate of the translation
+     * @return The resulting transform
+     */
+    public static Transform2d toTransform2d(Distance x, Distance y) {
+        return new Transform2d(x, y, new Rotation2d());
+    }
+
+    /**
      * Creates a pure rotating transform
      *
      * @param rotation The rotation to create the transform with

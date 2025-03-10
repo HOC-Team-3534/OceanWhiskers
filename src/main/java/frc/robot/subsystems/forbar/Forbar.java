@@ -1,14 +1,22 @@
 package frc.robot.subsystems.forbar;
 
 import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.units.measure.Power;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.hocLib.util.GeomUtil;
+import frc.robot.Robot;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +26,22 @@ public class Forbar extends TalonSRXMechanism {
         private Voltage inAndOutVoltage = Volts.of(9.6); // out is positive
         @Getter
         private Power spikeThreshold = inAndOutVoltage.times(Amps.of(12.0));
+
+        @Getter
+        private Pose3d bottomBarIn = new Pose3d();
+        @Getter
+        private Pose3d bottomBarOut = new Pose3d();
+        @Getter
+        private Pose3d topBarIn = new Pose3d();
+        @Getter
+        private Pose3d topBarOut = new Pose3d();
+        @Getter
+        private Pose3d carriageIn = new Pose3d();
+        @Getter
+        private Pose3d carriageOut = new Pose3d();
+
+        @Getter
+        private Time timeFromInToOut = Seconds.of(0.25);
 
         public ForbarConfig() {
             super("Forbar", 16);
@@ -58,7 +82,7 @@ public class Forbar extends TalonSRXMechanism {
         return Commands.waitSeconds(0.0)
                 .andThen(
                         startRun(
-                                () -> state.setPosition(Position.InBetween),
+                                () -> state.setPosition(Position.GoingIn),
                                 () -> setVoltageOut(
                                         config.getInAndOutVoltage().unaryMinus()))
                                 .until(this::isPowerSpikeExceeded),
@@ -67,7 +91,7 @@ public class Forbar extends TalonSRXMechanism {
 
     protected Command out() {
         return startRun(
-                () -> state.setPosition(Position.InBetween),
+                () -> state.setPosition(Position.GoingOut),
                 () -> setVoltageOut(config.getInAndOutVoltage()))
                 .until(this::isPowerSpikeExceeded)
                 .andThen(runOnce(() -> state.setPosition(Position.Out)));
@@ -76,13 +100,27 @@ public class Forbar extends TalonSRXMechanism {
     public enum Position {
         In,
         Out,
-        InBetween
+        GoingOut,
+        GoingIn
     }
 
     @Getter
     @Setter
     public class State {
         Position position = Position.In;
+        Pose3d currentOffset = new Pose3d();
+        Timer currentPositionTimer = new Timer();
+
+        State() {
+            currentPositionTimer.restart();
+        }
+
+        public void setPosition(Position position) {
+            if (!this.position.equals(position)) {
+                currentPositionTimer.restart();
+                this.position = position;
+            }
+        }
 
         public boolean isOut() {
             return position.equals(Position.Out);
@@ -90,6 +128,53 @@ public class Forbar extends TalonSRXMechanism {
 
         public boolean isIn() {
             return position.equals(Position.In);
+        }
+
+        private double getPercentOutVsIn() {
+            return switch (position) {
+                case GoingIn:
+                    yield 1
+                            - Math.min(
+                                    currentPositionTimer.get() / config.timeFromInToOut.in(Seconds),
+                                    1);
+                case GoingOut:
+                    yield Math.min(
+                            currentPositionTimer.get() / config.timeFromInToOut.in(Seconds), 1);
+                case In:
+                    yield 0.0;
+                case Out:
+                    yield 1.0;
+            };
+        }
+
+        private Pose3d interpolatePose(Pose3d in, Pose3d out) {
+            return in.interpolate(out, getPercentOutVsIn());
+        }
+
+        private Pose3d baseElevatorOffset() {
+            return new Pose3d(
+                    0.0, 0.0, Robot.getElevator().getHeight().in(Meters), Rotation3d.kZero);
+        }
+
+        public Pose3d getBottomBar() {
+            return baseElevatorOffset()
+                    .transformBy(
+                            GeomUtil.toTransform3d(
+                                    interpolatePose(config.bottomBarIn, config.bottomBarOut)));
+        }
+
+        public Pose3d getTopBar() {
+            return baseElevatorOffset()
+                    .transformBy(
+                            GeomUtil.toTransform3d(
+                                    interpolatePose(config.topBarIn, config.topBarOut)));
+        }
+
+        public Pose3d getCarriage() {
+            return baseElevatorOffset()
+                    .transformBy(
+                            GeomUtil.toTransform3d(
+                                    interpolatePose(config.carriageIn, config.carriageOut)));
         }
     }
 
