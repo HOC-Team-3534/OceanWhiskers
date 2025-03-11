@@ -36,8 +36,8 @@ public class Elevator extends TalonFXMechanism {
 
     @Getter
     public static class ElevatorConfig extends Config {
-        Distance L2 = Inches.of(14.5);
-        Distance L3 = Inches.of(30.5);
+        Distance L2 = Inches.of(9.5);
+        Distance L3 = Inches.of(25.5);
         Distance L4 = Inches.of(54.5);
         Distance Jaws = Inches.of(18.0);
         Distance PreClimb = Inches.of(15);

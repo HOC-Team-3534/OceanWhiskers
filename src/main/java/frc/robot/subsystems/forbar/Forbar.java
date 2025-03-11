@@ -22,26 +22,19 @@ import lombok.Setter;
 
 public class Forbar extends TalonSRXMechanism {
     public static class ForbarConfig extends TalonSRXMechanism.Config {
-        @Getter
-        private Voltage inAndOutVoltage = Volts.of(9.6); // out is positive
-        @Getter
-        private Power spikeThreshold = inAndOutVoltage.times(Amps.of(12.0));
+        @Getter private Voltage outVoltage = Volts.of(12.0); // out is positive
+        @Getter private Voltage holdOutVoltage = Volts.of(4.0); // out is positive
+        @Getter private Voltage inVoltage = Volts.of(-7.0); // in is negative
+        @Getter private Power spikeThreshold = outVoltage.times(Amps.of(10.0));
 
-        @Getter
-        private Pose3d bottomBarIn = new Pose3d();
-        @Getter
-        private Pose3d bottomBarOut = new Pose3d();
-        @Getter
-        private Pose3d topBarIn = new Pose3d();
-        @Getter
-        private Pose3d topBarOut = new Pose3d();
-        @Getter
-        private Pose3d carriageIn = new Pose3d();
-        @Getter
-        private Pose3d carriageOut = new Pose3d();
+        @Getter private Pose3d bottomBarIn = new Pose3d();
+        @Getter private Pose3d bottomBarOut = new Pose3d();
+        @Getter private Pose3d topBarIn = new Pose3d();
+        @Getter private Pose3d topBarOut = new Pose3d();
+        @Getter private Pose3d carriageIn = new Pose3d();
+        @Getter private Pose3d carriageOut = new Pose3d();
 
-        @Getter
-        private Time timeFromInToOut = Seconds.of(0.25);
+        @Getter private Time timeFromInToOut = Seconds.of(0.5);
 
         public ForbarConfig() {
             super("Forbar", 16);
@@ -50,8 +43,7 @@ public class Forbar extends TalonSRXMechanism {
 
     private ForbarConfig config;
 
-    @Getter
-    private State state = new State();
+    @Getter private State state = new State();
 
     public Forbar(ForbarConfig config) {
         super(config);
@@ -68,31 +60,35 @@ public class Forbar extends TalonSRXMechanism {
     }
 
     private boolean isPowerSpikeExceeded() {
-        return getPower().gt(config.getSpikeThreshold());
+        return state.currentPositionTimer.hasElapsed(config.timeFromInToOut.in(Seconds));
     }
 
-    protected Command zero() {
-        return run(() -> setVoltageOut(Volts.zero()));
+    protected Command zeroOrHold() {
+        return run(
+                () ->
+                        setVoltageOut(
+                                state.getPosition().equals(Position.Out)
+                                        ? config.getHoldOutVoltage()
+                                        : Volts.zero()));
     }
 
     // TODO: validate open and close happen when theya re supposed to and not when elevator is not
     // raised
 
     protected Command in() {
-        return Commands.waitSeconds(0.0)
+        return Commands.waitSeconds(0.25)
                 .andThen(
                         startRun(
-                                () -> state.setPosition(Position.GoingIn),
-                                () -> setVoltageOut(
-                                        config.getInAndOutVoltage().unaryMinus()))
+                                        () -> state.setPosition(Position.GoingIn),
+                                        () -> setVoltageOut(config.getInVoltage()))
                                 .until(this::isPowerSpikeExceeded),
                         runOnce(() -> state.setPosition(Position.In)));
     }
 
     protected Command out() {
         return startRun(
-                () -> state.setPosition(Position.GoingOut),
-                () -> setVoltageOut(config.getInAndOutVoltage()))
+                        () -> state.setPosition(Position.GoingOut),
+                        () -> setVoltageOut(config.getOutVoltage()))
                 .until(this::isPowerSpikeExceeded)
                 .andThen(runOnce(() -> state.setPosition(Position.Out)));
     }
