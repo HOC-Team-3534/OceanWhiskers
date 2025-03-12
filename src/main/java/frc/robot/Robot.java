@@ -155,21 +155,6 @@ public class Robot extends HocRobot {
                         new Pose3d()
                     });
 
-            var cadOffset = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
-
-            var longPivotOffset =
-                    cadOffset.transformBy(
-                            GeomUtil.toTransform3d(new Translation3d(0.17, 0.0, 0.4425)));
-            var shortPivotOffset =
-                    cadOffset.transformBy(
-                            GeomUtil.toTransform3d(new Translation3d(0.28375, 0.0, 0.4325)));
-            var carriageOffset =
-                    cadOffset.transformBy(
-                            GeomUtil.toTransform3d(new Translation3d(0.26, 0.0, 0.485)));
-            var algaeArmOffset =
-                    cadOffset.transformBy(
-                            GeomUtil.toTransform3d(new Translation3d(0.28, 0.0, 0.38)));
-
             Logging.log(
                     "InitialPositionComponentPoses",
                     new Pose3d[] {
@@ -186,19 +171,13 @@ public class Robot extends HocRobot {
                     new Pose3d[] {
                         new Pose3d(),
                         new Pose3d(),
-                        longPivotOffset.transformBy(
-                                GeomUtil.toTransform3d(
-                                        new Rotation3d(0.0, Units.degreesToRadians(48.5), 0.0))),
-                        shortPivotOffset.transformBy(
-                                GeomUtil.toTransform3d(
-                                        new Rotation3d(
-                                                0.0, Units.degreesToRadians(16.23 + 43.92), 0.0))),
-                        carriageOffset.transformBy(
-                                new Transform3d(
-                                        new Translation3d(0.2, 0.0, -0.1),
-                                        new Rotation3d(0.0, Units.degreesToRadians(-31.37), 0.0))),
+                        outLongPivotOffset,
+                        outShortPivotOffset,
+                        outCarriageOffset,
                         algaeArmOffset
                     });
+
+            percentForbarOut.initDefault(0.0);
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
@@ -236,6 +215,35 @@ public class Robot extends HocRobot {
         setupStates();
         RobotStates.setupStates();
     }
+
+    Pose3d cadOffset = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
+
+    Pose3d longPivotOffset =
+            cadOffset.transformBy(GeomUtil.toTransform3d(new Translation3d(0.17, 0.0, 0.4425)));
+    Pose3d shortPivotOffset =
+            cadOffset.transformBy(GeomUtil.toTransform3d(new Translation3d(0.28375, 0.0, 0.4325)));
+    Pose3d carriageOffset =
+            cadOffset.transformBy(GeomUtil.toTransform3d(new Translation3d(0.26, 0.0, 0.485)));
+    Pose3d algaeArmOffset =
+            cadOffset.transformBy(GeomUtil.toTransform3d(new Translation3d(0.28, 0.0, 0.38)));
+
+    Pose3d outLongPivotOffset =
+            longPivotOffset.transformBy(
+                    GeomUtil.toTransform3d(new Rotation3d(0.0, Units.degreesToRadians(48.5), 0.0)));
+
+    Pose3d outShortPivotOffset =
+            shortPivotOffset.transformBy(
+                    GeomUtil.toTransform3d(
+                            new Rotation3d(0.0, Units.degreesToRadians(16.23 + 43.92), 0.0)));
+
+    Pose3d outCarriageOffset =
+            carriageOffset.transformBy(
+                    new Transform3d(
+                            new Translation3d(0.3025, 0.0, -0.0075),
+                            new Rotation3d(0.0, Units.degreesToRadians(-31.37), 0.0)));
+
+    static final LoggedTunableNumber percentForbarOut =
+            new LoggedTunableNumber("Forbar/PercentPositionOutTesting");
 
     @Override
     public void robotPeriodic() {
@@ -281,6 +289,17 @@ public class Robot extends HocRobot {
                         FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L3),
                         FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L2),
                         FieldAndTags2025.ReefBranch.D.getScoredCoral(ReefLevel.L4)
+                    });
+
+            Logging.log(
+                    "ComponentPosesManualForbarPosition",
+                    new Pose3d[] {
+                        new Pose3d(),
+                        new Pose3d(),
+                        longPivotOffset.interpolate(outLongPivotOffset, percentForbarOut.get()),
+                        shortPivotOffset.interpolate(outShortPivotOffset, percentForbarOut.get()),
+                        carriageOffset.interpolate(outCarriageOffset, percentForbarOut.get()),
+                        algaeArmOffset
                     });
 
             CommandScheduler.getInstance().run();
