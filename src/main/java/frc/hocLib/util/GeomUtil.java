@@ -16,6 +16,7 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.units.measure.Distance;
@@ -131,6 +132,14 @@ public class GeomUtil {
      */
     public static Transform3d toTransform3d(Pose3d pose) {
         return new Transform3d(pose.getTranslation(), pose.getRotation());
+    }
+
+    public static Transform3d toTransform3d(Translation3d translation) {
+        return new Transform3d(translation, Rotation3d.kZero);
+    }
+
+    public static Transform3d toTransform3d(Rotation3d rotation) {
+        return new Transform3d(Translation3d.kZero, rotation);
     }
 
     /**

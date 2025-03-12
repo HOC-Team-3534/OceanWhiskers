@@ -9,6 +9,10 @@ import static edu.wpi.first.units.Units.Seconds;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -18,6 +22,7 @@ import frc.hocLib.HocRobot;
 import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
+import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
 import frc.reefscape.FieldAndTags2025;
@@ -138,6 +143,62 @@ public class Robot extends HocRobot {
             lights = new Lights(config.lights);
             auton = new Auton(config.auton);
             dtm = new DTM(config.dtm);
+
+            Logging.log(
+                    "ZeroedComponentPoses",
+                    new Pose3d[] {
+                        new Pose3d(),
+                        new Pose3d(),
+                        new Pose3d(),
+                        new Pose3d(),
+                        new Pose3d(),
+                        new Pose3d()
+                    });
+
+            var cadOffset = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
+
+            var longPivotOffset =
+                    cadOffset.transformBy(
+                            GeomUtil.toTransform3d(new Translation3d(0.17, 0.0, 0.4425)));
+            var shortPivotOffset =
+                    cadOffset.transformBy(
+                            GeomUtil.toTransform3d(new Translation3d(0.28375, 0.0, 0.4325)));
+            var carriageOffset =
+                    cadOffset.transformBy(
+                            GeomUtil.toTransform3d(new Translation3d(0.26, 0.0, 0.485)));
+            var algaeArmOffset =
+                    cadOffset.transformBy(
+                            GeomUtil.toTransform3d(new Translation3d(0.28, 0.0, 0.38)));
+
+            Logging.log(
+                    "InitialPositionComponentPoses",
+                    new Pose3d[] {
+                        new Pose3d(),
+                        new Pose3d(),
+                        longPivotOffset,
+                        shortPivotOffset,
+                        carriageOffset,
+                        algaeArmOffset
+                    });
+
+            Logging.log(
+                    "OutComponentPoses",
+                    new Pose3d[] {
+                        new Pose3d(),
+                        new Pose3d(),
+                        longPivotOffset.transformBy(
+                                GeomUtil.toTransform3d(
+                                        new Rotation3d(0.0, Units.degreesToRadians(48.5), 0.0))),
+                        shortPivotOffset.transformBy(
+                                GeomUtil.toTransform3d(
+                                        new Rotation3d(
+                                                0.0, Units.degreesToRadians(16.23 + 43.92), 0.0))),
+                        carriageOffset.transformBy(
+                                new Transform3d(
+                                        new Translation3d(0.2, 0.0, -0.1),
+                                        new Rotation3d(0.0, Units.degreesToRadians(-31.37), 0.0))),
+                        algaeArmOffset
+                    });
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
