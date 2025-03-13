@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.DegreesPerSecond;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Volts;
 
 import dev.doglog.DogLog;
@@ -12,6 +13,7 @@ import frc.hocLib.camera.StdDevCategory;
 import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.robot.subsystems.forbar.Forbar;
 import frc.robot.subsystems.swerve.Swerve;
 import org.photonvision.EstimatedRobotPose;
 
@@ -62,5 +64,12 @@ public class Logging extends DogLog {
         log(key + "/Speed Y", swerve.getState().Speeds.vyMetersPerSecond);
         log(key + "/Speed Rotation", swerve.getState().Speeds.omegaRadiansPerSecond);
         log(key + "/Pose", swerve.getState().Pose);
+    }
+
+    public static void log(String key, Forbar forbar) {
+        log(key + "/CANrange Distance", forbar.getState().getCANrangeDistance().in(Meters));
+        log(key + "/CANrange Detected Object", forbar.getState().isCANrangeIsDetected());
+
+        log(key, (TalonSRXMechanism) forbar);
     }
 }

@@ -91,7 +91,7 @@ public class RobotStates {
 
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
-    public static final Trigger ForbarReadyToDeploy = Trigger.kFalse;
+    public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
 
     @Setter @Getter private static boolean alignedWithReefForDeployment;
 

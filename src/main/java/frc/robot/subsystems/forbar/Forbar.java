@@ -217,6 +217,16 @@ public class Forbar extends TalonSRXMechanism {
             return componentOffsets.get();
         }
 
+        public Distance getCANrangeDistance() {
+            return isAttached()
+                    ? canRange.getDistance().getValue()
+                    : Meters.of(Double.POSITIVE_INFINITY);
+        }
+
+        public boolean isCANrangeIsDetected() {
+            return isAttached() ? canRange.getIsDetected().getValue().booleanValue() : false;
+        }
+
         private double getPercentOutVsIn() {
             return switch (position) {
                 case GoingIn:
