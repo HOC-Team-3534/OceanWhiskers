@@ -23,6 +23,7 @@ import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
+import frc.robot.Robot;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -215,11 +216,18 @@ public class Forbar extends TalonSRXMechanism {
                                     0.0));
 
             return new ForbarComponentOffsets(
-                    shortPivotOffset,
-                    longPivotOffset,
-                    carriageOffset,
-                    endOfShortPivot,
-                    new Pose3d(endOfLongPivot, Rotation3d.kZero));
+                    addElevatorOffset(shortPivotOffset),
+                    addElevatorOffset(longPivotOffset),
+                    addElevatorOffset(carriageOffset),
+                    addElevatorOffset(endOfShortPivot),
+                    addElevatorOffset(new Pose3d(endOfLongPivot, Rotation3d.kZero)));
+        }
+
+        private static Pose3d addElevatorOffset(Pose3d offset) {
+            return Robot.getElevator()
+                    .getState()
+                    .getStage2Displacement()
+                    .transformBy(GeomUtil.toTransform3d(offset));
         }
     }
 

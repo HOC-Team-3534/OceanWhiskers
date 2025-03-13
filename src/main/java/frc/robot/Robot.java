@@ -163,6 +163,9 @@ public class Robot extends HocRobot {
                         getJaws().getState().getComponentOffset()
                     });
 
+            Logging.log("EndOfLongPivot", forbarOffsets.getEndOfLongPivot());
+            Logging.log("EndOfShortPivot", forbarOffsets.getEndOfShortPivot());
+
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
 

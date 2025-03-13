@@ -1,7 +1,6 @@
 package frc.robot.subsystems.elevator;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Kilograms;
 import static edu.wpi.first.units.Units.Meters;
@@ -19,6 +18,7 @@ import com.ctre.phoenix6.configs.Slot0Configs;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation3d;
@@ -29,8 +29,11 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.wpilibj.simulation.RoboRioSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -121,6 +124,7 @@ public class Elevator extends TalonFXMechanism {
                     new SysIdRoutine.Mechanism(this::setVoltageOut, this::logMotor, this));
 
     private ElevatorSim elevatorSim;
+    private TalonFXSimState motorSim;
 
     public Elevator(ElevatorConfig config) {
         super(config);
@@ -139,14 +143,19 @@ public class Elevator extends TalonFXMechanism {
                         new ElevatorSim(
                                 DCMotor.getFalcon500(2),
                                 5,
-                                Pounds.of(30).in(Kilograms),
-                                Inches.of(1.83).in(Meters),
-                                0.0,
-                                config.getMaxLinearPosition().in(Meters),
-                                true,
-                                0.0,
+                                Pounds.of(25).in(Kilograms),
+                                Inches.of(1.83 / 2.0).in(Meters),
                                 0.01,
-                                0.0);
+                                config.getMaxLinearPosition().div(2).in(Meters),
+                                true,
+                                0.01);
+
+                motor.getConfigurator()
+                        .apply(
+                                new MotorOutputConfigs()
+                                        .withInverted(InvertedValue.CounterClockwise_Positive));
+
+                motorSim = motor.getSimState();
             }
         }
 
@@ -156,7 +165,7 @@ public class Elevator extends TalonFXMechanism {
 
     @Override
     protected Voltage updateVoltage() {
-        if (RobotBase.isSimulation()) return Volts.of(-motor.getSimState().getMotorVoltage());
+        if (RobotBase.isSimulation()) return Volts.of(motorSim.getMotorVoltage());
         return super.updateVoltage();
     }
 
@@ -175,14 +184,15 @@ public class Elevator extends TalonFXMechanism {
     @Override
     protected Angle updatePosition() {
         if (RobotBase.isSimulation())
-            return linearPositionToPosition(Meters.of(elevatorSim.getPositionMeters()));
+            return linearPositionToPosition(Meters.of(elevatorSim.getPositionMeters()).times(2));
         return super.updatePosition();
     }
 
     @Override
     protected AngularVelocity updateVelocity() {
         if (RobotBase.isSimulation())
-            return linearPositionToPosition(Meters.of(elevatorSim.getVelocityMetersPerSecond()))
+            return linearPositionToPosition(
+                            Meters.of(elevatorSim.getVelocityMetersPerSecond()).times(2))
                     .per(Second);
         return super.updateVelocity();
     }
@@ -194,7 +204,7 @@ public class Elevator extends TalonFXMechanism {
 
     @Override
     protected Distance updateLinearPosition() {
-        if (RobotBase.isSimulation()) return Meters.of(elevatorSim.getPositionMeters());
+        if (RobotBase.isSimulation()) return Meters.of(elevatorSim.getPositionMeters()).times(2);
         return super.updateLinearPosition();
     }
 
@@ -207,13 +217,18 @@ public class Elevator extends TalonFXMechanism {
     @Override
     public void simulationPeriodic() {
         if (isAttached()) {
-            double motorVoltage = -motor.getSimState().getMotorVoltage();
-            elevatorSim.setInput(motorVoltage);
+            motorSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+
+            elevatorSim.setInput(motor.getSimState().getMotorVoltage());
 
             elevatorSim.update(Robot.getConfig().LoopPeriod.in(Seconds));
 
             motor.getSimState().setRawRotorPosition(updatePosition());
             motor.getSimState().setRotorVelocity(updateVelocity());
+
+            RoboRioSim.setVInVoltage(
+                    BatterySim.calculateDefaultBatteryLoadedVoltage(
+                            elevatorSim.getCurrentDrawAmps()));
         }
     }
 
@@ -408,12 +423,12 @@ public class Elevator extends TalonFXMechanism {
 
         public Pose3d getStage1Displacement() {
             return new Pose3d(
-                    new Translation3d(0.0, 0.0, getHeight().div(2).in(Meters)), new Rotation3d());
+                    new Translation3d(0.0, 0.0, getHeight().div(2).in(Meters)), Rotation3d.kZero);
         }
 
         public Pose3d getStage2Displacement() {
             return new Pose3d(
-                    new Translation3d(0.0, 0.0, getHeight().in(Meters)), new Rotation3d());
+                    new Translation3d(0.0, 0.0, getHeight().in(Meters)), Rotation3d.kZero);
         }
     }
 
