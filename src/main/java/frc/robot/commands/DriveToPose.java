@@ -19,6 +19,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.hocLib.Logging;
@@ -66,7 +67,7 @@ public class DriveToPose<
             new LoggedTunableNumber("DriveToPose/FFMaxRadius");
 
     static {
-        drivekP.initDefault(0.8);
+        drivekP.initDefault(RobotBase.isReal() ? 0.8 : 13.0);
         drivekD.initDefault(0.0);
         thetakP.initDefault(4.0);
         thetakD.initDefault(0.0);
@@ -229,8 +230,14 @@ public class DriveToPose<
                         0.0,
                         1.0);
         driveErrorAbs = currentDistance;
+
+        var controllerSetpointTranslation =
+                driveController.getSetpoint().equals(driveController.getGoal()) && !atGoal()
+                        ? currentPose.getTranslation()
+                        : lastSetpointTranslation;
+
         driveController.reset(
-                lastSetpointTranslation.getDistance(targetPose.getTranslation()),
+                controllerSetpointTranslation.getDistance(targetPose.getTranslation()),
                 driveController.getSetpoint().velocity);
         double driveVelocityScalar =
                 driveController.getSetpoint().velocity * ffScaler
