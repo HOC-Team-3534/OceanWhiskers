@@ -4,19 +4,11 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.Degrees;
-import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Seconds;
 
 import dev.doglog.DogLogOptions;
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation3d;
-import edu.wpi.first.math.util.Units;
-import edu.wpi.first.units.measure.Angle;
-import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -26,7 +18,6 @@ import frc.hocLib.HocRobot;
 import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
-import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
 import frc.reefscape.FieldAndTags2025;
@@ -57,7 +48,6 @@ import frc.robot.subsystems.vision.VisionSystem;
 import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 public class Robot extends HocRobot {
     @Getter private static Config config;
@@ -160,18 +150,18 @@ public class Robot extends HocRobot {
                         new Pose3d()
                     });
 
+            var forbarOffsets = getForbar().getState().getComponentOffsets();
+
             Logging.log(
                     "InitialPositionComponentPoses",
                     new Pose3d[] {
                         new Pose3d(),
                         new Pose3d(),
-                        robotToLongPivot,
-                        robotToShortPivot,
-                        robotToCarriage,
-                        robotToAlgaeArm
+                        forbarOffsets.getLongPivot(),
+                        forbarOffsets.getShortPivot(),
+                        forbarOffsets.getCarriage(),
+                        getJaws().getState().getComponentOffset()
                     });
-
-            percentForbarOut.initDefault(0.0);
 
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
@@ -210,91 +200,6 @@ public class Robot extends HocRobot {
         RobotStates.setupStates();
     }
 
-    Pose3d fieldToRobotCAD = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
-
-    Pose3d robotToLongPivot =
-            fieldToRobotCAD.transformBy(
-                    GeomUtil.toTransform3d(new Translation3d(0.17, 0.0, 0.4425)));
-    Pose3d robotToShortPivot =
-            fieldToRobotCAD.transformBy(
-                    GeomUtil.toTransform3d(new Translation3d(0.28375, 0.0, 0.4325)));
-    Pose3d robotToCarriage =
-            fieldToRobotCAD.transformBy(
-                    GeomUtil.toTransform3d(new Translation3d(0.22, 0.0, 0.6525)));
-    Pose3d robotToAlgaeArm =
-            fieldToRobotCAD.transformBy(GeomUtil.toTransform3d(new Translation3d(0.28, 0.0, 0.38)));
-
-    Angle shortPivotPitchOffset = Degrees.of(-16.23 - 90.0);
-    Angle shortPivotPitchRange = Degrees.of(16.23 + 43.92);
-
-    Angle longPivotPitchOffset = Degrees.of(-90);
-
-    Distance shortPivotLength = Inches.of(9.0);
-    Distance longPivotLength = Inches.of(10.5);
-    Distance backPlatePivotSeparation = Inches.of(3.01);
-
-    @RequiredArgsConstructor
-    static class ForbarComponentOffsets {
-        final Pose3d shortPivot, longPivot, carriage;
-        final Pose3d endOfShortPivot, endOfLongPivot;
-    }
-
-    ForbarComponentOffsets calcForbarComponentPositions(double percentOutVsIn) {
-        Angle changeInShortPivotPitch =
-                shortPivotPitchRange.times(MathUtil.clamp(percentOutVsIn, 0.0, 1.0));
-
-        var shortPivotOffset =
-                robotToShortPivot.transformBy(
-                        GeomUtil.toTransform3d(0.0, changeInShortPivotPitch, 0.0));
-
-        var endOfShortPivot =
-                shortPivotOffset
-                        .transformBy(GeomUtil.toTransform3d(0.0, shortPivotPitchOffset, 0.0))
-                        .transformBy(GeomUtil.toTransform3d(shortPivotLength, 0.0, 0.0));
-
-        var endOfLongPivot =
-                GeomUtil.calcIntercetionOfCirclesInXZPlane(
-                                robotToLongPivot.getTranslation(),
-                                longPivotLength,
-                                endOfShortPivot.getTranslation(),
-                                backPlatePivotSeparation)
-                        .get(1);
-
-        var toEndOfLongPivot = endOfLongPivot.minus(robotToLongPivot.getTranslation());
-
-        var longPivotOffset =
-                new Pose3d(
-                        robotToLongPivot.getTranslation(),
-                        new Rotation3d(
-                                0.0,
-                                Math.atan2(toEndOfLongPivot.getX(), toEndOfLongPivot.getZ()),
-                                0.0));
-
-        var toEndOfLongPivotFromEndofShortPivot =
-                endOfLongPivot.minus(endOfShortPivot.getTranslation());
-
-        var carriageOffset =
-                new Pose3d(
-                        endOfShortPivot.getTranslation(),
-                        new Rotation3d(
-                                0.0,
-                                Units.degreesToRadians(40)
-                                        + Math.atan2(
-                                                toEndOfLongPivotFromEndofShortPivot.getX(),
-                                                toEndOfLongPivotFromEndofShortPivot.getZ()),
-                                0.0));
-
-        return new ForbarComponentOffsets(
-                shortPivotOffset,
-                longPivotOffset,
-                carriageOffset,
-                endOfShortPivot,
-                new Pose3d(endOfLongPivot, Rotation3d.kZero));
-    }
-
-    static final LoggedTunableNumber percentForbarOut =
-            new LoggedTunableNumber("Forbar/PercentPositionOutTesting");
-
     @Override
     public void robotPeriodic() {
         try {
@@ -326,12 +231,21 @@ public class Robot extends HocRobot {
                             .map((step) -> step.getGoalPose())
                             .orElse(new Pose2d()));
 
+            var forbarOffsets = getForbar().getState().getComponentOffsets();
+
             Logging.log(
-                    "Components Offsets",
+                    "ComponentOffsets",
                     new Pose3d[] {
                         getElevator().getState().getStage1Displacement(),
-                        getElevator().getState().getStage2Displacement()
+                        getElevator().getState().getStage2Displacement(),
+                        forbarOffsets.getLongPivot(),
+                        forbarOffsets.getShortPivot(),
+                        forbarOffsets.getCarriage(),
+                        getJaws().getState().getComponentOffset()
                     });
+
+            Logging.log("EndOfLongPivot", forbarOffsets.getEndOfLongPivot());
+            Logging.log("EndOfShortPivot", forbarOffsets.getEndOfShortPivot());
 
             Logging.log(
                     "Scoring/ScoredCoral",
@@ -340,22 +254,6 @@ public class Robot extends HocRobot {
                         FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L2),
                         FieldAndTags2025.ReefBranch.D.getScoredCoral(ReefLevel.L4)
                     });
-
-            var forbarOffsets = calcForbarComponentPositions(percentForbarOut.get());
-
-            Logging.log(
-                    "ComponentPosesManualForbarPosition",
-                    new Pose3d[] {
-                        new Pose3d(),
-                        new Pose3d(),
-                        forbarOffsets.longPivot,
-                        forbarOffsets.shortPivot,
-                        forbarOffsets.carriage,
-                        robotToAlgaeArm
-                    });
-
-            Logging.log("EndOfLongPivot", forbarOffsets.endOfLongPivot);
-            Logging.log("EndOfShortPivot", forbarOffsets.endOfShortPivot);
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

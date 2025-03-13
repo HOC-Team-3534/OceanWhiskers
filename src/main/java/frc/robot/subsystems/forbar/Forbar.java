@@ -1,12 +1,18 @@
 package frc.robot.subsystems.forbar;
 
 import static edu.wpi.first.units.Units.Amps;
-import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
@@ -15,9 +21,10 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
-import frc.robot.Robot;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 public class Forbar extends TalonSRXMechanism {
@@ -27,12 +34,24 @@ public class Forbar extends TalonSRXMechanism {
         @Getter private Voltage inVoltage = Volts.of(-7.0); // in is negative
         @Getter private Power spikeThreshold = outVoltage.times(Amps.of(10.0));
 
-        @Getter private Pose3d bottomBarIn = new Pose3d();
-        @Getter private Pose3d bottomBarOut = new Pose3d();
-        @Getter private Pose3d topBarIn = new Pose3d();
-        @Getter private Pose3d topBarOut = new Pose3d();
-        @Getter private Pose3d carriageIn = new Pose3d();
-        @Getter private Pose3d carriageOut = new Pose3d();
+        Pose3d fieldToRobotCAD = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
+
+        Pose3d robotToLongPivot =
+                fieldToRobotCAD.transformBy(
+                        GeomUtil.toTransform3d(new Translation3d(0.17, 0.0, 0.4425)));
+        Pose3d robotToShortPivot =
+                fieldToRobotCAD.transformBy(
+                        GeomUtil.toTransform3d(new Translation3d(0.28375, 0.0, 0.4325)));
+        Pose3d robotToCarriage =
+                fieldToRobotCAD.transformBy(
+                        GeomUtil.toTransform3d(new Translation3d(0.22, 0.0, 0.6525)));
+
+        Angle shortPivotPitchOffset = Degrees.of(-16.23 - 90.0);
+        Angle shortPivotPitchRange = Degrees.of(16.23 + 43.92);
+
+        Distance shortPivotLength = Inches.of(9.0);
+        Distance longPivotLength = Inches.of(10.5);
+        Distance backPlatePivotSeparation = Inches.of(3.01);
 
         @Getter private Time timeFromInToOut = Seconds.of(0.5);
 
@@ -106,6 +125,8 @@ public class Forbar extends TalonSRXMechanism {
         Position position = Position.In;
         Pose3d currentOffset = new Pose3d();
         Timer currentPositionTimer = new Timer();
+        CachedValue<ForbarComponentOffsets> componentOffsets =
+                new CachedValue<>(() -> updateForbarComponentPositions(getPercentOutVsIn()));
 
         State() {
             currentPositionTimer.restart();
@@ -126,6 +147,10 @@ public class Forbar extends TalonSRXMechanism {
             return position.equals(Position.In);
         }
 
+        public ForbarComponentOffsets getComponentOffsets() {
+            return componentOffsets.get();
+        }
+
         private double getPercentOutVsIn() {
             return switch (position) {
                 case GoingIn:
@@ -143,35 +168,66 @@ public class Forbar extends TalonSRXMechanism {
             };
         }
 
-        private Pose3d interpolatePose(Pose3d in, Pose3d out) {
-            return in.interpolate(out, getPercentOutVsIn());
-        }
+        ForbarComponentOffsets updateForbarComponentPositions(double percentOutVsIn) {
+            Angle changeInShortPivotPitch =
+                    config.shortPivotPitchRange.times(MathUtil.clamp(percentOutVsIn, 0.0, 1.0));
 
-        private Pose3d baseElevatorOffset() {
-            return new Pose3d(
-                    0.0, 0.0, Robot.getElevator().getHeight().in(Meters), Rotation3d.kZero);
-        }
+            var shortPivotOffset =
+                    config.robotToShortPivot.transformBy(
+                            GeomUtil.toTransform3d(0.0, changeInShortPivotPitch, 0.0));
 
-        public Pose3d getBottomBar() {
-            return baseElevatorOffset()
-                    .transformBy(
-                            GeomUtil.toTransform3d(
-                                    interpolatePose(config.bottomBarIn, config.bottomBarOut)));
-        }
+            var endOfShortPivot =
+                    shortPivotOffset
+                            .transformBy(
+                                    GeomUtil.toTransform3d(0.0, config.shortPivotPitchOffset, 0.0))
+                            .transformBy(GeomUtil.toTransform3d(config.shortPivotLength, 0.0, 0.0));
 
-        public Pose3d getTopBar() {
-            return baseElevatorOffset()
-                    .transformBy(
-                            GeomUtil.toTransform3d(
-                                    interpolatePose(config.topBarIn, config.topBarOut)));
-        }
+            var endOfLongPivot =
+                    GeomUtil.calcIntercetionOfCirclesInXZPlane(
+                                    config.robotToLongPivot.getTranslation(),
+                                    config.longPivotLength,
+                                    endOfShortPivot.getTranslation(),
+                                    config.backPlatePivotSeparation)
+                            .get(1);
 
-        public Pose3d getCarriage() {
-            return baseElevatorOffset()
-                    .transformBy(
-                            GeomUtil.toTransform3d(
-                                    interpolatePose(config.carriageIn, config.carriageOut)));
+            var toEndOfLongPivot = endOfLongPivot.minus(config.robotToLongPivot.getTranslation());
+
+            var longPivotOffset =
+                    new Pose3d(
+                            config.robotToLongPivot.getTranslation(),
+                            new Rotation3d(
+                                    0.0,
+                                    Math.atan2(toEndOfLongPivot.getX(), toEndOfLongPivot.getZ()),
+                                    0.0));
+
+            var toEndOfLongPivotFromEndofShortPivot =
+                    endOfLongPivot.minus(endOfShortPivot.getTranslation());
+
+            var carriageOffset =
+                    new Pose3d(
+                            endOfShortPivot.getTranslation(),
+                            new Rotation3d(
+                                    0.0,
+                                    Units.degreesToRadians(40)
+                                            + Math.atan2(
+                                                    toEndOfLongPivotFromEndofShortPivot.getX(),
+                                                    toEndOfLongPivotFromEndofShortPivot.getZ()),
+                                    0.0));
+
+            return new ForbarComponentOffsets(
+                    shortPivotOffset,
+                    longPivotOffset,
+                    carriageOffset,
+                    endOfShortPivot,
+                    new Pose3d(endOfLongPivot, Rotation3d.kZero));
         }
+    }
+
+    @Getter
+    @RequiredArgsConstructor
+    public static class ForbarComponentOffsets {
+        final Pose3d shortPivot, longPivot, carriage;
+        final Pose3d endOfShortPivot, endOfLongPivot;
     }
 
     @Override
