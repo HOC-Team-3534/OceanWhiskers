@@ -3,9 +3,14 @@ package frc.robot.subsystems.forbar;
 import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.ctre.phoenix6.configs.CANrangeConfiguration;
+import com.ctre.phoenix6.hardware.CANrange;
+import com.ctre.phoenix6.signals.UpdateModeValue;
+import com.ctre.phoenix6.sim.CANrangeSimState;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
@@ -16,7 +21,10 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Power;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.Logging;
@@ -68,18 +76,71 @@ public class Forbar extends TalonSRXMechanism {
 
     @Getter private State state = new State();
 
+    private CANrange canRange;
+    private CANrangeSimState canRangeSim;
+
     public Forbar(ForbarConfig config) {
         super(config);
         this.config = config;
 
         if (isAttached()) {
             motor.setInverted(false);
+
+            canRange = new CANrange(19);
+
+            var canRangeConfig = new CANrangeConfiguration();
+
+            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(4.0).in(Meters);
+            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(2.0).in(Meters);
+
+            canRangeConfig.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
+
+            canRangeConfig.FovParams.FOVCenterX = 0.0;
+            canRangeConfig.FovParams.FOVCenterY = 0.0;
+            canRangeConfig.FovParams.FOVRangeX = 27.0;
+            canRangeConfig.FovParams.FOVRangeY = 27.0;
+
+            canRange.getConfigurator().apply(canRangeConfig);
+
+            canRangeSim = canRange.getSimState();
+        }
+
+        if (RobotBase.isSimulation()) {
+            SmartDashboard.putBoolean("HoldingCoralOverride", false);
         }
     }
 
+    private boolean prevCanRangeDetectedObject;
+
     @Override
     public void periodic() {
+        if (isAttached()) {
+            var detectedObject = canRange.getIsDetected().getValue().booleanValue();
+
+            if (detectedObject != prevCanRangeDetectedObject) {
+                state.setHoldingCoral(detectedObject);
+                prevCanRangeDetectedObject = detectedObject;
+            }
+        }
+
         Logging.log("Forbar", this);
+    }
+
+    boolean prevHoldingCoralOverride;
+
+    @Override
+    public void simulationPeriodic() {
+        var holdingCoralOverride = SmartDashboard.getBoolean("HoldingCoralOverride", false);
+
+        if (holdingCoralOverride != prevHoldingCoralOverride) {
+            if (isAttached()) {
+                canRangeSim.setSupplyVoltage(RobotController.getBatteryVoltage());
+                canRangeSim.setDistance(holdingCoralOverride ? Inches.of(1.5) : Inches.of(12.0));
+            } else {
+                state.setHoldingCoral(holdingCoralOverride);
+            }
+            prevHoldingCoralOverride = holdingCoralOverride;
+        }
     }
 
     private boolean isPowerSpikeExceeded() {

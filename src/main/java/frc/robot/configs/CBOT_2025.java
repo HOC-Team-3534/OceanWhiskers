@@ -13,7 +13,7 @@ public class CBOT_2025 extends Config {
 
         elevator.enableMotionMagic();
 
-        this.forbar.setAttached(false);
+        this.forbar.setAttached(true);
         this.elevator.setAttached(true);
         this.jaws.setAttached(true);
         this.lights.setAttached(true);
