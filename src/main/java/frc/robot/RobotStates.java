@@ -11,6 +11,7 @@ import frc.robot.commands.auton.DTM;
 import frc.robot.controllers.Codriver;
 import frc.robot.controllers.Driver;
 import frc.robot.subsystems.elevator.Elevator;
+import frc.robot.subsystems.forbar.Forbar;
 import frc.robot.subsystems.jaws.Jaws;
 import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.util.FieldUtil;
@@ -86,7 +87,10 @@ public class RobotStates {
     public static final Trigger JawsOut = new Trigger(() -> jaws.getState().isOut());
 
     // FORBAR
-    public static final Trigger ForbarHoldingCoral = Trigger.kFalse;
+    public static final Forbar forbar = Robot.getForbar();
+
+    public static final Trigger ForbarHoldingCoral =
+            new Trigger(() -> forbar.getState().isHoldingCoral());
     public static final Trigger ForbarReadyToDeploy = Trigger.kFalse;
 
     @Setter @Getter private static boolean alignedWithReefForDeployment;

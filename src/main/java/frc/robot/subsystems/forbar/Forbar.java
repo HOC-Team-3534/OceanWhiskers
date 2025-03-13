@@ -47,6 +47,9 @@ public class Forbar extends TalonSRXMechanism {
                 fieldToRobotCAD.transformBy(
                         GeomUtil.toTransform3d(new Translation3d(0.22, 0.0, 0.6525)));
 
+        Translation3d carriageToBottomOfCoral =
+                new Translation3d(Inches.of(1.625), Inches.zero(), Inches.of(-2.647));
+
         Angle shortPivotPitchOffset = Degrees.of(-16.23 - 90.0);
         Angle shortPivotPitchRange = Degrees.of(16.23 + 43.92);
 
@@ -123,6 +126,7 @@ public class Forbar extends TalonSRXMechanism {
     @Getter
     @Setter
     public class State {
+        boolean holdingCoral;
         Position position = Position.In;
         Pose3d currentOffset = new Pose3d();
         Timer currentPositionTimer = new Timer();
@@ -215,12 +219,24 @@ public class Forbar extends TalonSRXMechanism {
                                                     toEndOfLongPivotFromEndofShortPivot.getZ()),
                                     0.0));
 
+            var bottomOfCoral =
+                    carriageOffset
+                            .transformBy(GeomUtil.toTransform3d(0.0, Degrees.of(-90), 0.0))
+                            .transformBy(
+                                    GeomUtil.toTransform3d(
+                                            config.carriageToBottomOfCoral.rotateBy(
+                                                    new Rotation3d(
+                                                            Degrees.zero(),
+                                                            Degrees.of(90),
+                                                            Degrees.zero()))));
+
             return new ForbarComponentOffsets(
                     addElevatorOffset(shortPivotOffset),
                     addElevatorOffset(longPivotOffset),
                     addElevatorOffset(carriageOffset),
                     addElevatorOffset(endOfShortPivot),
-                    addElevatorOffset(new Pose3d(endOfLongPivot, Rotation3d.kZero)));
+                    addElevatorOffset(new Pose3d(endOfLongPivot, Rotation3d.kZero)),
+                    addElevatorOffset(bottomOfCoral));
         }
 
         private static Pose3d addElevatorOffset(Pose3d offset) {
@@ -235,7 +251,7 @@ public class Forbar extends TalonSRXMechanism {
     @RequiredArgsConstructor
     public static class ForbarComponentOffsets {
         final Pose3d shortPivot, longPivot, carriage;
-        final Pose3d endOfShortPivot, endOfLongPivot;
+        final Pose3d endOfShortPivot, endOfLongPivot, bottomOfCoral;
     }
 
     @Override

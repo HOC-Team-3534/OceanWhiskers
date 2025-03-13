@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Seconds;
 
 import dev.doglog.DogLogOptions;
@@ -18,6 +19,7 @@ import frc.hocLib.HocRobot;
 import frc.hocLib.Logging;
 import frc.hocLib.Rio;
 import frc.hocLib.util.CrashTracker;
+import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
 import frc.reefscape.FieldAndTags2025;
@@ -249,6 +251,23 @@ public class Robot extends HocRobot {
 
             Logging.log("EndOfLongPivot", forbarOffsets.getEndOfLongPivot());
             Logging.log("EndOfShortPivot", forbarOffsets.getEndOfShortPivot());
+
+            Logging.log(
+                    "RobotCoral",
+                    RobotStates.ForbarHoldingCoral.getAsBoolean()
+                            ? new Pose3d[] {
+                                new Pose3d(getSwerve().getPose())
+                                        .transformBy(
+                                                GeomUtil.toTransform3d(
+                                                        forbarOffsets
+                                                                .getBottomOfCoral()
+                                                                .transformBy(
+                                                                        GeomUtil.toTransform3d(
+                                                                                Inches.of(6.0),
+                                                                                0.0,
+                                                                                0.0))))
+                            }
+                            : new Pose3d[] {});
 
             Logging.log(
                     "Scoring/ScoredCoral",
