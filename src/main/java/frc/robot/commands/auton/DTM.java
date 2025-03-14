@@ -168,6 +168,10 @@ public class DTM {
                 .get();
     }
 
+    public Optional<Pose2d> finalGoalPoseInFrontOfClosestLoadingStation() {
+        return getClosestHumanPlayerStationID().flatMap(this::findGoalPoseInFrontOfTag);
+    }
+
     private Optional<Pose2d> findGoalPoseInFrontOfTag(int id) {
         return APRIL_TAG_FIELD_LAYOUT
                 .getTagPose(id)

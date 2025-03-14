@@ -31,10 +31,17 @@ import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
+import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.Robot;
+import frc.robot.commands.auton.DTM;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.ironmaple.simulation.IntakeSimulation;
+import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
 
 public class Forbar extends TalonSRXMechanism {
     public static class ForbarConfig extends TalonSRXMechanism.Config {
@@ -79,6 +86,8 @@ public class Forbar extends TalonSRXMechanism {
     private CANrange canRange;
     private CANrangeSimState canRangeSim;
 
+    @Getter private IntakeSimulation intakeSim = null;
+
     public Forbar(ForbarConfig config) {
         super(config);
         this.config = config;
@@ -103,10 +112,20 @@ public class Forbar extends TalonSRXMechanism {
             canRange.getConfigurator().apply(canRangeConfig);
 
             canRangeSim = canRange.getSimState();
+
+            canRangeSim.setDistance(Inches.of(24.0));
         }
 
         if (RobotBase.isSimulation()) {
             SmartDashboard.putBoolean("HoldingCoralOverride", false);
+
+            intakeSim =
+                    IntakeSimulation.InTheFrameIntake(
+                            "Coral",
+                            Robot.getSwerve().getMapleSimSwerveDrivetrain().mapleSimDrive,
+                            Inches.of(6.0),
+                            IntakeSide.FRONT,
+                            1);
         }
     }
 
@@ -127,19 +146,49 @@ public class Forbar extends TalonSRXMechanism {
     }
 
     boolean prevHoldingCoralOverride;
+    int prevIntakeSimCount;
+    Timer simTimeAlignedWithPickup = new Timer();
 
     @Override
     public void simulationPeriodic() {
+        Robot.getDtm()
+                .finalGoalPoseInFrontOfClosestLoadingStation()
+                .ifPresentOrElse(
+                        loadingStationPose -> {
+                            var relative =
+                                    loadingStationPose.relativeTo(Robot.getSwerve().getPose());
+
+                            if (relative.getMeasureX().isNear(Inches.zero(), Inches.of(2.0))
+                                    && relative.getMeasureY().isNear(Inches.zero(), Inches.of(24.0))
+                                    && Math.abs(relative.getRotation().getDegrees()) < 3.0) {
+
+                            } else {
+                                simTimeAlignedWithPickup.restart();
+                            }
+                        },
+                        simTimeAlignedWithPickup::restart);
+
+        if (simTimeAlignedWithPickup.hasElapsed(0.5) && !state.isHoldingCoral())
+            intakeSim.addGamePieceToIntake();
+
         var holdingCoralOverride = SmartDashboard.getBoolean("HoldingCoralOverride", false);
 
         if (holdingCoralOverride != prevHoldingCoralOverride) {
+            if (holdingCoralOverride) intakeSim.addGamePieceToIntake();
+            else intakeSim.obtainGamePieceFromIntake();
+            prevHoldingCoralOverride = holdingCoralOverride;
+        }
+
+        var intakeSimCount = intakeSim.getGamePiecesAmount();
+
+        if (intakeSimCount != prevIntakeSimCount) {
             if (isAttached()) {
                 canRangeSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-                canRangeSim.setDistance(holdingCoralOverride ? Inches.of(1.5) : Inches.of(12.0));
+                canRangeSim.setDistance(intakeSimCount > 0 ? Inches.of(1.5) : Inches.of(12.0));
             } else {
-                state.setHoldingCoral(holdingCoralOverride);
+                state.setHoldingCoral(intakeSimCount > 0);
             }
-            prevHoldingCoralOverride = holdingCoralOverride;
+            prevIntakeSimCount = intakeSimCount;
         }
     }
 
@@ -193,6 +242,8 @@ public class Forbar extends TalonSRXMechanism {
         Timer currentPositionTimer = new Timer();
         CachedValue<ForbarComponentOffsets> componentOffsets =
                 new CachedValue<>(() -> updateForbarComponentPositions(getPercentOutVsIn()));
+        CachedValue<Optional<Entry<ReefLevel, Pose3d>>> validScoringLocation =
+                new CachedValue<>(() -> updateValidScoringLocation());
 
         State() {
             currentPositionTimer.restart();
@@ -215,6 +266,10 @@ public class Forbar extends TalonSRXMechanism {
 
         public ForbarComponentOffsets getComponentOffsets() {
             return componentOffsets.get();
+        }
+
+        public Optional<Entry<ReefLevel, Pose3d>> getValidScoringLocation() {
+            return validScoringLocation.get();
         }
 
         public Distance getCANrangeDistance() {
@@ -242,6 +297,46 @@ public class Forbar extends TalonSRXMechanism {
                 case Out:
                     yield 1.0;
             };
+        }
+
+        Optional<Entry<ReefLevel, Pose3d>> updateValidScoringLocation() {
+            return DTM.getClosestReefBranch()
+                    .flatMap(
+                            branch -> {
+                                var bottomOfCoral =
+                                        new Pose3d(Robot.getSwerve().getPose())
+                                                .transformBy(
+                                                        GeomUtil.toTransform3d(
+                                                                getComponentOffsets()
+                                                                        .bottomOfCoral));
+
+                                Function<Pose3d, Distance> xyDistanceFromCoral =
+                                        (location) ->
+                                                Meters.of(
+                                                        location.getTranslation()
+                                                                .toTranslation2d()
+                                                                .minus(
+                                                                        bottomOfCoral
+                                                                                .getTranslation()
+                                                                                .toTranslation2d())
+                                                                .getNorm());
+
+                                return branch.getScoringLocations().entrySet().stream()
+                                        .filter(
+                                                (location) ->
+                                                        xyDistanceFromCoral
+                                                                        .apply(location.getValue())
+                                                                        .lt(Inches.of(2.0))
+                                                                && location.getValue()
+                                                                        .getMeasureZ()
+                                                                        .minus(
+                                                                                bottomOfCoral
+                                                                                        .getMeasureZ())
+                                                                        .isNear(
+                                                                                Inches.of(0.0),
+                                                                                Inches.of(6.0)))
+                                        .findFirst();
+                            });
         }
 
         ForbarComponentOffsets updateForbarComponentPositions(double percentOutVsIn) {

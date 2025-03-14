@@ -92,13 +92,17 @@ public class RobotStates {
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
+    public static final Trigger ForbarCloseToValidScoringLocation =
+            new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
+                    .debounce(0.25);
 
     @Setter @Getter private static boolean alignedWithReefForDeployment;
 
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment))
+                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment)
+                                        .or(ForbarCloseToValidScoringLocation))
                                 .or(Util.teleop));
     }
 
@@ -131,19 +135,19 @@ public class RobotStates {
 
     public static void setupStates() {
         driver.DTMToReefLeft_LT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         driver.DTMToReefRight_RT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         driver.DTMToHumanPlayerStation_B.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getState().Pose),
+                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
                         () -> !Robot.getElevator().getState().isClimbing())
                 .whileTrue(dtm.dtmToHumanPlayerStation());
 

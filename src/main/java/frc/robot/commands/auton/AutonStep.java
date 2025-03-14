@@ -1,5 +1,7 @@
 package frc.robot.commands.auton;
 
+import static edu.wpi.first.units.Units.Inches;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -7,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.ProxyCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
+import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.Util;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
@@ -32,7 +35,8 @@ public abstract class AutonStep {
         var path = Util.isRedAlliance() ? getPath().flipPath() : getPath();
         var points = path.getAllPathPoints();
         var lastPoint = points.get(points.size() - 1);
-        return new Pose2d(lastPoint.position, lastPoint.rotationTarget.rotation());
+        return new Pose2d(lastPoint.position, lastPoint.rotationTarget.rotation())
+                .transformBy(GeomUtil.toTransform2d(Inches.of(1.0), Inches.zero()));
     }
 
     public Command alignWithGoalPose() {
@@ -43,18 +47,18 @@ public abstract class AutonStep {
 
     public Command completeStep() {
         return Commands.deadline(
-                followPath()
-                        .asProxy()
-                        .andThen(
-                                Commands.parallel(
-                                        alignWithGoalPose().asProxy().until(this::isStepComplete)),
-                                new WaitUntilCommand(this::isStepComplete)),
-                Commands.startEnd(
-                        () -> setCurrentStep(Optional.of(this)),
-                        () -> setCurrentStep(Optional.empty())),
-                Commands.startEnd(
-                        () -> RobotStates.setDrivingAutonomously(true),
-                        () -> RobotStates.setDrivingAutonomously(false)));
+                        followPath()
+                                .asProxy()
+                                .andThen(
+                                        Commands.parallel(alignWithGoalPose().asProxy()),
+                                        new WaitUntilCommand(this::isStepComplete)),
+                        Commands.startEnd(
+                                () -> setCurrentStep(Optional.of(this)),
+                                () -> setCurrentStep(Optional.empty())),
+                        Commands.startEnd(
+                                () -> RobotStates.setDrivingAutonomously(true),
+                                () -> RobotStates.setDrivingAutonomously(false)))
+                .until(this::isStepComplete);
     }
 
     public boolean isDeployTimedOut() {
