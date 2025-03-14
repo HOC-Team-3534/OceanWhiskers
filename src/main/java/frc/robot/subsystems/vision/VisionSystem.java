@@ -152,7 +152,7 @@ public class VisionSystem extends HocSubsystem {
 
     @Override
     public void simulationPeriodic() {
-        visionSim.update(Robot.getSwerve().getState().Pose);
+        visionSim.update(Robot.getSwerve().getPose());
     }
 
     private Map<Integer, Pair<SwerveDrivePoseEstimator, Timer>> poseEstimatorMap = new HashMap<>();

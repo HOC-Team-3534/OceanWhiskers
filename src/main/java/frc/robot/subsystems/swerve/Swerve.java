@@ -1,9 +1,11 @@
 package frc.robot.subsystems.swerve;
 
 import static edu.wpi.first.units.Units.DegreesPerSecond;
+import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.InchesPerSecond;
 import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
+import static edu.wpi.first.units.Units.Pounds;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
@@ -23,12 +25,15 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotBase;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.sysid.SysIdRoutineLog;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -45,6 +50,7 @@ import frc.hocLib.swerve.Telemetry;
 import frc.hocLib.swerve.VisionMeasurementAdder;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.Util;
+import frc.robot.util.MapleSimSwerveDrivetrain;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -96,7 +102,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder>
                 CANcoder::new,
                 config.getDrivetrainConstants(),
                 100.0,
-                config.getSwerveModuleConstants());
+                MapleSimSwerveDrivetrain.regulateModuleConstantsForSimulation(
+                        config.getSwerveModuleConstants()));
         this.config = config;
 
         var pathPlannerConfig = loadRobotConfig();
@@ -123,6 +130,41 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder>
         logger = new Telemetry(config.getKSpeedAt12Volts().in(MetersPerSecond));
 
         registerTelemetry(logger::telemeterize);
+
+        if (RobotBase.isSimulation()) {
+            startSimThread();
+        }
+    }
+
+    private Notifier m_simNotifier = null;
+    @Getter private MapleSimSwerveDrivetrain mapleSimSwerveDrivetrain = null;
+
+    private void startSimThread() {
+        mapleSimSwerveDrivetrain =
+                new MapleSimSwerveDrivetrain(
+                        config.getSimLoopPeriod(),
+                        // TODO: modify the following constants according to your robot
+                        Pounds.of(115), // robot weight
+                        Inches.of(36), // bumper length
+                        Inches.of(36), // bumper width
+                        DCMotor.getFalcon500(1), // drive motor type
+                        DCMotor.getFalcon500(1), // steer motor type
+                        1.2, // wheel COF
+                        getModuleLocations(),
+                        getPigeon2(),
+                        getModules(),
+                        config.getSwerveModuleConstants());
+        /* Run simulation at a faster rate so PID gains behave more reasonably */
+        m_simNotifier = new Notifier(mapleSimSwerveDrivetrain::update);
+        m_simNotifier.startPeriodic(config.getSimLoopPeriod().in(Seconds));
+    }
+
+    @Override
+    public void resetPose(Pose2d pose) {
+        if (this.mapleSimSwerveDrivetrain != null)
+            mapleSimSwerveDrivetrain.mapleSimDrive.setSimulationWorldPose(pose);
+        Timer.delay(0.05); // Wait for simulation to update
+        super.resetPose(pose);
     }
 
     @Override
@@ -141,7 +183,7 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder>
 
     @Override
     public void simulationPeriodic() {
-        updateSimState(0.020, RobotController.getBatteryVoltage());
+        // updateSimState(0.020, RobotController.getBatteryVoltage());
     }
 
     Optional<RobotConfig> loadRobotConfig() {
@@ -162,6 +204,8 @@ public class Swerve extends SwerveDrivetrain<TalonFX, TalonFX, CANcoder>
 
     @Override
     public Pose2d getPose() {
+        if (RobotBase.isSimulation())
+            return mapleSimSwerveDrivetrain.mapleSimDrive.getSimulatedDriveTrainPose();
         return getState().Pose;
     }
 

@@ -24,6 +24,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -118,6 +119,13 @@ public class Auton {
 
         if (steps.size() == 0) return driveForward(config.getDriveForwardDistance());
 
+        if (RobotBase.isSimulation()) {
+            var firstPath = steps.get(0).getPath();
+            firstPath
+                    .getStartingHolonomicPose()
+                    .ifPresent((startingPose) -> Robot.getSwerve().resetPose(startingPose));
+        }
+
         return AutonStep.stepsToCommand(steps);
     }
 
@@ -149,6 +157,6 @@ public class Auton {
     }
 
     private static Pose2d getPose() {
-        return Robot.getSwerve().getState().Pose;
+        return Robot.getSwerve().getPose();
     }
 }

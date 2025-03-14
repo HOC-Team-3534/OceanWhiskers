@@ -10,6 +10,8 @@ import static edu.wpi.first.units.Units.Seconds;
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Timer;
@@ -22,6 +24,7 @@ import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
+import frc.reefscape.FieldAndTags2025;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.Auton.AutonConfig;
 import frc.robot.commands.auton.AutonStep;
@@ -49,6 +52,7 @@ import frc.robot.subsystems.vision.VisionSystem;
 import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
 import lombok.Getter;
+import org.ironmaple.simulation.SimulatedArena;
 
 public class Robot extends HocRobot {
     @Getter private static Config config;
@@ -171,6 +175,16 @@ public class Robot extends HocRobot {
             Logging.log("EndOfLongPivot", forbarOffsets.getEndOfLongPivot());
             Logging.log("EndOfShortPivot", forbarOffsets.getEndOfShortPivot());
 
+            getSwerve()
+                    .resetPose(
+                            new Pose2d(
+                                    new Translation2d(
+                                            FieldAndTags2025.FIELD_LENGTH
+                                                    .div(2)
+                                                    .minus(Inches.of(20)),
+                                            FieldAndTags2025.FIELD_WIDTH.div(2)),
+                                    Rotation2d.kZero));
+
             // Setup Default Commands for all subsystems
             setupDefaultCommands();
 
@@ -272,8 +286,6 @@ public class Robot extends HocRobot {
                             }
                             : new Pose3d[] {});
 
-            Logging.log("Scoring/ScoredCoral", getScoring().getCoralLocationsArray());
-
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {
             // intercept error and log it
@@ -297,6 +309,10 @@ public class Robot extends HocRobot {
     @Override
     public void autonomousInit() {
         clearCommandsAndButtons();
+        if (isSimulation()) {
+            SimulatedArena.getInstance().resetFieldForAuto();
+            getForbar().getIntakeSim().addGamePieceToIntake();
+        }
         auton.init();
     }
 

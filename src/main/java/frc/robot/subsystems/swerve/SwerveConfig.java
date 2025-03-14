@@ -7,6 +7,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.CANBus;
@@ -30,8 +31,10 @@ import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
 import edu.wpi.first.units.measure.MomentOfInertia;
+import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.units.measure.Voltage;
 import frc.hocLib.HocSubsystem;
+import java.util.List;
 import lombok.Getter;
 
 public class SwerveConfig extends HocSubsystem.Config {
@@ -171,7 +174,12 @@ public class SwerveConfig extends HocSubsystem.Config {
     @Getter private Distance kBackRightXPos, kBackRightYPos;
 
     //
-    @Getter private SwerveModuleConstants<?, ?, ?> FrontLeft, FrontRight, BackLeft, BackRight;
+    @Getter
+    private SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration>
+            FrontLeft,
+            FrontRight,
+            BackLeft,
+            BackRight;
 
     // Theoretical free speed (m/s) at 12 V applied output;
     // This needs to be tuned to your individual robot
@@ -180,13 +188,21 @@ public class SwerveConfig extends HocSubsystem.Config {
     @Getter private Distance kSwerveCircumference;
     @Getter private AngularVelocity kMaxAngularRate;
 
+    @Getter private Time simLoopPeriod = Seconds.of(0.01);
+
     public SwerveConfig() {
         super("Swerve");
         updateConfig();
     }
 
-    public SwerveModuleConstants<?, ?, ?>[] getSwerveModuleConstants() {
-        return new SwerveModuleConstants[] {FrontLeft, FrontRight, BackLeft, BackRight};
+    @SuppressWarnings("unchecked")
+    public SwerveModuleConstants<TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration>
+            [] getSwerveModuleConstants() {
+        var constants = List.of(FrontLeft, FrontRight, BackLeft, BackRight);
+        return (SwerveModuleConstants<
+                                TalonFXConfiguration, TalonFXConfiguration, CANcoderConfiguration>
+                        [])
+                constants.toArray(new SwerveModuleConstants<?, ?, ?>[constants.size()]);
     }
 
     public SwerveConfig configDriveGains(double ks, double kv, double ka) {
