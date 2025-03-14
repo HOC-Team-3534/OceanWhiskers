@@ -213,6 +213,26 @@ public class DTM {
                 .map(tag -> tag.ID);
     }
 
+    public static Optional<ReefBranch.Side> getClosestReefBranchSide() {
+        var tagId = getClosestReefID();
+
+        if (tagId.isEmpty()) return Optional.empty();
+
+        var tagPose = APRIL_TAG_FIELD_LAYOUT.getTagPose(tagId.get());
+
+        if (tagPose.isEmpty()) return Optional.empty();
+
+        var currentPose = Robot.getSwerve().getPose();
+
+        var tagToRobot = currentPose.relativeTo(tagPose.get().toPose2d());
+
+        return Optional.of(tagToRobot.getY() > 0 ? ReefBranch.Side.Right : ReefBranch.Side.Left);
+    }
+
+    public static Optional<ReefBranch> getClosestReefBranch() {
+        return getClosestReefBranchSide().flatMap(DTM::getClosestReefBranch);
+    }
+
     public static Optional<ReefBranch> getClosestReefBranch(ReefBranch.Side side) {
         return getClosestReefID()
                 .flatMap(ReefSide::getSide)

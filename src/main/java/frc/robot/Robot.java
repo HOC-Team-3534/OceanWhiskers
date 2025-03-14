@@ -22,8 +22,6 @@ import frc.hocLib.util.CrashTracker;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.TuningCommand;
-import frc.reefscape.FieldAndTags2025;
-import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.commands.auton.Auton;
 import frc.robot.commands.auton.Auton.AutonConfig;
 import frc.robot.commands.auton.AutonStep;
@@ -44,6 +42,7 @@ import frc.robot.subsystems.jaws.Jaws;
 import frc.robot.subsystems.jaws.Jaws.JawsConfig;
 import frc.robot.subsystems.lights.Lights;
 import frc.robot.subsystems.lights.Lights.LightsConfig;
+import frc.robot.subsystems.scoring.Scoring;
 import frc.robot.subsystems.swerve.Swerve;
 import frc.robot.subsystems.swerve.SwerveConfig;
 import frc.robot.subsystems.vision.VisionSystem;
@@ -87,6 +86,8 @@ public class Robot extends HocRobot {
 
     @Getter private static Auton auton;
     @Getter private static DTM dtm;
+
+    @Getter private static Scoring scoring;
 
     public Robot() {
         super();
@@ -140,6 +141,8 @@ public class Robot extends HocRobot {
             lights = new Lights(config.lights);
             auton = new Auton(config.auton);
             dtm = new DTM(config.dtm);
+
+            scoring = new Scoring();
 
             Logging.log(
                     "ZeroedComponentPoses",
@@ -269,13 +272,7 @@ public class Robot extends HocRobot {
                             }
                             : new Pose3d[] {});
 
-            Logging.log(
-                    "Scoring/ScoredCoral",
-                    new Pose3d[] {
-                        FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L3),
-                        FieldAndTags2025.ReefBranch.A.getScoredCoral(ReefLevel.L2),
-                        FieldAndTags2025.ReefBranch.D.getScoredCoral(ReefLevel.L4)
-                    });
+            Logging.log("Scoring/ScoredCoral", getScoring().getCoralLocationsArray());
 
             CommandScheduler.getInstance().run();
         } catch (Throwable t) {

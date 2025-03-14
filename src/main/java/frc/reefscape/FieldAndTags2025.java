@@ -72,6 +72,7 @@ public final class FieldAndTags2025 {
         L;
 
         @Getter ReefSide reefSide;
+        Map<ReefLevel, Pose3d> rawScoringLocations = new HashMap<>();
         Map<ReefLevel, Pose3d> scoringLocations = new HashMap<>();
 
         static {
@@ -100,7 +101,7 @@ public final class FieldAndTags2025 {
                                             level.pitch.in(Radians),
                                             groundScorePose.getRotation().getRadians()));
 
-                    branch.scoringLocations.put(level, branchPose);
+                    branch.rawScoringLocations.put(level, branchPose);
                 }
             }
         }
@@ -118,20 +119,33 @@ public final class FieldAndTags2025 {
             return ReefBranchBetweenBranches.div(2).times(getSide().equals(Side.Left) ? 1 : -1);
         }
 
+        public Map<ReefLevel, Pose3d> getScoringLocations() {
+            if (scoringLocations.size() != 0) return scoringLocations;
+
+            for (var raw : rawScoringLocations.entrySet()) {
+                var location = raw.getValue();
+                var flippedLocation2d =
+                        Util.applyIfRedAlliance(location.toPose2d(), FlippingUtil::flipFieldPose);
+                var allianceBasedPose =
+                        new Pose3d(flippedLocation2d)
+                                .transformBy(
+                                        new Transform3d(
+                                                0,
+                                                0,
+                                                location.getZ(),
+                                                new Rotation3d(
+                                                        location.getRotation().getX(),
+                                                        location.getRotation().getY(),
+                                                        0)));
+
+                scoringLocations.put(raw.getKey(), allianceBasedPose);
+            }
+
+            return scoringLocations;
+        }
+
         public Pose3d getScoringLocation(ReefLevel level) {
-            var location = scoringLocations.get(level);
-            var flippedLocation2d =
-                    Util.applyIfRedAlliance(location.toPose2d(), FlippingUtil::flipFieldPose);
-            return new Pose3d(flippedLocation2d)
-                    .transformBy(
-                            new Transform3d(
-                                    0,
-                                    0,
-                                    location.getZ(),
-                                    new Rotation3d(
-                                            location.getRotation().getX(),
-                                            location.getRotation().getY(),
-                                            0)));
+            return getScoringLocations().get(level);
         }
 
         public Pose3d getScoredCoral(ReefLevel level) {
