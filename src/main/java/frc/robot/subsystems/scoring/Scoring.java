@@ -13,6 +13,7 @@ import frc.robot.RobotStates;
 import lombok.Getter;
 import lombok.Setter;
 import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.seasonspecific.reefscape2025.Arena2025Reefscape;
 import org.ironmaple.simulation.seasonspecific.reefscape2025.ReefscapeCoralOnFly;
 
 public class Scoring extends HocSubsystem {
@@ -21,6 +22,14 @@ public class Scoring extends HocSubsystem {
 
     public Scoring() {
         super(new Config("Scoring"));
+        SimulatedArena.overrideInstance(
+                new Arena2025Reefscape() {
+                    @Override
+                    public void placeGamePiecesOnField() {
+                        super.placeGamePiecesOnField();
+                    }
+                });
+
         SimulatedArena.getInstance().resetFieldForAuto();
     }
 
