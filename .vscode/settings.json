@@ -42,7 +42,8 @@
     ".SysId": true,
     ".roboRIOTeamNumberSetter": true,
     "logs": true,
-    "gradle.properties": true
+    "gradle.properties": true,
+    ".gitattributes": true
   },
   "java.test.config": [
     {

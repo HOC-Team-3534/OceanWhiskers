@@ -365,6 +365,7 @@ public class Robot extends HocRobot {
         if (isSimulation()) {
             SimulatedArena.getInstance().resetFieldForAuto();
             getForbar().getIntakeSim().addGamePieceToIntake();
+            getForbar().getState().setHoldingCoral(true);
         }
         auton.init();
     }
