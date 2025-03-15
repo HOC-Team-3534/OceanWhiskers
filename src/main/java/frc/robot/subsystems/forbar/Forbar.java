@@ -8,7 +8,9 @@ import static edu.wpi.first.units.Units.Seconds;
 import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.CANrangeConfiguration;
+import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.hardware.CANrange;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.UpdateModeValue;
 import com.ctre.phoenix6.sim.CANrangeSimState;
 import edu.wpi.first.math.MathUtil;
@@ -28,7 +30,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.hocLib.Logging;
-import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.hocLib.mechanism.TalonFXMechanism;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
 import frc.reefscape.FieldAndTags2025.ReefLevel;
@@ -43,8 +45,8 @@ import lombok.Setter;
 import org.ironmaple.simulation.IntakeSimulation;
 import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
 
-public class Forbar extends TalonSRXMechanism {
-    public static class ForbarConfig extends TalonSRXMechanism.Config {
+public class Forbar extends TalonFXMechanism {
+    public static class ForbarConfig extends TalonFXMechanism.Config {
         @Getter private Voltage outVoltage = Volts.of(12.0); // out is positive
         @Getter private Voltage holdOutVoltage = Volts.of(4.0); // out is positive
         @Getter private Voltage inVoltage = Volts.of(-7.0); // in is negative
@@ -76,6 +78,11 @@ public class Forbar extends TalonSRXMechanism {
 
         public ForbarConfig() {
             super("Forbar", 16);
+            var motorOutputConfigs = new MotorOutputConfigs();
+
+            motorOutputConfigs.Inverted = InvertedValue.Clockwise_Positive;
+
+            setMotorOutputConfigs(motorOutputConfigs);
         }
     }
 
