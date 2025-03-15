@@ -6,14 +6,6 @@ import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecondPerSecond;
-import static frc.robot.commands.auton.AutonChoosers.getFirstBranch;
-import static frc.robot.commands.auton.AutonChoosers.getFirstBranchLevel;
-import static frc.robot.commands.auton.AutonChoosers.getSecondBranch;
-import static frc.robot.commands.auton.AutonChoosers.getSecondBranchLevel;
-import static frc.robot.commands.auton.AutonChoosers.getThirdBranch;
-import static frc.robot.commands.auton.AutonChoosers.getThirdBranchLevel;
-import static frc.robot.commands.auton.AutonChoosers.lockChoosers;
-import static frc.robot.commands.auton.AutonChoosers.unlockChoosers;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
@@ -81,52 +73,70 @@ public class Auton {
     // TODO: test and tune gui paths
 
     public void init() {
-        m_autonomousCommand = getAutonomousCommand();
+        loadAutonomousCommand();
+        if (RobotBase.isSimulation()) resetPoseToStartOfPath();
 
         if (m_autonomousCommand != null) {
             m_autonomousCommand.schedule();
         }
     }
 
-    Command getAutonomousCommand() {
-        lockChoosers();
+    AutonChoosers.Choices choices = null;
+    List<AutonStep> steps = new ArrayList<>();
 
-        List<AutonStep> steps = new ArrayList<>();
+    public void loadAutonomousCommand() {
+        var newChoices = AutonChoosers.Choices.load();
 
-        var firstBranch = getFirstBranch();
+        if (newChoices == null || (choices != null && newChoices.equals(choices))) return;
 
-        if (firstBranch != null) {
+        choices = newChoices;
 
-            steps.add(new DeployStep(true, getFirstBranchLevel(), firstBranch));
+        if (choices.getFirstBranch() != null) {
 
-            var secondBranch = getSecondBranch();
+            steps.add(
+                    new DeployStep(
+                            true,
+                            choices.getFirstBranchLevel(),
+                            choices.getFirstBranch(),
+                            choices.getSideOfField()));
 
-            if (secondBranch != null) {
+            if (choices.getSecondBranch() != null) {
 
-                steps.add(new PickupStep(firstBranch));
-                steps.add(new DeployStep(false, getSecondBranchLevel(), secondBranch));
+                steps.add(new PickupStep(choices.getFirstBranch(), choices.getSideOfField()));
+                steps.add(
+                        new DeployStep(
+                                false,
+                                choices.getSecondBranchLevel(),
+                                choices.getSecondBranch(),
+                                choices.getSideOfField()));
 
-                var thirdBranch = getThirdBranch();
-
-                if (thirdBranch != null) {
-                    steps.add(new PickupStep(secondBranch));
-                    steps.add(new DeployStep(false, getThirdBranchLevel(), thirdBranch));
+                if (choices.getThirdBranch() != null) {
+                    steps.add(new PickupStep(choices.getSecondBranch(), choices.getSideOfField()));
+                    steps.add(
+                            new DeployStep(
+                                    false,
+                                    choices.getThirdBranchLevel(),
+                                    choices.getThirdBranch(),
+                                    choices.getSideOfField()));
                 }
             }
         }
 
-        unlockChoosers();
+        if (steps.size() == 0) {
+            m_autonomousCommand = driveForward(config.getDriveForwardDistance());
+            return;
+        }
 
-        if (steps.size() == 0) return driveForward(config.getDriveForwardDistance());
+        m_autonomousCommand = AutonStep.stepsToCommand(steps);
+    }
 
-        if (RobotBase.isSimulation()) {
+    void resetPoseToStartOfPath() {
+        if (steps.size() > 0) {
             var firstPath = steps.get(0).getPath();
             firstPath
                     .getStartingHolonomicPose()
                     .ifPresent((startingPose) -> Robot.getSwerve().resetPose(startingPose));
         }
-
-        return AutonStep.stepsToCommand(steps);
     }
 
     // Drive forward

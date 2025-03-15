@@ -351,10 +351,18 @@ public class Robot extends HocRobot {
     public void disabledInit() {
         resetCommandsAndButtons();
         super.disabledInit();
+        loadAutonomousTimer.restart();
     }
 
+    Timer loadAutonomousTimer = new Timer();
+
     @Override
-    public void disabledPeriodic() {}
+    public void disabledPeriodic() {
+        if (loadAutonomousTimer.hasElapsed(0.5)) {
+            getAuton().loadAutonomousCommand();
+            loadAutonomousTimer.restart();
+        }
+    }
 
     @Override
     public void disabledExit() {}

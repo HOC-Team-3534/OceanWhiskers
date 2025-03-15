@@ -5,6 +5,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.hocLib.util.CachedSendableChooser;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.reefscape.FieldAndTags2025.SideOfField;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.With;
 
 public class AutonChoosers {
 
@@ -87,51 +93,62 @@ public class AutonChoosers {
         chooser.addOption("2", 2);
     }
 
-    public static void lockChoosers() {
-        sideOfFieldChooser.lock();
-        firstBranchChooser.lock();
-        secondBranchChooser.lock();
-        thirdBranchChooser.lock();
-        firstBranchLevelChooser.lock();
-        secondBranchLevelChooser.lock();
-        thirdBranchLevelChooser.lock();
-    }
+    @Getter
+    @Setter
+    @With
+    @NonNull
+    @RequiredArgsConstructor
+    @AllArgsConstructor
+    public static class Choices {
+        SideOfField sideOfField;
+        ReefBranch firstBranch, secondBranch, thirdBranch;
+        int firstBranchLevel, secondBranchLevel, thirdBranchLevel;
 
-    public static void unlockChoosers() {
-        sideOfFieldChooser.unlock();
-        firstBranchChooser.unlock();
-        secondBranchChooser.unlock();
-        thirdBranchChooser.unlock();
-        firstBranchLevelChooser.unlock();
-        secondBranchLevelChooser.unlock();
-        thirdBranchLevelChooser.unlock();
-    }
+        public static Choices load() {
+            var sideOfField = sideOfFieldChooser.getSelected();
 
-    public static boolean isLeftSideOfFieldSelected() {
-        return sideOfFieldChooser.getSelected().equals(SideOfField.Left);
-    }
+            var firstBranch = firstBranchChooser.getSelected();
 
-    public static ReefBranch getFirstBranch() {
-        return firstBranchChooser.getSelected();
-    }
+            var secondBranch = secondBranchChooser.getSelected();
 
-    public static ReefBranch getSecondBranch() {
-        return secondBranchChooser.getSelected();
-    }
+            var thirdBranch = thirdBranchChooser.getSelected();
 
-    public static ReefBranch getThirdBranch() {
-        return thirdBranchChooser.getSelected();
-    }
+            var firstBranchLevel = firstBranchLevelChooser.getSelected();
+            var secondBranchLevel = secondBranchLevelChooser.getSelected();
+            var thirdBranchLevel = thirdBranchLevelChooser.getSelected();
 
-    public static int getFirstBranchLevel() {
-        return firstBranchLevelChooser.getSelected();
-    }
+            if (sideOfField == null
+                    || firstBranch == null
+                    || secondBranch == null
+                    || thirdBranch == null) return null;
 
-    public static int getSecondBranchLevel() {
-        return secondBranchLevelChooser.getSelected();
-    }
+            return new Choices(
+                    sideOfField,
+                    firstBranch,
+                    secondBranch,
+                    thirdBranch,
+                    firstBranchLevel,
+                    secondBranchLevel,
+                    thirdBranchLevel);
+        }
 
-    public static int getThirdBranchLevel() {
-        return thirdBranchLevelChooser.getSelected();
+        public boolean isLeftSideOfField() {
+            return sideOfField.equals(SideOfField.Left);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Choices) {
+                var typedObj = (Choices) obj;
+                return this.sideOfField.equals(typedObj.sideOfField)
+                        && this.firstBranch.equals(typedObj.firstBranch)
+                        && this.firstBranchLevel == typedObj.firstBranchLevel
+                        && this.secondBranch.equals(typedObj.secondBranch)
+                        && this.secondBranchLevel == typedObj.secondBranchLevel
+                        && this.thirdBranch.equals(typedObj.thirdBranch)
+                        && this.thirdBranchLevel == typedObj.thirdBranchLevel;
+            }
+            return false;
+        }
     }
 }
