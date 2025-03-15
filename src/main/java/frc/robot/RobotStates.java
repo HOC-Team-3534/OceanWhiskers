@@ -106,6 +106,7 @@ public class RobotStates {
                                 .or(Util.teleop));
     }
 
+    public static final Trigger GoToL1Coral = codriver.GoToL1Coral_A;
     public static final Trigger GoToL2Coral = codriver.GoToL2Coral_B.or(isAutonLevel(2));
     public static final Trigger GoToL3Coral = codriver.GoToL3Coral_X.or(isAutonLevel(3));
     public static final Trigger GoToL4Coral = codriver.GoToL4Coral_Y.or(isAutonLevel(4));

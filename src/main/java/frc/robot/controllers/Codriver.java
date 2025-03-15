@@ -13,6 +13,7 @@ public class Codriver extends Gamepad {
 
     public final Trigger UseSysIdOverManual = Trigger.kFalse;
 
+    public final Trigger GoToL1Coral_A = A.and(noFn, teleop);
     public final Trigger GoToL2Coral_B = B.and(noFn, teleop);
     public final Trigger GoToL3Coral_X = X.and(noFn, teleop);
     public final Trigger GoToL4Coral_Y = Y.and(noFn, teleop);
