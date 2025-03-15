@@ -39,6 +39,8 @@ import frc.robot.controllers.Codriver;
 import frc.robot.controllers.Codriver.CodriverConfig;
 import frc.robot.controllers.Driver;
 import frc.robot.controllers.Driver.DriverConfig;
+import frc.robot.subsystems.door.Door;
+import frc.robot.subsystems.door.Door.DoorConfig;
 import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.elevator.Elevator.ElevatorConfig;
 import frc.robot.subsystems.forbar.Forbar;
@@ -68,6 +70,7 @@ public class Robot extends HocRobot {
         public JawsConfig jaws = new JawsConfig();
 
         public ForbarConfig forbar = new ForbarConfig();
+        public DoorConfig door = new DoorConfig();
 
         public AutonConfig auton = new AutonConfig();
         public DTMConfig dtm = new DTMConfig();
@@ -89,6 +92,8 @@ public class Robot extends HocRobot {
     @Getter private static Lights lights;
 
     @Getter private static Forbar forbar;
+
+    @Getter private static Door door;
 
     @Getter private static Auton auton;
     @Getter private static DTM dtm;
@@ -142,6 +147,8 @@ public class Robot extends HocRobot {
             jaws = new Jaws(config.jaws);
             Timer.delay(canInitDelay);
             forbar = new Forbar(config.forbar);
+            Timer.delay(canInitDelay);
+            door = new Door(config.door);
             Timer.delay(canInitDelay);
             visionSystem = new VisionSystem(config.vision);
             lights = new Lights(config.lights);
