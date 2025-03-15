@@ -11,6 +11,7 @@ import dev.doglog.DogLog;
 import frc.hocLib.camera.PhotonCameraPlus;
 import frc.hocLib.camera.StdDevCategory;
 import frc.hocLib.mechanism.Mechanism;
+import frc.hocLib.mechanism.TalonFXMechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
 import frc.robot.subsystems.forbar.Forbar;
@@ -70,6 +71,6 @@ public class Logging extends DogLog {
         log(key + "/CANrange Distance", forbar.getState().getCANrangeDistance().in(Meters));
         log(key + "/CANrange Detected Object", forbar.getState().isCANrangeIsDetected());
 
-        log(key, (TalonSRXMechanism) forbar);
+        log(key, (TalonFXMechanism) forbar);
     }
 }
