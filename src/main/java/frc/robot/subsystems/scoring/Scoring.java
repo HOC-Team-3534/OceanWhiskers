@@ -29,11 +29,11 @@ public class Scoring extends HocSubsystem {
         //             }
         //         });
 
-        SimulatedArena.getInstance().resetFieldForAuto();
+        if (RobotBase.isSimulation()) SimulatedArena.getInstance().resetFieldForAuto();
     }
 
     @Override
-    public void periodic() {
+    public void simulationPeriodic() {
         Logging.log(
                 "Scoring/CoralGamePieces",
                 SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
@@ -59,39 +59,45 @@ public class Scoring extends HocSubsystem {
                                                 .getComponentOffsets()
                                                 .getBottomOfCoral();
 
-                                SimulatedArena.getInstance()
-                                        .addGamePieceProjectile(
-                                                new ReefscapeCoralOnFly(
-                                                        // Obtain robot position
-                                                        // from drive simulation
-                                                        Robot.getSwerve()
-                                                                .getPose()
-                                                                .getTranslation(),
-                                                        // The scoring mechanism
-                                                        // is installed at
-                                                        // (0.46, 0) (meters) on
-                                                        // the
-                                                        // robot
-                                                        bottomOfCoral
-                                                                .getTranslation()
-                                                                .toTranslation2d(),
-                                                        // Obtain robot speed
-                                                        // from drive simulation
-                                                        Robot.getSwerve().getFieldRelativeSpeeds(),
-                                                        // Obtain robot facing
-                                                        // from drive simulation
-                                                        Robot.getSwerve().getPose().getRotation(),
-                                                        // The height at which
-                                                        // the coral is ejected
-                                                        bottomOfCoral.getMeasureZ(),
-                                                        // The initial speed of
-                                                        // the coral
-                                                        MetersPerSecond.of(0),
-                                                        // The coral is ejected
-                                                        // at a 35-degree slope
-                                                        validLocation.getKey().equals(ReefLevel.L4)
-                                                                ? Degrees.of(-90)
-                                                                : Degrees.of(-35)));
+                                if (RobotBase.isSimulation())
+                                    SimulatedArena.getInstance()
+                                            .addGamePieceProjectile(
+                                                    new ReefscapeCoralOnFly(
+                                                            // Obtain robot position
+                                                            // from drive simulation
+                                                            Robot.getSwerve()
+                                                                    .getPose()
+                                                                    .getTranslation(),
+                                                            // The scoring mechanism
+                                                            // is installed at
+                                                            // (0.46, 0) (meters) on
+                                                            // the
+                                                            // robot
+                                                            bottomOfCoral
+                                                                    .getTranslation()
+                                                                    .toTranslation2d(),
+                                                            // Obtain robot speed
+                                                            // from drive simulation
+                                                            Robot.getSwerve()
+                                                                    .getFieldRelativeSpeeds(),
+                                                            // Obtain robot facing
+                                                            // from drive simulation
+                                                            Robot.getSwerve()
+                                                                    .getPose()
+                                                                    .getRotation(),
+                                                            // The height at which
+                                                            // the coral is ejected
+                                                            bottomOfCoral.getMeasureZ(),
+                                                            // The initial speed of
+                                                            // the coral
+                                                            MetersPerSecond.of(0),
+                                                            // The coral is ejected
+                                                            // at a 35-degree slope
+                                                            validLocation
+                                                                            .getKey()
+                                                                            .equals(ReefLevel.L4)
+                                                                    ? Degrees.of(-90)
+                                                                    : Degrees.of(-35)));
                             });
         }
     }
