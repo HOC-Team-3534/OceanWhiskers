@@ -22,12 +22,13 @@ public class Door extends TalonSRXMechanism {
         Time timeInAndOut = Seconds.of(.5);
 
         public DoorConfig() {
-            super("Door", 20);
+            super("Door", 18);
         }
     }
 
     private DoorConfig config;
-    @Getter private State state = new State();
+    @Getter
+    private State state = new State();
 
     public Door(DoorConfig config) {
         super(config);
@@ -45,8 +46,8 @@ public class Door extends TalonSRXMechanism {
 
     protected Command out() {
         return startRun(
-                        () -> state.setPosition(Position.GoingOut),
-                        () -> setVoltageOut(config.getOutVoltage()))
+                () -> state.setPosition(Position.GoingOut),
+                () -> setVoltageOut(config.getOutVoltage()))
                 .until(state::isInStateLongEnough)
                 .andThen(
                         runOnce(
@@ -58,8 +59,8 @@ public class Door extends TalonSRXMechanism {
 
     protected Command in() {
         return startRun(
-                        () -> state.setPosition(Position.GoingIn),
-                        () -> setVoltageOut(config.getInVoltage()))
+                () -> state.setPosition(Position.GoingIn),
+                () -> setVoltageOut(config.getInVoltage()))
                 .until(state::isInStateLongEnough)
                 .andThen(runOnce(() -> state.setPosition(Position.In)));
     }
