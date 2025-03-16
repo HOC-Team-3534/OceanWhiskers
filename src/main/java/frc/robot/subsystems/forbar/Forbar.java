@@ -47,8 +47,8 @@ import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
 
 public class Forbar extends TalonFXMechanism {
     public static class ForbarConfig extends TalonFXMechanism.Config {
-        @Getter private Voltage outVoltage = Volts.of(6.0); // out is positive
-        @Getter private Voltage holdOutVoltage = Volts.of(2.0); // out is positive
+        @Getter private Voltage outVoltage = Volts.of(3.0); // out is positive
+        @Getter private Voltage holdOutVoltage = Volts.of(1.25); // out is positive
         @Getter private Voltage inVoltage = Volts.of(-3.0); // in is negative
         @Getter private Power spikeThreshold = outVoltage.times(Amps.of(10.0));
 
@@ -100,8 +100,6 @@ public class Forbar extends TalonFXMechanism {
         this.config = config;
 
         if (isAttached()) {
-            motor.setInverted(false);
-
             canRange = new CANrange(19);
 
             var canRangeConfig = new CANrangeConfiguration();
