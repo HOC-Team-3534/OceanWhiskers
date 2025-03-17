@@ -27,6 +27,7 @@ public class Driver extends Gamepad {
 
     public final Trigger DTMToReefLeft_LT = leftTrigger.and(noFn, teleop);
     public final Trigger DTMToReefRight_RT = rightTrigger.and(noFn, teleop);
+    public final Trigger DTMToReefCenter_A = A.and(noFn, teleop);
     public final Trigger DTMToHumanPlayerStation_B = B.and(noFn, teleop);
 
     public static class DriverConfig extends Config {
