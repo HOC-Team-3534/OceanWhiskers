@@ -56,7 +56,6 @@ import frc.robot.subsystems.vision.VisionSystem;
 import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
 import lombok.Getter;
-import org.ironmaple.simulation.SimulatedArena;
 
 public class Robot extends HocRobot {
     @Getter private static Config config;
@@ -384,7 +383,7 @@ public class Robot extends HocRobot {
     public void autonomousInit() {
         clearCommandsAndButtons();
         if (isSimulation()) {
-            SimulatedArena.getInstance().resetFieldForAuto();
+            getScoring().resetFieldForAuto();
             getForbar().getIntakeSim().addGamePieceToIntake();
             getForbar().getState().setHoldingCoral(true);
         }
