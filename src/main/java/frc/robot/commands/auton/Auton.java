@@ -89,6 +89,8 @@ public class Auton {
 
         if (newChoices == null || (choices != null && newChoices.equals(choices))) return;
 
+        steps.clear();
+
         choices = newChoices;
 
         if (choices.getFirstBranch() != null) {
