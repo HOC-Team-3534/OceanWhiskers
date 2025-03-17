@@ -85,7 +85,7 @@ public class Elevator extends TalonFXMechanism {
             setMMConfigs(
                     new MotionMagicConfigs()
                             // theoretical max of 66.5 rot of motor per second
-                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(37.0))
+                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(60.0))
                             // recalc says acceleration can be 99 rot per s^2
                             .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80.0))
                             .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(2000)));
