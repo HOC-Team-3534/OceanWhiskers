@@ -2,6 +2,7 @@ package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -149,6 +150,22 @@ public class RobotStates {
     public static final Trigger DTMReefCenter = driver.DTMToReefCenter_A.and(CanDTM);
     public static final Trigger DTMHumanPlayerStation =
             driver.DTMToHumanPlayerStation_B.and(CanDTM);
+
+    private static boolean isAlignedForPickup(Pose2d loadingStationPose) {
+        Pose2d relative = loadingStationPose.relativeTo(Robot.getSwerve().getPose());
+        boolean xAligned = relative.getMeasureX().isNear(Inches.zero(), Inches.of(2.0));
+        boolean yAligned = relative.getMeasureY().isNear(Inches.zero(), Inches.of(24.0));
+        boolean rotationAligned = Math.abs(relative.getRotation().getDegrees()) < 3.0;
+        return xAligned && yAligned && rotationAligned;
+    }
+
+    public static final Trigger AlignedForPickup =
+            new Trigger(
+                    () ->
+                            Robot.getDtm()
+                                    .finalGoalPoseInFrontOfClosestLoadingStation()
+                                    .map(RobotStates::isAlignedForPickup)
+                                    .orElse(false));
 
     public static void setupStates() {
         DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
