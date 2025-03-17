@@ -16,9 +16,9 @@ public class Door extends TalonSRXMechanism {
     @Getter
     public static class DoorConfig extends Config {
         // TODO tune values for opening and closing door
-        Voltage outVoltage = Volts.of(1);
-        Voltage holdInVoltage = Volts.of(0);
-        Voltage inVoltage = Volts.of(-1);
+        Voltage outVoltage = Volts.of(4);
+        Voltage holdInVoltage = Volts.of(-1);
+        Voltage inVoltage = Volts.of(-4);
         Time timeInAndOut = Seconds.of(.5);
 
         public DoorConfig() {
@@ -27,8 +27,7 @@ public class Door extends TalonSRXMechanism {
     }
 
     private DoorConfig config;
-    @Getter
-    private State state = new State();
+    @Getter private State state = new State();
 
     public Door(DoorConfig config) {
         super(config);
@@ -46,8 +45,8 @@ public class Door extends TalonSRXMechanism {
 
     protected Command out() {
         return startRun(
-                () -> state.setPosition(Position.GoingOut),
-                () -> setVoltageOut(config.getOutVoltage()))
+                        () -> state.setPosition(Position.GoingOut),
+                        () -> setVoltageOut(config.getOutVoltage()))
                 .until(state::isInStateLongEnough)
                 .andThen(
                         runOnce(
@@ -59,8 +58,8 @@ public class Door extends TalonSRXMechanism {
 
     protected Command in() {
         return startRun(
-                () -> state.setPosition(Position.GoingIn),
-                () -> setVoltageOut(config.getInVoltage()))
+                        () -> state.setPosition(Position.GoingIn),
+                        () -> setVoltageOut(config.getInVoltage()))
                 .until(state::isInStateLongEnough)
                 .andThen(runOnce(() -> state.setPosition(Position.In)));
     }

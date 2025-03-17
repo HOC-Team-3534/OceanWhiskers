@@ -16,8 +16,10 @@ public class DoorStates {
 
         var DoorIn = new Trigger(() -> door.getState().isIn());
 
-        ForbarOut.and(GoToL1Coral.not()).onTrue(door.zero());
-        ForbarOut.and(GoToL1Coral).onTrue(door.out());
+        // ForbarOut.and(GoToL1Coral.not()).onTrue(door.zero());
+        // ForbarOut.and(GoToL1Coral).onTrue(door.out());
+
+        ForbarOut.debounce(0.15).onTrue(door.out());
         DoorIn.onTrue(door.holdIn());
         DoorIn.not().and(ForbarIn).onTrue(door.in());
     }

@@ -46,10 +46,13 @@ import org.ironmaple.simulation.IntakeSimulation;
 import org.ironmaple.simulation.IntakeSimulation.IntakeSide;
 
 public class Forbar extends TalonFXMechanism {
+    @Getter
     public static class ForbarConfig extends TalonFXMechanism.Config {
-        @Getter private Voltage outVoltage = Volts.of(3.0); // out is positive
-        @Getter private Voltage holdOutVoltage = Volts.of(1.25); // out is positive
-        @Getter private Voltage inVoltage = Volts.of(-3.0); // in is negative
+        Voltage outVoltage = Volts.of(1.75); // out is positive
+        Voltage holdOutVoltage = Volts.of(0.25); // out is positive
+        Voltage inWithoutVoltage = Volts.of(-1.5); // in is negative
+        Voltage inWithVoltage = Volts.of(-1.75); // in is negative
+
         @Getter private Power spikeThreshold = outVoltage.times(Amps.of(10.0));
 
         Pose3d fieldToRobotCAD = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
@@ -74,7 +77,7 @@ public class Forbar extends TalonFXMechanism {
         Distance longPivotLength = Inches.of(10.5);
         Distance backPlatePivotSeparation = Inches.of(3.01);
 
-        @Getter private Time timeFromInToOut = Seconds.of(0.25);
+        @Getter private Time timeFromInToOut = Seconds.of(0.15);
 
         public ForbarConfig() {
             super("Forbar", 16);
@@ -83,6 +86,11 @@ public class Forbar extends TalonFXMechanism {
             motorOutputConfigs.Inverted = InvertedValue.Clockwise_Positive;
 
             setMotorOutputConfigs(motorOutputConfigs);
+
+            getTalonConfig().CurrentLimits.SupplyCurrentLimit = 40;
+            getTalonConfig().CurrentLimits.SupplyCurrentLowerLimit = 20;
+            getTalonConfig().CurrentLimits.SupplyCurrentLowerTime = 0.1;
+            getTalonConfig().CurrentLimits.StatorCurrentLimit = 60;
         }
     }
 
@@ -218,7 +226,11 @@ public class Forbar extends TalonFXMechanism {
                 .andThen(
                         startRun(
                                         () -> state.setPosition(Position.GoingIn),
-                                        () -> setVoltageOut(config.getInVoltage()))
+                                        () ->
+                                                setVoltageOut(
+                                                        state.isHoldingCoral()
+                                                                ? config.getInWithVoltage()
+                                                                : config.getInWithoutVoltage()))
                                 .until(this::isPowerSpikeExceeded),
                         runOnce(() -> state.setPosition(Position.In)));
     }
