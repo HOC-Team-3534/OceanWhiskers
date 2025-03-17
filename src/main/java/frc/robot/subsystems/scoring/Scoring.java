@@ -36,14 +36,23 @@ public class Scoring extends HocSubsystem {
 
     public Scoring() {
         super(new Config("Scoring"));
-        // SimulatedArena.overrideInstance(
-        //         new Arena2025Reefscape() {
-        //             @Override
-        //             public void placeGamePiecesOnField() {
-        //                 super.placeGamePiecesOnField();
-        //             }
-        //         });
 
+        resetFieldForAuto();
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        Logging.log(
+                "Scoring/CoralGamePieces",
+                SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
+        Logging.log(
+                "Scoring/AlgaeGamePieces",
+                SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
+
+        Logging.log("Scoring/Reef Algae", reefAlgae.toArray(new Pose3d[reefAlgae.size()]));
+    }
+
+    public void resetFieldForAuto() {
         if (RobotBase.isSimulation()) SimulatedArena.getInstance().resetFieldForAuto();
 
         var centerY = FieldAndTags2025.FIELD_WIDTH.div(2);
@@ -92,19 +101,8 @@ public class Scoring extends HocSubsystem {
                         algaeL2Z,
                         Rotation3d.kZero);
 
+        reefAlgae.clear();
         reefAlgae.addAll(List.of(abAlgae, cdAlgae, efAlgae, ghAlgae, ijAlgae, klAlgae));
-    }
-
-    @Override
-    public void simulationPeriodic() {
-        Logging.log(
-                "Scoring/CoralGamePieces",
-                SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
-        Logging.log(
-                "Scoring/AlgaeGamePieces",
-                SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
-
-        Logging.log("Scoring/Reef Algae", reefAlgae.toArray(new Pose3d[reefAlgae.size()]));
     }
 
     void checkForScoredCoral() {
@@ -168,11 +166,14 @@ public class Scoring extends HocSubsystem {
     }
 
     void checkForRemoveAlgae() {
+        var lengthOfAlgaeArm = Inches.of(11);
+        var radiusOfAlgae = Units.inchesToMeters(8.0);
+
         var algaeWheelPosition =
                 Robot.getJaws()
                         .getState()
                         .getComponentOffset()
-                        .transformBy(GeomUtil.toTransform3d(Inches.of(11), 0.0, 0.0))
+                        .transformBy(GeomUtil.toTransform3d(lengthOfAlgaeArm, 0.0, 0.0))
                         .getTranslation();
         var algaeWheelPositionOnField =
                 new Pose3d(Robot.getSwerve().getPose())
@@ -180,8 +181,7 @@ public class Scoring extends HocSubsystem {
                         .getTranslation();
         for (int i = 0; i < reefAlgae.size(); i++) {
             var algaePosition = reefAlgae.get(i).getTranslation();
-            if (algaePosition.minus(algaeWheelPositionOnField).getNorm()
-                    > Units.inchesToMeters(8.0)) continue;
+            if (algaePosition.minus(algaeWheelPositionOnField).getNorm() > radiusOfAlgae) continue;
 
             reefAlgae.remove(i);
 
@@ -189,32 +189,15 @@ public class Scoring extends HocSubsystem {
                 SimulatedArena.getInstance()
                         .addGamePieceProjectile(
                                 new ReefscapeAlgaeOnFly(
-                                        // Obtain robot position
-                                        // from drive simulation
                                         algaePosition.toTranslation2d(),
-                                        // The scoring mechanism
-                                        // is installed at
-                                        // (0.46, 0) (meters) on
-                                        // the
-                                        // robot
                                         new Translation2d(),
-                                        // Obtain robot speed
-                                        // from drive simulation
                                         new ChassisSpeeds(),
-                                        // Obtain robot facing
-                                        // from drive simulation
                                         algaePosition
                                                 .toTranslation2d()
                                                 .minus(FieldAndTags2025.CenterOfBlueReef)
                                                 .getAngle(),
-                                        // The height at which
-                                        // the coral is ejected
                                         algaePosition.getMeasureZ(),
-                                        // The initial speed of
-                                        // the coral
                                         MetersPerSecond.of(1),
-                                        // The coral is ejected
-                                        // at a 35-degree slope
                                         Degrees.of(0)));
         }
     }
