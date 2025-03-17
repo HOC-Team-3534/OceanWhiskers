@@ -35,6 +35,7 @@ import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
 import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 import frc.robot.commands.auton.DTM;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -164,22 +165,7 @@ public class Forbar extends TalonFXMechanism {
 
     @Override
     public void simulationPeriodic() {
-        Robot.getDtm()
-                .finalGoalPoseInFrontOfClosestLoadingStation()
-                .ifPresentOrElse(
-                        loadingStationPose -> {
-                            var relative =
-                                    loadingStationPose.relativeTo(Robot.getSwerve().getPose());
-
-                            if (relative.getMeasureX().isNear(Inches.zero(), Inches.of(2.0))
-                                    && relative.getMeasureY().isNear(Inches.zero(), Inches.of(24.0))
-                                    && Math.abs(relative.getRotation().getDegrees()) < 3.0) {
-
-                            } else {
-                                simTimeAlignedWithPickup.restart();
-                            }
-                        },
-                        simTimeAlignedWithPickup::restart);
+        if (!RobotStates.AlignedForPickup.getAsBoolean()) simTimeAlignedWithPickup.restart();
 
         if (simTimeAlignedWithPickup.hasElapsed(0.5) && !state.isHoldingCoral())
             intakeSim.addGamePieceToIntake();
