@@ -67,7 +67,7 @@ public class DriveToPose<
             new LoggedTunableNumber("DriveToPose/FFMaxRadius");
 
     static {
-        drivekP.initDefault(RobotBase.isReal() ? 0.8 : 13.0);
+        drivekP.initDefault(RobotBase.isReal() ? 1.3 : 15.0);
         drivekD.initDefault(0.0);
         thetakP.initDefault(4.0);
         thetakD.initDefault(0.0);
