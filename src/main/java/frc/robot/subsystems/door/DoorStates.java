@@ -14,7 +14,7 @@ public class DoorStates {
     static Trigger DoorIn = new Trigger(() -> door.getState().isIn());
 
     static Trigger AttemptingToPickup = AlignedForPickup.and(ForbarHoldingCoral.not());
-    static Trigger ScoringCoral = ForbarOut.debounce(0.15);
+    static Trigger ScoringCoral = ForbarOut.debounce(0.15).or(GoToL1Coral);
 
     public static void setupDefaultCommand() {
         door.setDefaultCommand(
@@ -28,6 +28,6 @@ public class DoorStates {
 
     public static void setupBindings() {
         ScoringCoral.onTrue(door.out());
-        DoorIn.not().and(ForbarIn, AttemptingToPickup.not()).onTrue(door.in());
+        DoorIn.not().and(AttemptingToPickup.not(), ScoringCoral.not()).onTrue(door.in());
     }
 }
