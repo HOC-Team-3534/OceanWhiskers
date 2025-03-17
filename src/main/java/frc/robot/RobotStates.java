@@ -1,5 +1,9 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.dashboard.Elastic;
@@ -134,23 +138,31 @@ public class RobotStates {
     public static final Trigger DrivingAutonomously =
             new Trigger(RobotStates::isDrivingAutonomously);
 
+    public static final Trigger CanDTM =
+            new Trigger(
+                    () ->
+                            FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose())
+                                    && !Robot.getElevator().getState().isClimbing());
+
+    public static final Trigger DTMReefLeft = driver.DTMToReefLeft_LT.and(CanDTM);
+    public static final Trigger DTMReefRight = driver.DTMToReefRight_RT.and(CanDTM);
+    public static final Trigger DTMReefCenter = driver.DTMToReefCenter_A.and(CanDTM);
+    public static final Trigger DTMHumanPlayerStation =
+            driver.DTMToHumanPlayerStation_B.and(CanDTM);
+
     public static void setupStates() {
-        driver.DTMToReefLeft_LT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
+        DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
-        driver.DTMToReefRight_RT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
+        DTMReefRight.whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
-        driver.DTMToHumanPlayerStation_B.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToHumanPlayerStation());
+        DTMReefCenter.whileTrue(
+                        dtm.dtmToReef(
+                                new Transform2d(Inches.of(-1), Inches.zero(), new Rotation2d())))
+                .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
+                .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
+        DTMHumanPlayerStation.whileTrue(dtm.dtmToHumanPlayerStation());
 
         Util.autoMode.onTrue(Commands.runOnce(() -> selectTab("Autonomous")));
         Util.teleop.onTrue(Commands.runOnce(() -> selectTab("Teleop")));
