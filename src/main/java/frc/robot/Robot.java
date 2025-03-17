@@ -384,6 +384,7 @@ public class Robot extends HocRobot {
         clearCommandsAndButtons();
         if (isSimulation()) {
             getScoring().resetFieldForAuto();
+            getScoring().resetFieldForAuto();
             getForbar().getIntakeSim().addGamePieceToIntake();
             getForbar().getState().setHoldingCoral(true);
         }
