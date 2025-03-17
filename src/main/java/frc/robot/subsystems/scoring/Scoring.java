@@ -4,6 +4,7 @@ import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.MetersPerSecondPerSecond;
 
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -89,7 +90,16 @@ public class Scoring extends HocSubsystem {
         if (Robot.getForbar().getState().isHoldingCoral()) {
 
             if (RobotStates.GoToL1Coral.getAsBoolean()) {
-                launchCoral(null);
+                var impactSpeeds = impactDetector.getImpactChassisSpeeds();
+                var impactDirection =
+                        new Translation2d(
+                                        impactSpeeds.vxMetersPerSecond,
+                                        impactSpeeds.vyMetersPerSecond)
+                                .getAngle()
+                                .getMeasure();
+                if (impactDirection
+                        .minus(Robot.getSwerve().getPose().getRotation().getMeasure())
+                        .isNear(Degrees.zero(), Degrees.of(60))) launchCoral(null);
             } else {
 
                 Robot.getForbar()
