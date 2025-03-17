@@ -278,6 +278,12 @@ public class Robot extends HocRobot {
             Logging.log("EndOfLongPivot", forbarOffsets.getEndOfLongPivot());
             Logging.log("EndOfShortPivot", forbarOffsets.getEndOfShortPivot());
 
+            Logging.log(
+                    "RobotState",
+                    isDisabled()
+                            ? "Disabled"
+                            : isAutonomous() ? "Autonomous" : isTeleop() ? "Teleop" : "Test");
+
             var centerY = FieldAndTags2025.FIELD_WIDTH.div(2);
             var centerX = FieldAndTags2025.FIELD_LENGTH.div(2);
 
