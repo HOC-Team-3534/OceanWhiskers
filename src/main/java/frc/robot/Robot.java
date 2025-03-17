@@ -5,14 +5,12 @@
 package frc.robot;
 
 import static edu.wpi.first.units.Units.Inches;
-import static edu.wpi.first.units.Units.Millimeters;
 import static edu.wpi.first.units.Units.Seconds;
 
 import dev.doglog.DogLogOptions;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -56,7 +54,6 @@ import frc.robot.subsystems.vision.VisionSystem;
 import frc.robot.subsystems.vision.VisionSystem.VisionConfig;
 import java.util.Optional;
 import lombok.Getter;
-import org.ironmaple.simulation.SimulatedArena;
 
 public class Robot extends HocRobot {
     @Getter private static Config config;
@@ -284,57 +281,6 @@ public class Robot extends HocRobot {
                             ? "Disabled"
                             : isAutonomous() ? "Autonomous" : isTeleop() ? "Teleop" : "Test");
 
-            var centerY = FieldAndTags2025.FIELD_WIDTH.div(2);
-            var centerX = FieldAndTags2025.FIELD_LENGTH.div(2);
-
-            var abXFromCenterX = Millimeters.of(4964.12);
-            var cdklFromCenterX = Millimeters.of(4624.48);
-            var efijFromCenterX = Millimeters.of(3945.1);
-            var ghFromCenterX = Millimeters.of(3605.45);
-
-            var cdefijklFromCenterY = Millimeters.of(588.288);
-
-            var algaeL3Z = Millimeters.of(1313.18);
-            var algaeL2Z = Millimeters.of(909.32);
-
-            var abAlgae =
-                    new Pose3d(centerX.minus(abXFromCenterX), centerY, algaeL3Z, Rotation3d.kZero);
-
-            var cdAlgae =
-                    new Pose3d(
-                            centerX.minus(cdklFromCenterX),
-                            centerY.minus(cdefijklFromCenterY),
-                            algaeL2Z,
-                            Rotation3d.kZero);
-
-            var efAlgae =
-                    new Pose3d(
-                            centerX.minus(efijFromCenterX),
-                            centerY.minus(cdefijklFromCenterY),
-                            algaeL3Z,
-                            Rotation3d.kZero);
-
-            var ghAlgae =
-                    new Pose3d(centerX.minus(ghFromCenterX), centerY, algaeL2Z, Rotation3d.kZero);
-
-            var ijAlgae =
-                    new Pose3d(
-                            centerX.minus(efijFromCenterX),
-                            centerY.plus(cdefijklFromCenterY),
-                            algaeL3Z,
-                            Rotation3d.kZero);
-
-            var klAlgae =
-                    new Pose3d(
-                            centerX.minus(cdklFromCenterX),
-                            centerY.plus(cdefijklFromCenterY),
-                            algaeL2Z,
-                            Rotation3d.kZero);
-
-            Logging.log(
-                    "Reef Algae",
-                    new Pose3d[] {abAlgae, cdAlgae, efAlgae, ghAlgae, ijAlgae, klAlgae});
-
             Logging.log(
                     "RobotCoral",
                     RobotStates.ForbarHoldingCoral.getAsBoolean()
@@ -384,7 +330,8 @@ public class Robot extends HocRobot {
     public void autonomousInit() {
         clearCommandsAndButtons();
         if (isSimulation()) {
-            SimulatedArena.getInstance().resetFieldForAuto();
+            getScoring().resetFieldForAuto();
+            getScoring().resetFieldForAuto();
             getForbar().getIntakeSim().addGamePieceToIntake();
             getForbar().getState().setHoldingCoral(true);
         }
