@@ -2,11 +2,16 @@ package frc.robot.commands.auton;
 
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.path.PathPlannerPath;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.reefscape.FieldAndTags2025.SideOfField;
+import frc.robot.Robot;
 import frc.robot.RobotStates;
 import frc.robot.commands.DriveToPose;
 import frc.robot.commands.FollowPathThenDriveToPose;
@@ -27,12 +32,24 @@ public class PickupStep extends AutonStep {
         else return paths.getToRight();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Command followPath() {
         return new FollowPathThenDriveToPose<Swerve>(
                 (FollowPathCommand) super.followPath(),
-                (DriveToPose<Swerve>) super.alignWithGoalPose());
+                (DriveToPose<Swerve>)
+                        new DriveToPose<Swerve>(
+                                Robot.getSwerve(),
+                                () ->
+                                        new Pose2d(
+                                                        Robot.getSwerve()
+                                                                .getPose()
+                                                                .getTranslation(),
+                                                        getGoalPose().getRotation())
+                                                .transformBy(
+                                                        new Transform2d(
+                                                                Units.feetToMeters(1.0),
+                                                                0.0,
+                                                                Rotation2d.kZero))));
     }
 
     @Override

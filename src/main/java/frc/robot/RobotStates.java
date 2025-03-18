@@ -106,7 +106,8 @@ public class RobotStates {
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment))
+                        (ForbarReadyToDeploy.debounce(0.25)
+                                        .and(RobotStates::isAlignedWithReefForDeployment))
                                 .or(Util.teleop));
     }
 

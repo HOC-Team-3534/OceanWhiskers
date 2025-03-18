@@ -74,7 +74,7 @@ public class DriveToPose<
 
     static {
         drivekP.initDefault(RobotBase.isReal() ? 0.8 : 15.0);
-        driveClosekP.initDefault(10.0);
+        driveClosekP.initDefault(1.3);
         drivekPDistance.initDefault(Units.inchesToMeters(12.0));
         driveClosekPDistance.initDefault(Units.inchesToMeters(6.0));
         drivekD.initDefault(0.0);
