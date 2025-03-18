@@ -330,7 +330,7 @@ public class Forbar extends TalonFXMechanism {
                                                 (location) ->
                                                         xyDistanceFromCoral
                                                                         .apply(location.getValue())
-                                                                        .lt(Inches.of(2.0))
+                                                                        .lt(Inches.of(1.0))
                                                                 && location.getValue()
                                                                         .getMeasureZ()
                                                                         .minus(

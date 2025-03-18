@@ -41,6 +41,12 @@ public class DriveToPose<
         extends Command {
     private static final LoggedTunableNumber drivekP =
             new LoggedTunableNumber("DriveToPose/DrivekP");
+    private static final LoggedTunableNumber driveClosekP =
+            new LoggedTunableNumber("DriveToPose/DriveClosekP");
+    private static final LoggedTunableNumber drivekPDistance =
+            new LoggedTunableNumber("DriveToPose/DrivekPDistance");
+    private static final LoggedTunableNumber driveClosekPDistance =
+            new LoggedTunableNumber("DriveToPose/DriveClosekPDistance");
     private static final LoggedTunableNumber drivekD =
             new LoggedTunableNumber("DriveToPose/DrivekD");
     private static final LoggedTunableNumber thetakP =
@@ -67,12 +73,15 @@ public class DriveToPose<
             new LoggedTunableNumber("DriveToPose/FFMaxRadius");
 
     static {
-        drivekP.initDefault(RobotBase.isReal() ? 1.3 : 15.0);
+        drivekP.initDefault(RobotBase.isReal() ? 0.8 : 15.0);
+        driveClosekP.initDefault(10.0);
+        drivekPDistance.initDefault(Units.inchesToMeters(12.0));
+        driveClosekPDistance.initDefault(Units.inchesToMeters(6.0));
         drivekD.initDefault(0.0);
         thetakP.initDefault(4.0);
         thetakD.initDefault(0.0);
         driveMaxVelocity.initDefault(3.8);
-        driveMaxAcceleration.initDefault(3.0);
+        driveMaxAcceleration.initDefault(1.5);
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
         thetaMaxAcceleration.initDefault(8.0);
         driveTolerance.initDefault(0.01);
@@ -190,6 +199,17 @@ public class DriveToPose<
     public void execute() {
         running = true;
 
+        var percentNormalVsClose =
+                (MathUtil.clamp(driveErrorAbs, driveClosekPDistance.get(), drivekPDistance.get())
+                                - driveClosekPDistance.get())
+                        / (drivekPDistance.get() - driveClosekPDistance.get());
+
+        var updatedDriveKp =
+                drivekP.get() * percentNormalVsClose
+                        + driveClosekP.get() * (1 - percentNormalVsClose);
+
+        driveController.setP(updatedDriveKp);
+
         // Update from tunable numbers
         if (driveMaxVelocity.hasChanged(hashCode())
                 || driveMaxVelocitySlow.hasChanged(hashCode())
@@ -202,7 +222,6 @@ public class DriveToPose<
                 || drivekD.hasChanged(hashCode())
                 || thetakP.hasChanged(hashCode())
                 || thetakD.hasChanged(hashCode())) {
-            driveController.setP(drivekP.get());
             driveController.setD(drivekD.get());
             driveController.setConstraints(
                     new TrapezoidProfile.Constraints(

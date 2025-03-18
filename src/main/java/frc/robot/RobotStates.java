@@ -99,15 +99,14 @@ public class RobotStates {
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
     public static final Trigger ForbarCloseToValidScoringLocation =
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
-                    .debounce(0.25);
+                    .debounce(1.0);
 
     @Setter @Getter private static boolean alignedWithReefForDeployment;
 
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment)
-                                        .or(ForbarCloseToValidScoringLocation))
+                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment))
                                 .or(Util.teleop));
     }
 

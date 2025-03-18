@@ -54,7 +54,7 @@ public class DTM {
                         RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
 
-        Distance offsetFromWallToCenter = Inches.of(17.5);
+        Distance offsetFromWallToCenter = Inches.of(18);
 
         // TODO: tune skip and alignment values
         Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
