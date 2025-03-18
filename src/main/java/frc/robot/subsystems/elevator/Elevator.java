@@ -56,8 +56,8 @@ public class Elevator extends TalonFXMechanism {
         Distance L4 = Inches.of(53.5);
         Distance Jaws = Inches.of(18.0);
         Distance PreClimb = Inches.of(15);
-        Distance L2Algae = Inches.of(23.0);
-        Distance L3Algae = Inches.of(40.0);
+        Distance L2Algae = Inches.of(21.0);
+        Distance L3Algae = Inches.of(38.0);
 
         boolean motionMagicEnabled;
 

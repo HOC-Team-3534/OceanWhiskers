@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.UpdateModeValue;
@@ -51,6 +52,7 @@ public class Forbar extends TalonFXMechanism {
     public static class ForbarConfig extends TalonFXMechanism.Config {
         Voltage outVoltage = Volts.of(1.75); // out is positive
         Voltage holdOutVoltage = Volts.of(0.25); // out is positive
+        // Voltage holdInVoltage = Volts.of(-0.2); // in is negative
         Voltage inWithoutVoltage = Volts.of(-1.5); // in is negative
         Voltage inWithVoltage = Volts.of(-1.75); // in is negative
 
@@ -197,11 +199,10 @@ public class Forbar extends TalonFXMechanism {
 
     protected Command zeroOrHold() {
         return run(
-                () ->
-                        setVoltageOut(
-                                state.getPosition().equals(Position.Out)
-                                        ? config.getHoldOutVoltage()
-                                        : Volts.zero()));
+                () -> {
+                    if (isAttached() && state.isIn()) motor.setControl(new StaticBrake());
+                    else setVoltageOut(state.isOut() ? config.getHoldOutVoltage() : Volts.zero());
+                });
     }
 
     // TODO: validate open and close happen when theya re supposed to and not when elevator is not

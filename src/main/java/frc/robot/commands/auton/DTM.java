@@ -54,13 +54,11 @@ public class DTM {
                         RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
 
-        Distance offsetFromWallToCenter = Inches.of(16.5);
+        Distance offsetFromWallToCenter = Inches.of(17.5);
 
         // TODO: tune skip and alignment values
         Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(10.0);
-
-        Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
 
         Pose2d dtmAlignTolerance =
                 new Pose2d(Inches.of(3.25), Inches.of(1.0), Rotation2d.fromDegrees(4.0));

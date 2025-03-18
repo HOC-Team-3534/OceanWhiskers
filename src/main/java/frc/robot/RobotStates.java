@@ -176,7 +176,7 @@ public class RobotStates {
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         DTMReefCenter.whileTrue(
                         dtm.dtmToReef(
-                                new Transform2d(Inches.of(-1), Inches.zero(), new Rotation2d())))
+                                new Transform2d(Inches.of(-10), Inches.zero(), new Rotation2d())))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
         DTMHumanPlayerStation.whileTrue(dtm.dtmToHumanPlayerStation());
