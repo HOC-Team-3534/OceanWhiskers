@@ -69,7 +69,8 @@ public class PickupStep extends AutonStep {
 
     @Override
     public boolean isStepComplete() {
-        return RobotStates.ForbarHoldingCoral.getAsBoolean() || leavePickupTimeout.hasElapsed(2.0);
+        return RobotStates.ForbarHoldingCoralDebounce.getAsBoolean()
+                || leavePickupTimeout.hasElapsed(2.0);
     }
 
     @Override

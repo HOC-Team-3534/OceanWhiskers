@@ -93,7 +93,7 @@ public class RobotStates {
 
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
-    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.0);
+    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.1);
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
     public static final Trigger ForbarCloseToValidScoringLocation =
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())

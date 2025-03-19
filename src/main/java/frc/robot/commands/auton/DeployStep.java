@@ -48,7 +48,7 @@ public class DeployStep extends AutonStep {
 
     @Override
     public boolean isStepComplete() {
-        return !RobotStates.ForbarHoldingCoralDebounce.getAsBoolean();
+        return !RobotStates.ForbarHoldingCoral.getAsBoolean();
     }
 
     @Override
