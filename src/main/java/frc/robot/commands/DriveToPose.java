@@ -22,6 +22,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.Logging;
 import frc.hocLib.swerve.DriveSpeedsConsumer;
 import frc.hocLib.swerve.FieldRelativeSpeedsSupplier;
@@ -74,17 +75,17 @@ public class DriveToPose<
 
     static {
         drivekP.initDefault(RobotBase.isReal() ? 0.8 : 15.0);
-        driveClosekP.initDefault(1.3);
+        driveClosekP.initDefault(1.0);
         drivekPDistance.initDefault(Units.inchesToMeters(12.0));
         driveClosekPDistance.initDefault(Units.inchesToMeters(6.0));
         drivekD.initDefault(0.0);
         thetakP.initDefault(4.0);
         thetakD.initDefault(0.0);
         driveMaxVelocity.initDefault(3.8);
-        driveMaxAcceleration.initDefault(1.5);
+        driveMaxAcceleration.initDefault(3.0);
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
         thetaMaxAcceleration.initDefault(8.0);
-        driveTolerance.initDefault(0.01);
+        driveTolerance.initDefault(0.015);
         thetaTolerance.initDefault(Units.degreesToRadians(1.0));
         ffMinRadius.initDefault(0.05);
         ffMaxRadius.initDefault(0.1);
@@ -342,9 +343,11 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
+    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.25);
+
     @Override
     public boolean isFinished() {
-        return atGoal();
+        return atGoal() && AtGoalTrigger.getAsBoolean();
     }
 
     /** Checks if the robot pose is within the allowed drive and theta tolerances. */
