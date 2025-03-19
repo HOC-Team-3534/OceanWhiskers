@@ -51,10 +51,7 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
-    public static final Trigger SwerveMoving =
-            new Trigger(() -> swerve.isMoving())
-                    .debounce(0.5)
-                    .onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
+    public static final Trigger SwerveMoving = new Trigger(() -> swerve.isMoving()).debounce(0.5);
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
@@ -107,7 +104,9 @@ public class RobotStates {
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment)
+                        (ForbarReadyToDeploy.and(
+                                                RobotStates::isAlignedWithReefForDeployment,
+                                                () -> Robot.getDoor().getState().isOut())
                                         .debounce(0.25))
                                 .or(Util.teleop));
     }
@@ -209,6 +208,8 @@ public class RobotStates {
 
         Util.autoMode.onTrue(Commands.runOnce(() -> selectTab("Autonomous")));
         Util.teleop.onTrue(Commands.runOnce(() -> selectTab("Teleop")));
+
+        SwerveMoving.onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
     }
 
     static void selectTab(String tabName) {

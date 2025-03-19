@@ -4,7 +4,9 @@ import static frc.robot.RobotStates.*;
 
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
+import frc.hocLib.util.Util;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 
 public class DoorStates {
     private static Door door = Robot.getDoor();
@@ -15,7 +17,12 @@ public class DoorStates {
     static Trigger DoorOut = new Trigger(() -> door.getState().isOut());
 
     static Trigger AttemptingToPickup = CanRangeCloseToWall;
-    static Trigger ScoringCoral = ForbarOut.debounce(0.15).or(GoToL1Coral);
+    static Trigger ScoringCoral =
+            ForbarOut.debounce(0.15)
+                    .and(
+                            Util.teleop.or(
+                                    Util.autoMode.and(RobotStates::isAlignedWithReefForDeployment)))
+                    .or(GoToL1Coral);
 
     public static void setupDefaultCommand() {
         door.setDefaultCommand(
