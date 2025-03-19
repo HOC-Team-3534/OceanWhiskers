@@ -259,6 +259,9 @@ public class Robot extends HocRobot {
                             .map((step) -> step.getGoalPose())
                             .orElse(new Pose2d()));
 
+            Logging.log(
+                    "Aligned With Reef For Deploy", RobotStates.isAlignedWithReefForDeployment());
+
             var forbarOffsets = getForbar().getState().getComponentOffsets();
 
             Logging.log(

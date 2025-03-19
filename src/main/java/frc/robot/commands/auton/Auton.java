@@ -42,7 +42,7 @@ public class Auton {
                                         .map(step -> step.isLevel(level))
                                         .orElse(false))
                 .and(
-                        RobotStates.ForbarHoldingCoral.not(),
+                        RobotStates.ForbarHoldingCoral,
                         WAIT_TO_RAISE_TO_LEVEL
                                 .and(RobotStates::isAlignedWithReefForDeployment)
                                 .or(WAIT_TO_RAISE_TO_LEVEL.not().and(autonDeploy)));

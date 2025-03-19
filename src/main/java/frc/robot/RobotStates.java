@@ -93,7 +93,7 @@ public class RobotStates {
 
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
-    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.5);
+    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.0);
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
     public static final Trigger ForbarCloseToValidScoringLocation =
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
@@ -104,10 +104,9 @@ public class RobotStates {
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(
-                                                RobotStates::isAlignedWithReefForDeployment,
-                                                () -> Robot.getDoor().getState().isOut())
-                                        .debounce(0.25))
+                        ForbarReadyToDeploy.and(
+                                        RobotStates::isAlignedWithReefForDeployment,
+                                        () -> Robot.getDoor().getState().isOut())
                                 .or(Util.teleop, ForbarHoldingCoral.not()));
     }
 

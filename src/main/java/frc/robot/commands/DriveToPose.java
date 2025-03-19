@@ -75,7 +75,7 @@ public class DriveToPose<
 
     static {
         drivekP.initDefault(RobotBase.isReal() ? 0.8 : 15.0);
-        driveClosekP.initDefault(3.0);
+        driveClosekP.initDefault(4.0);
         drivekPDistance.initDefault(Units.inchesToMeters(12.0));
         driveClosekPDistance.initDefault(Units.inchesToMeters(3.0));
         drivekD.initDefault(0.0);
@@ -345,7 +345,7 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
-    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.25);
+    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.1);
 
     @Override
     public boolean isFinished() {
