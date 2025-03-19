@@ -345,7 +345,7 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
-    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.1);
+    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.25);
 
     @Override
     public boolean isFinished() {

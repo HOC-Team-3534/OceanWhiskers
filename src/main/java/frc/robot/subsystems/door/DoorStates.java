@@ -16,7 +16,7 @@ public class DoorStates {
     static Trigger DoorIn = new Trigger(() -> door.getState().isIn());
     static Trigger DoorOut = new Trigger(() -> door.getState().isOut());
 
-    static Trigger AttemptingToPickup = CanRangeCloseToWall;
+    static Trigger AttemptingToPickup = CanRangeCloseToWall.debounce(0.15);
     static Trigger ScoringCoral =
             ForbarOut.debounce(0.15)
                     .and(
