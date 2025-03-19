@@ -96,6 +96,7 @@ public class RobotStates {
 
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
+    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.5);
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
     public static final Trigger ForbarCloseToValidScoringLocation =
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
@@ -106,8 +107,8 @@ public class RobotStates {
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.debounce(0.25)
-                                        .and(RobotStates::isAlignedWithReefForDeployment))
+                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment)
+                                        .debounce(0.25))
                                 .or(Util.teleop));
     }
 
@@ -166,6 +167,31 @@ public class RobotStates {
                                     .finalGoalPoseInFrontOfClosestLoadingStation()
                                     .map(RobotStates::isAlignedForPickup)
                                     .orElse(false));
+    public static final Trigger NotCloseToReef =
+            new Trigger(
+                    () -> {
+                        var robot = Robot.getSwerve().getPose();
+                        var closestReef = Robot.getDtm().findGoalPoseInFrontOfClosestReefSide();
+
+                        if (closestReef.isEmpty()) return false;
+                        var distance =
+                                robot.getTranslation()
+                                        .getDistance(closestReef.get().getTranslation());
+
+                        return distance > 1;
+                    });
+    public static final Trigger CanRangeCloseToWall =
+            new Trigger(
+                            () ->
+                                    Robot.getForbar()
+                                                    .getState()
+                                                    .getCANrangeDistance()
+                                                    .lt(Inches.of(13))
+                                            && Robot.getForbar()
+                                                    .getState()
+                                                    .getCANrangeStdDev()
+                                                    .lt(Inches.of(0.35)))
+                    .and(ForbarHoldingCoral.not(), NotCloseToReef);
 
     public static void setupStates() {
         DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))

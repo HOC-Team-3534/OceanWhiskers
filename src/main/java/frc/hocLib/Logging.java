@@ -70,6 +70,7 @@ public class Logging extends DogLog {
 
     public static void log(String key, Forbar forbar) {
         log(key + "/CANrange Distance", forbar.getState().getCANrangeDistance().in(Meters));
+        log(key + "/CANrange Distance StdDev", forbar.getState().getCANrangeStdDev().in(Meters));
         log(key + "/CANrange Detected Object", forbar.getState().isCANrangeIsDetected());
 
         log(key, (TalonFXMechanism) forbar);

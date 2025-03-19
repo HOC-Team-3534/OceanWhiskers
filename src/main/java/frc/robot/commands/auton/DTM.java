@@ -176,7 +176,12 @@ public class DTM {
                                 .orElseGet(() -> Robot.getSwerve().getPose()));
     }
 
-    private Pose2d findGoalPoseInFrontOfReefSide(ReefSide reefSide) {
+    public Optional<Pose2d> findGoalPoseInFrontOfClosestReefSide() {
+
+        return getClosestReefSide().map(this::findGoalPoseInFrontOfReefSide);
+    }
+
+    public Pose2d findGoalPoseInFrontOfReefSide(ReefSide reefSide) {
         return findGoalPoseInFrontOfTag(reefSide.getTagId()).get();
     }
 

@@ -1,5 +1,7 @@
 package frc.robot.commands.auton;
 
+import static edu.wpi.first.units.Units.Feet;
+
 import com.pathplanner.lib.commands.FollowPathCommand;
 import com.pathplanner.lib.path.PathPlannerPath;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -35,21 +37,34 @@ public class PickupStep extends AutonStep {
     @Override
     public Command followPath() {
         return new FollowPathThenDriveToPose<Swerve>(
-                (FollowPathCommand) super.followPath(),
-                (DriveToPose<Swerve>)
-                        new DriveToPose<Swerve>(
-                                Robot.getSwerve(),
-                                () ->
-                                        new Pose2d(
-                                                        Robot.getSwerve()
-                                                                .getPose()
-                                                                .getTranslation(),
-                                                        getGoalPose().getRotation())
-                                                .transformBy(
-                                                        new Transform2d(
-                                                                Units.feetToMeters(1.0),
-                                                                0.0,
-                                                                Rotation2d.kZero))));
+                        (FollowPathCommand) super.followPath(),
+                        (DriveToPose<Swerve>)
+                                new DriveToPose<Swerve>(
+                                        Robot.getSwerve(),
+                                        () -> {
+                                            var robot =
+                                                    Robot.getSwerve().getPose().getTranslation();
+                                            var goal = getGoalPose();
+
+                                            var closeToWall =
+                                                    goal.relativeTo(
+                                                                    new Pose2d(
+                                                                            robot,
+                                                                            goal.getRotation()))
+                                                            .getMeasureX()
+                                                            .isNear(Feet.zero(), Feet.of(1));
+
+                                            var baseXY =
+                                                    closeToWall ? robot : goal.getTranslation();
+
+                                            return new Pose2d(baseXY, goal.getRotation())
+                                                    .transformBy(
+                                                            new Transform2d(
+                                                                    Units.feetToMeters(1.0),
+                                                                    0.0,
+                                                                    Rotation2d.kZero));
+                                        }))
+                .until(RobotStates.CanRangeCloseToWall);
     }
 
     @Override

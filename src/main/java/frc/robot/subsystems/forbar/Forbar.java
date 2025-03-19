@@ -115,14 +115,14 @@ public class Forbar extends TalonFXMechanism {
 
             var canRangeConfig = new CANrangeConfiguration();
 
-            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(4.0).in(Meters);
-            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(2.0).in(Meters);
+            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(6.0).in(Meters);
+            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(1.0).in(Meters);
 
             canRangeConfig.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
 
-            canRangeConfig.FovParams.FOVCenterX = 0.0;
+            canRangeConfig.FovParams.FOVCenterX = 11.8;
             canRangeConfig.FovParams.FOVCenterY = 0.0;
-            canRangeConfig.FovParams.FOVRangeX = 27.0;
+            canRangeConfig.FovParams.FOVRangeX = 6.75;
             canRangeConfig.FovParams.FOVRangeY = 27.0;
 
             canRange.getConfigurator().apply(canRangeConfig);
@@ -279,6 +279,12 @@ public class Forbar extends TalonFXMechanism {
         public Distance getCANrangeDistance() {
             return isAttached()
                     ? canRange.getDistance().getValue()
+                    : Meters.of(Double.POSITIVE_INFINITY);
+        }
+
+        public Distance getCANrangeStdDev() {
+            return isAttached()
+                    ? canRange.getDistanceStdDev().getValue()
                     : Meters.of(Double.POSITIVE_INFINITY);
         }
 

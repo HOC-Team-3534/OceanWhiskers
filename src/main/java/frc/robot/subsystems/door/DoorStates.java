@@ -12,18 +12,17 @@ public class DoorStates {
     static Trigger ForbarIn = new Trigger(() -> Robot.getForbar().getState().isIn());
     static Trigger ForbarOut = new Trigger(() -> Robot.getForbar().getState().isOut());
     static Trigger DoorIn = new Trigger(() -> door.getState().isIn());
+    static Trigger DoorOut = new Trigger(() -> door.getState().isOut());
 
-    static Trigger AttemptingToPickup = AlignedForPickup.and(ForbarHoldingCoral.not());
+    static Trigger AttemptingToPickup = CanRangeCloseToWall;
     static Trigger ScoringCoral = ForbarOut.debounce(0.15).or(GoToL1Coral);
 
     public static void setupDefaultCommand() {
         door.setDefaultCommand(
                 Commands.either(
-                        door.out(),
+                        Commands.either(door.zero(), door.out(), DoorOut),
                         Commands.either(door.holdIn(), door.zero(), () -> DoorIn.getAsBoolean()),
-                        () ->
-                                AlignedForPickup.getAsBoolean()
-                                        && !ForbarHoldingCoral.getAsBoolean()));
+                        AttemptingToPickup));
     }
 
     public static void setupBindings() {
