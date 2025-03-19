@@ -108,7 +108,7 @@ public class RobotStates {
                                                 RobotStates::isAlignedWithReefForDeployment,
                                                 () -> Robot.getDoor().getState().isOut())
                                         .debounce(0.25))
-                                .or(Util.teleop));
+                                .or(Util.teleop, ForbarHoldingCoral.not()));
     }
 
     public static final Trigger GoToL1Coral = codriver.GoToL1Coral_A;

@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -32,13 +33,17 @@ public class Auton {
     static final EventTrigger autonDeploy = new EventTrigger("Deploy");
     static final EventTrigger autonPickup = new EventTrigger("Pickup");
 
+    static final Trigger WAIT_TO_RAISE_TO_LEVEL = Trigger.kTrue;
+
     public static Trigger isLevel(int level) {
         return new Trigger(
-                        () ->
-                                AutonStep.getCurrentStep()
-                                        .map(step -> step.isLevel(level))
-                                        .orElse(false))
-                .and(autonDeploy);
+                () -> AutonStep.getCurrentStep()
+                        .map(step -> step.isLevel(level))
+                        .orElse(false))
+                .and(RobotStates.ForbarHoldingCoral.not(),
+                        WAIT_TO_RAISE_TO_LEVEL
+                                .and(RobotStates::isAlignedWithReefForDeployment)
+                                .or(WAIT_TO_RAISE_TO_LEVEL.not().and(autonDeploy)));
     }
 
     static {
@@ -49,12 +54,11 @@ public class Auton {
     @Setter
     @Accessors(chain = true)
     public static class AutonConfig {
-        PathConstraints pathConstraints =
-                new PathConstraints(
-                        MetersPerSecond.of(3.0),
-                        MetersPerSecondPerSecond.of(4.0),
-                        RotationsPerSecond.of(1.5),
-                        RotationsPerSecondPerSecond.of(4.5));
+        PathConstraints pathConstraints = new PathConstraints(
+                MetersPerSecond.of(3.0),
+                MetersPerSecondPerSecond.of(4.0),
+                RotationsPerSecond.of(1.5),
+                RotationsPerSecondPerSecond.of(4.5));
 
         Distance driveForwardDistance = Feet.of(2);
     }
@@ -74,7 +78,8 @@ public class Auton {
 
     public void init() {
         loadAutonomousCommand();
-        if (RobotBase.isSimulation()) resetPoseToStartOfPath();
+        if (RobotBase.isSimulation())
+            resetPoseToStartOfPath();
 
         if (m_autonomousCommand != null) {
             m_autonomousCommand.schedule();
@@ -87,7 +92,8 @@ public class Auton {
     public void loadAutonomousCommand() {
         var newChoices = AutonChoosers.Choices.load();
 
-        if (newChoices == null || (choices != null && newChoices.equals(choices))) return;
+        if (newChoices == null || (choices != null && newChoices.equals(choices)))
+            return;
 
         steps.clear();
 
@@ -145,22 +151,22 @@ public class Auton {
     public Command driveForward(Distance distance) {
 
         return Commands.deferredProxy(
-                        () -> {
-                            var goalPose = calculatePoseXDistanceAhead(distance);
+                () -> {
+                    var goalPose = calculatePoseXDistanceAhead(distance);
 
-                            var path =
-                                    new PathPlannerPath(
-                                            PathPlannerPath.waypointsFromPoses(getPose(), goalPose),
-                                            config.pathConstraints,
-                                            null,
-                                            new GoalEndState(0.0, goalPose.getRotation()));
+                    var path = new PathPlannerPath(
+                            PathPlannerPath.waypointsFromPoses(getPose(), goalPose),
+                            config.pathConstraints,
+                            null,
+                            new GoalEndState(0.0, goalPose.getRotation()));
 
-                            if (path.getAllPathPoints().size() < 5) return Commands.none();
+                    if (path.getAllPathPoints().size() < 5)
+                        return Commands.none();
 
-                            path.preventFlipping = true;
+                    path.preventFlipping = true;
 
-                            return AutoBuilder.followPath(path).withName("Auton.Drive Forward");
-                        })
+                    return AutoBuilder.followPath(path).withName("Auton.Drive Forward");
+                })
                 .withName("Auton.Drive Forward Proxy");
     }
 
