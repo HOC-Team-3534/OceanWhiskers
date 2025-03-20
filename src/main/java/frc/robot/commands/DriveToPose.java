@@ -31,6 +31,7 @@ import frc.hocLib.swerve.RobotPoseSupplier;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.robot.Robot;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -119,6 +120,13 @@ public class DriveToPose<
     private DoubleSupplier omegaFF = () -> 0.0;
 
     private DriveSpeedsConsumer output;
+
+    private BooleanSupplier additionalFinishedLogic = () -> true;
+
+    public DriveToPose<T> WithAdditionalFinishedLogic(BooleanSupplier additionalFinishedLogic) {
+        this.additionalFinishedLogic = additionalFinishedLogic;
+        return this;
+    }
 
     public DriveToPose(T drive, Supplier<Pose2d> target) {
         this.drive = drive;
@@ -345,11 +353,11 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
-    Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.25);
+    @Getter Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.1);
 
     @Override
     public boolean isFinished() {
-        return atGoal() && AtGoalTrigger.getAsBoolean();
+        return atGoal() && AtGoalTrigger.getAsBoolean() && additionalFinishedLogic.getAsBoolean();
     }
 
     /** Checks if the robot pose is within the allowed drive and theta tolerances. */
@@ -360,6 +368,7 @@ public class DriveToPose<
     }
 
     public DriveToPose<T> withOutput(DriveSpeedsConsumer output) {
-        return new DriveToPose<>(drive, target, robot, output, linearFF, omegaFF);
+        return new DriveToPose<>(drive, target, robot, output, linearFF, omegaFF)
+                .WithAdditionalFinishedLogic(additionalFinishedLogic);
     }
 }

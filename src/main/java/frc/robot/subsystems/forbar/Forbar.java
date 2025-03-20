@@ -115,8 +115,8 @@ public class Forbar extends TalonFXMechanism {
 
             var canRangeConfig = new CANrangeConfiguration();
 
-            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(4.5).in(Meters);
-            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(1.0).in(Meters);
+            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(6.5).in(Meters);
+            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(3.0).in(Meters);
 
             canRangeConfig.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
 

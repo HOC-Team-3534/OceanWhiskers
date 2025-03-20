@@ -178,6 +178,7 @@ public class RobotStates {
 
                         return distance > 1;
                     });
+
     public static final Trigger CanRangeCloseToWall =
             new Trigger(
                             () ->
@@ -188,8 +189,16 @@ public class RobotStates {
                                             && Robot.getForbar()
                                                     .getState()
                                                     .getCANrangeStdDev()
-                                                    .lt(Inches.of(0.35)))
+                                                    .lt(Inches.of(0.15)))
                     .and(ForbarHoldingCoral.not(), NotCloseToReef);
+    public static final Trigger CanRangeAwayFromWall =
+            new Trigger(
+                    () ->
+                            Robot.getForbar().getState().getCANrangeDistance().gt(Inches.of(20))
+                                    || Robot.getForbar()
+                                            .getState()
+                                            .getCANrangeStdDev()
+                                            .gt(Inches.of(0.75)));
 
     public static void setupStates() {
         DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))

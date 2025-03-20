@@ -46,6 +46,7 @@ public class FollowPathThenDriveToPose<
                         (speeds, ff) ->
                                 setLatestFollowPathCommandOutput(
                                         new Pair<ChassisSpeeds, DriveFeedforwards>(speeds, ff)));
+
         this.driveToPoseCommand = driveToPoseCommand.withOutput(this::setLatestDriveToPoseOutput);
 
         secondsToStartMerge.initDefault(0.75);

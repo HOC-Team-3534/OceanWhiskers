@@ -50,7 +50,7 @@ public abstract class AutonStep {
                         followPath()
                                 .asProxy()
                                 .andThen(
-                                        Commands.parallel(alignWithGoalPose().asProxy()),
+                                        alignWithGoalPose().asProxy(),
                                         new WaitUntilCommand(this::isStepComplete)),
                         Commands.startEnd(
                                 () -> setCurrentStep(Optional.of(this)),
