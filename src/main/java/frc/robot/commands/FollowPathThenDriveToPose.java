@@ -75,8 +75,8 @@ public class FollowPathThenDriveToPose<
                 followPathCommand.isFinished() || secondsIntoMerge > mergeDuration.get();
 
         if (isFinishedFollowingPath && !followPathEnded) {
-            followPathCommand.end(false);
-            followPathEnded = true;
+            // followPathCommand.end(false);
+            // followPathEnded = true;
         }
 
         if (!isFinishedFollowingPath) followPathCommand.execute();

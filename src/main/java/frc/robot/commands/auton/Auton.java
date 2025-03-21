@@ -33,7 +33,7 @@ public class Auton {
     static final EventTrigger autonDeploy = new EventTrigger("Deploy");
     static final EventTrigger autonPickup = new EventTrigger("Pickup");
 
-    static final Trigger WAIT_TO_RAISE_TO_LEVEL = Trigger.kTrue;
+    static final Trigger WAIT_TO_RAISE_TO_LEVEL = Trigger.kFalse;
 
     public static Trigger isLevel(int level) {
         return new Trigger(
