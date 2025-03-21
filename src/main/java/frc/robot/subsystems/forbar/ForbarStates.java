@@ -17,10 +17,14 @@ public class ForbarStates {
 
     public static void setupBindings() {
         GoToL2Coral.or(GoToL3Coral, GoToL4Coral)
-                .and(codriver.ForceForbarIn.not(),
+                .and(
+                        codriver.ForceForbarIn.not(),
                         () -> Robot.getElevator().getState().isNearTargetHeight(),
                         () -> Robot.getElevator().getTargetHeight().gt(Inches.of(0)))
                 .onTrue(forbar.out());
-        GoToL2Coral.or(GoToL3Coral, GoToL4Coral).not().or(codriver.ForceForbarIn).onTrue(forbar.in());
+        GoToL2Coral.or(GoToL3Coral, GoToL4Coral)
+                .not()
+                .or(codriver.ForceForbarIn)
+                .onTrue(forbar.in());
     }
 }
