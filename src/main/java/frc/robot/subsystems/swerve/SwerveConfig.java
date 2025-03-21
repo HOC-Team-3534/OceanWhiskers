@@ -137,6 +137,8 @@ public class SwerveConfig extends HocSubsystem.Config {
     @Getter private Distance kWheelBase = Inches.of(21.5);
     @Getter private Distance kTrackWidth = Inches.of(21.5);
 
+    @Getter private Distance kRobotWidth = Inches.of(36.0);
+
     // Front Left
     @Getter private int kFrontLeftDriveMotorId = 1;
     @Getter private int kFrontLeftSteerMotorId = 3;

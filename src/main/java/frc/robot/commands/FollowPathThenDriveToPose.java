@@ -49,7 +49,7 @@ public class FollowPathThenDriveToPose<
 
         this.driveToPoseCommand = driveToPoseCommand.withOutput(this::setLatestDriveToPoseOutput);
 
-        secondsToStartMerge.initDefault(0.75);
+        secondsToStartMerge.initDefault(1.25);
         mergeDuration.initDefault(0.25);
 
         addRequirements(followPathCommand.getRequirements());

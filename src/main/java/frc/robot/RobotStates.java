@@ -201,6 +201,8 @@ public class RobotStates {
                                             .gt(Inches.of(0.75)));
 
     public static void setupStates() {
+        setAlignedWithReefForDeployment(false);
+
         DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));

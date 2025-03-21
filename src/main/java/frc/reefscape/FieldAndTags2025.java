@@ -53,8 +53,13 @@ public final class FieldAndTags2025 {
     public static final Distance InsideDiameterOfCoral = Inches.of(4.25);
     public static final Distance OutsideDiameterOfBranch = Inches.of(1.66);
 
-    public static final Translation2d CenterOfBlueReef =
-            new Translation2d(Inches.of(176.746), FIELD_WIDTH.div(2));
+    public static final class Reef {
+
+        public static final Translation2d center =
+                new Translation2d(Inches.of(176.746), FIELD_WIDTH.div(2));
+
+        public static final double faceLength = Units.inchesToMeters(36.792600);
+    }
 
     @RequiredArgsConstructor
     public enum ReefBranch {
@@ -86,7 +91,7 @@ public final class FieldAndTags2025 {
                                 .times(branch.getSide().equals(Side.Left) ? -1 : 1);
                 Pose2d groundScorePose =
                         new Pose2d(
-                                        CenterOfBlueReef,
+                                        Reef.center,
                                         Rotation2d.fromDegrees(-180 + (60 * reefSideOrdinal)))
                                 .transformBy(new Transform2d(adjustX, adjustY, Rotation2d.kZero));
                 for (var level : ReefLevel.values()) {

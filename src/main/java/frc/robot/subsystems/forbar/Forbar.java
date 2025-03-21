@@ -185,7 +185,7 @@ public class Forbar extends TalonFXMechanism {
         if (intakeSimCount != prevIntakeSimCount) {
             if (isAttached()) {
                 canRangeSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-                canRangeSim.setDistance(intakeSimCount > 0 ? Inches.of(1.5) : Inches.of(12.0));
+                canRangeSim.setDistance(intakeSimCount > 0 ? Inches.of(1.5) : Inches.of(24.0));
             } else {
                 state.setHoldingCoral(intakeSimCount > 0);
             }
@@ -336,7 +336,7 @@ public class Forbar extends TalonFXMechanism {
                                                 (location) ->
                                                         xyDistanceFromCoral
                                                                         .apply(location.getValue())
-                                                                        .lt(Inches.of(1.0))
+                                                                        .lt(Inches.of(1.5))
                                                                 && location.getValue()
                                                                         .getMeasureZ()
                                                                         .minus(

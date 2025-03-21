@@ -20,6 +20,7 @@ import frc.hocLib.Logging;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.ImpactDetector;
 import frc.reefscape.FieldAndTags2025;
+import frc.reefscape.FieldAndTags2025.Reef;
 import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.Robot;
 import frc.robot.RobotStates;
@@ -206,7 +207,7 @@ public class Scoring extends HocSubsystem {
                                         new ChassisSpeeds(),
                                         algaePosition
                                                 .toTranslation2d()
-                                                .minus(FieldAndTags2025.CenterOfBlueReef)
+                                                .minus(Reef.center)
                                                 .getAngle(),
                                         algaePosition.getMeasureZ(),
                                         MetersPerSecond.of(1),
