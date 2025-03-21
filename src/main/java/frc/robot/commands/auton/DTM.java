@@ -294,7 +294,7 @@ public class DTM {
     }
 
     public static Pose2d getDriveTarget(Pose2d robot, Pose2d goal) {
-        if(!UseReefDriveTargetModifier) return goal;
+        if (!UseReefDriveTargetModifier) return goal;
         var centerOfReef = FieldUtil.flipIfRed(Reef.center);
         Rotation2d angleToGoal =
                 robot.getTranslation()
