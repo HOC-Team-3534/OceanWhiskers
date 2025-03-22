@@ -14,6 +14,7 @@ import static frc.reefscape.FieldAndTags2025.FIELD_WIDTH;
 import static frc.reefscape.FieldAndTags2025.getAllianceReefTags;
 
 import com.pathplanner.lib.path.PathConstraints;
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
@@ -23,10 +24,13 @@ import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.Time;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.hocLib.Logging;
 import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
+import frc.hocLib.util.LoggedTunableNumber;
 import frc.hocLib.util.Util;
 import frc.reefscape.FieldAndTags2025.LoadingStation;
+import frc.reefscape.FieldAndTags2025.Reef;
 import frc.reefscape.FieldAndTags2025.ReefBranch;
 import frc.reefscape.FieldAndTags2025.ReefSide;
 import frc.robot.Robot;
@@ -54,13 +58,11 @@ public class DTM {
                         RotationsPerSecond.of(1.5),
                         RotationsPerSecondPerSecond.of(4.5));
 
-        Distance offsetFromWallToCenter = Inches.of(16.5);
+        Distance offsetFromWallToCenter = Inches.of(18);
 
         // TODO: tune skip and alignment values
         Distance skipPathForDTMTolerance = Inches.of(0.0); // taken out so never skip
         Angle skipPathFromDTMAngleTolerance = Degrees.of(10.0);
-
-        Distance offsetFromWallToCenterDTM = Inches.of(-16.5);
 
         Pose2d dtmAlignTolerance =
                 new Pose2d(Inches.of(3.25), Inches.of(1.0), Rotation2d.fromDegrees(4.0));
@@ -71,11 +73,19 @@ public class DTM {
         boolean ignoreSideOffset = false;
     }
 
+    public static boolean UseReefDriveTargetModifier = true;
+
     private final DTMConfig config;
+
+    static LoggedTunableNumber maxDistanceReefLineup =
+            new LoggedTunableNumber("DTM/MaxDistanceReefLineup", 1.5);
 
     public DTM(DTMConfig config) {
         this.config = config;
     }
+
+    // Radius of regular hexagon is side length
+    private static final double reefRadius = Reef.faceLength;
 
     private final Driver driver = Robot.getDriver();
 
@@ -87,7 +97,7 @@ public class DTM {
         return Commands.deadline(
                 new DriveToPose<Swerve>(
                                 Robot.getSwerve(),
-                                target,
+                                () -> getDriveTarget(robot.get(), target.get()),
                                 robot,
                                 () -> {
                                     var input =
@@ -121,22 +131,45 @@ public class DTM {
         return command;
     }
 
-    public Command dtmToReef(ReefBranch.Side side) {
-        return Commands.deferredProxy(
-                () -> getClosestReefBranch(side).map(this::dtmToReef).orElse(Commands.none()));
+    public Command dtmToReef() {
+        return dtmToReef(Transform2d.kZero);
     }
 
-    public Command dtmToReef(ReefBranch reefBranch) {
-        var goalPose = findGoalPoseInFrontOfReefBranch(reefBranch);
+    public Command dtmToReef(Transform2d offset) {
+        return Commands.deferredProxy(
+                () ->
+                        getClosestReefSide()
+                                .map((reefSide) -> dtmToReef(reefSide, null, offset))
+                                .orElse(Commands.none()));
+    }
+
+    public Command dtmToReef(ReefBranch.Side side) {
+        return Commands.deferredProxy(
+                () ->
+                        getClosestReefSide()
+                                .map((reefSide) -> dtmToReef(reefSide, side))
+                                .orElse(Commands.none()));
+    }
+
+    public Command dtmToReef(ReefSide reefSide, ReefBranch.Side side) {
+        return dtmToReef(reefSide, side, Transform2d.kZero);
+    }
+
+    public Command dtmToReef(ReefSide reefSide, ReefBranch.Side side, Transform2d offset) {
+        var goalPose =
+                side == null
+                        ? findGoalPoseInFrontOfReefSide(reefSide).transformBy(offset)
+                        : findGoalPoseInFrontOfReefBranch(reefSide.getBranch(side))
+                                .transformBy(offset);
+
+        Supplier<Pose2d> robot =
+                () ->
+                        Robot.getVisionSystem()
+                                .getPoseEstimateByTag(reefSide.getTagId())
+                                .orElseGet(() -> Robot.getSwerve().getPose());
 
         var command =
-                driveToPose(
-                                () -> goalPose,
-                                () ->
-                                        Robot.getVisionSystem()
-                                                .getPoseEstimateByTag(
-                                                        reefBranch.getReefSide().getTagId())
-                                                .orElseGet(() -> Robot.getSwerve().getPose()))
+                driveToPose(() -> goalPose, robot)
                         .andThen(
                                 Commands.runOnce(
                                         () -> RobotStates.setAlignedWithReefForDeployment(true)));
@@ -147,13 +180,24 @@ public class DTM {
     }
 
     public DriveToPose<Swerve> driveToReefBranch(ReefBranch reefBranch) {
-        return new DriveToPose<Swerve>(
-                Robot.getSwerve(),
-                () -> findGoalPoseInFrontOfReefBranch(reefBranch),
+        Supplier<Pose2d> robot =
                 () ->
                         Robot.getVisionSystem()
                                 .getPoseEstimateByTag(reefBranch.getReefSide().getTagId())
-                                .orElseGet(() -> Robot.getSwerve().getPose()));
+                                .orElseGet(() -> Robot.getSwerve().getPose());
+        return new DriveToPose<Swerve>(
+                Robot.getSwerve(),
+                () -> getDriveTarget(robot.get(), findGoalPoseInFrontOfReefBranch(reefBranch)),
+                robot);
+    }
+
+    public Optional<Pose2d> findGoalPoseInFrontOfClosestReefSide() {
+
+        return getClosestReefSide().map(this::findGoalPoseInFrontOfReefSide);
+    }
+
+    public Pose2d findGoalPoseInFrontOfReefSide(ReefSide reefSide) {
+        return findGoalPoseInFrontOfTag(reefSide.getTagId()).get();
     }
 
     private Pose2d findGoalPoseInFrontOfReefBranch(ReefBranch reefBranch) {
@@ -237,13 +281,66 @@ public class DTM {
         return getClosestReefBranchSide().flatMap(DTM::getClosestReefBranch);
     }
 
+    public static Optional<ReefSide> getClosestReefSide() {
+        return getClosestReefID().flatMap(ReefSide::getSide);
+    }
+
     public static Optional<ReefBranch> getClosestReefBranch(ReefBranch.Side side) {
-        return getClosestReefID()
-                .flatMap(ReefSide::getSide)
-                .map((reefSide) -> reefSide.getBranch(side));
+        return getClosestReefSide().map((reefSide) -> reefSide.getBranch(side));
     }
 
     public static Optional<Integer> getClosestReefID() {
         return cachedClosestReef.get();
+    }
+
+    public static Pose2d getDriveTarget(Pose2d robot, Pose2d goal) {
+        if (!UseReefDriveTargetModifier) return goal;
+        var centerOfReef = FieldUtil.flipIfRed(Reef.center);
+        Rotation2d angleToGoal =
+                robot.getTranslation()
+                        .minus(centerOfReef)
+                        .getAngle()
+                        .minus(goal.getTranslation().minus(centerOfReef).getAngle());
+        Logging.log("DTM/AngleToGoal", angleToGoal);
+        if (Math.abs(angleToGoal.getDegrees()) >= 30.0 && withinDistanceToReef(robot, 1)) {
+            var offset = robot.relativeTo(goal);
+            double yDistance = Math.abs(offset.getY());
+            double xDistance = Math.abs(offset.getX());
+            // shift
+            double shiftXT =
+                    MathUtil.clamp(
+                            (yDistance / (Reef.faceLength * 2))
+                                    + ((xDistance - 0.3) / (Reef.faceLength * 4)),
+                            0.0,
+                            1.0);
+            double shiftYT =
+                    MathUtil.clamp(
+                            yDistance <= 0.2 ? 0.0 : offset.getX() / Reef.faceLength, 0.0, 1.0);
+            return goal.transformBy(
+                    GeomUtil.toTransform2d(
+                            -shiftXT * maxDistanceReefLineup.get(),
+                            Math.copySign(
+                                    shiftYT * maxDistanceReefLineup.get() * 0.8, offset.getY())));
+        }
+        return goal.transformBy(
+                GeomUtil.toTransform2d(
+                        -MathUtil.clamp(
+                                        (robot.getTranslation().getDistance(goal.getTranslation())
+                                                        - 0.4)
+                                                / 0.6,
+                                        0.0,
+                                        1.0)
+                                * 0.7,
+                        0.0));
+    }
+
+    public static boolean withinDistanceToReef(Pose2d robot, double distance) {
+        final double distanceToReefCenter =
+                FieldUtil.flipIfRed(robot).getTranslation().getDistance(Reef.center);
+        Logging.log("DTM/DistanceToReefCenter", distanceToReefCenter);
+        return distanceToReefCenter
+                <= reefRadius
+                        + Robot.getConfig().swerve.getKRobotWidth().in(Meters) / 2.0
+                        + distance;
     }
 }

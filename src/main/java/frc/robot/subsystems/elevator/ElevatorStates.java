@@ -44,6 +44,7 @@ public class ElevatorStates {
                         () ->
                                 elevator.getState().getTargetLevel().equals(Level.Bottom)
                                         && !elevator.getState().isClimbing())
+                .debounce(0.25)
                 .onTrue(goToLevel(Level.Jaws).until(JawsIn));
 
         ElevatorVoltageUp.whileTrue(

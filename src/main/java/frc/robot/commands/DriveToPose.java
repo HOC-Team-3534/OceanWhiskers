@@ -22,6 +22,7 @@ import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.Logging;
 import frc.hocLib.swerve.DriveSpeedsConsumer;
 import frc.hocLib.swerve.FieldRelativeSpeedsSupplier;
@@ -30,6 +31,7 @@ import frc.hocLib.swerve.RobotPoseSupplier;
 import frc.hocLib.util.GeomUtil;
 import frc.hocLib.util.LoggedTunableNumber;
 import frc.robot.Robot;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 import lombok.Getter;
@@ -41,6 +43,12 @@ public class DriveToPose<
         extends Command {
     private static final LoggedTunableNumber drivekP =
             new LoggedTunableNumber("DriveToPose/DrivekP");
+    private static final LoggedTunableNumber driveClosekP =
+            new LoggedTunableNumber("DriveToPose/DriveClosekP");
+    private static final LoggedTunableNumber drivekPDistance =
+            new LoggedTunableNumber("DriveToPose/DrivekPDistance");
+    private static final LoggedTunableNumber driveClosekPDistance =
+            new LoggedTunableNumber("DriveToPose/DriveClosekPDistance");
     private static final LoggedTunableNumber drivekD =
             new LoggedTunableNumber("DriveToPose/DrivekD");
     private static final LoggedTunableNumber thetakP =
@@ -67,7 +75,10 @@ public class DriveToPose<
             new LoggedTunableNumber("DriveToPose/FFMaxRadius");
 
     static {
-        drivekP.initDefault(RobotBase.isReal() ? 0.8 : 13.0);
+        drivekP.initDefault(RobotBase.isReal() ? 0.8 : 15.0);
+        driveClosekP.initDefault(4.0);
+        drivekPDistance.initDefault(Units.inchesToMeters(12.0));
+        driveClosekPDistance.initDefault(Units.inchesToMeters(3.0));
         drivekD.initDefault(0.0);
         thetakP.initDefault(4.0);
         thetakD.initDefault(0.0);
@@ -75,7 +86,7 @@ public class DriveToPose<
         driveMaxAcceleration.initDefault(3.0);
         thetaMaxVelocity.initDefault(Units.degreesToRadians(360.0));
         thetaMaxAcceleration.initDefault(8.0);
-        driveTolerance.initDefault(0.01);
+        driveTolerance.initDefault(0.03);
         thetaTolerance.initDefault(Units.degreesToRadians(1.0));
         ffMinRadius.initDefault(0.05);
         ffMaxRadius.initDefault(0.1);
@@ -109,6 +120,13 @@ public class DriveToPose<
     private DoubleSupplier omegaFF = () -> 0.0;
 
     private DriveSpeedsConsumer output;
+
+    private BooleanSupplier additionalFinishedLogic = () -> true;
+
+    public DriveToPose<T> WithAdditionalFinishedLogic(BooleanSupplier additionalFinishedLogic) {
+        this.additionalFinishedLogic = additionalFinishedLogic;
+        return this;
+    }
 
     public DriveToPose(T drive, Supplier<Pose2d> target) {
         this.drive = drive;
@@ -190,6 +208,17 @@ public class DriveToPose<
     public void execute() {
         running = true;
 
+        var percentNormalVsClose =
+                (MathUtil.clamp(driveErrorAbs, driveClosekPDistance.get(), drivekPDistance.get())
+                                - driveClosekPDistance.get())
+                        / (drivekPDistance.get() - driveClosekPDistance.get());
+
+        var updatedDriveKp =
+                drivekP.get() * percentNormalVsClose
+                        + driveClosekP.get() * (1 - percentNormalVsClose);
+
+        driveController.setP(updatedDriveKp);
+
         // Update from tunable numbers
         if (driveMaxVelocity.hasChanged(hashCode())
                 || driveMaxVelocitySlow.hasChanged(hashCode())
@@ -202,7 +231,6 @@ public class DriveToPose<
                 || drivekD.hasChanged(hashCode())
                 || thetakP.hasChanged(hashCode())
                 || thetakD.hasChanged(hashCode())) {
-            driveController.setP(drivekP.get());
             driveController.setD(drivekD.get());
             driveController.setConstraints(
                     new TrapezoidProfile.Constraints(
@@ -232,7 +260,9 @@ public class DriveToPose<
         driveErrorAbs = currentDistance;
 
         var controllerSetpointTranslation =
-                driveController.getSetpoint().equals(driveController.getGoal()) && !atGoal()
+                driveController.getSetpoint().equals(driveController.getGoal())
+                                && !atGoal()
+                                && driveErrorAbs > driveClosekPDistance.get()
                         ? currentPose.getTranslation()
                         : lastSetpointTranslation;
 
@@ -323,9 +353,11 @@ public class DriveToPose<
         return running && driveController.atGoal() && thetaController.atGoal();
     }
 
+    @Getter Trigger AtGoalTrigger = new Trigger(this::atGoal).debounce(0.1);
+
     @Override
     public boolean isFinished() {
-        return atGoal();
+        return atGoal() && AtGoalTrigger.getAsBoolean() && additionalFinishedLogic.getAsBoolean();
     }
 
     /** Checks if the robot pose is within the allowed drive and theta tolerances. */
@@ -336,6 +368,7 @@ public class DriveToPose<
     }
 
     public DriveToPose<T> withOutput(DriveSpeedsConsumer output) {
-        return new DriveToPose<>(drive, target, robot, output, linearFF, omegaFF);
+        return new DriveToPose<>(drive, target, robot, output, linearFF, omegaFF)
+                .WithAdditionalFinishedLogic(additionalFinishedLogic);
     }
 }

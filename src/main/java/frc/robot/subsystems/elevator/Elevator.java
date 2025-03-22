@@ -56,8 +56,8 @@ public class Elevator extends TalonFXMechanism {
         Distance L4 = Inches.of(53.5);
         Distance Jaws = Inches.of(18.0);
         Distance PreClimb = Inches.of(15);
-        Distance L2Algae = Inches.of(23.0);
-        Distance L3Algae = Inches.of(40.0);
+        Distance L2Algae = Inches.of(21.0);
+        Distance L3Algae = Inches.of(38.0);
 
         boolean motionMagicEnabled;
 
@@ -85,10 +85,10 @@ public class Elevator extends TalonFXMechanism {
             setMMConfigs(
                     new MotionMagicConfigs()
                             // theoretical max of 66.5 rot of motor per second
-                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(37.0))
+                            .withMotionMagicCruiseVelocity(RotationsPerSecond.of(55))
                             // recalc says acceleration can be 99 rot per s^2
-                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(80.0))
-                            .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(2000)));
+                            .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(85))
+                            .withMotionMagicJerk(RotationsPerSecondPerSecond.per(Second).of(5000)));
 
             setMotorOutputConfigs(
                     new MotorOutputConfigs().withInverted(InvertedValue.Clockwise_Positive));

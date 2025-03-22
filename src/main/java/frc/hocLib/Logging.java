@@ -14,6 +14,7 @@ import frc.hocLib.mechanism.Mechanism;
 import frc.hocLib.mechanism.TalonFXMechanism;
 import frc.hocLib.mechanism.TalonSRXArm;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.robot.subsystems.door.Door;
 import frc.robot.subsystems.forbar.Forbar;
 import frc.robot.subsystems.swerve.Swerve;
 import org.photonvision.EstimatedRobotPose;
@@ -69,8 +70,14 @@ public class Logging extends DogLog {
 
     public static void log(String key, Forbar forbar) {
         log(key + "/CANrange Distance", forbar.getState().getCANrangeDistance().in(Meters));
+        log(key + "/CANrange Distance StdDev", forbar.getState().getCANrangeStdDev().in(Meters));
         log(key + "/CANrange Detected Object", forbar.getState().isCANrangeIsDetected());
 
         log(key, (TalonFXMechanism) forbar);
+    }
+
+    public static void log(String key, Door door) {
+        log(key + "/Position", door.getState().getPosition().name());
+        log(key, (TalonSRXMechanism) door);
     }
 }

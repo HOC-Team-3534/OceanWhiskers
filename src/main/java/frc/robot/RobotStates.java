@@ -1,5 +1,10 @@
 package frc.robot;
 
+import static edu.wpi.first.units.Units.Inches;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.hocLib.dashboard.Elastic;
@@ -46,10 +51,7 @@ public class RobotStates {
     public static final Trigger SwerveDynamicBackward =
             driver.SwerveDynamicBackward_DDP.and(SwerveIsTesting);
 
-    public static final Trigger SwerveMoving =
-            new Trigger(() -> swerve.isMoving())
-                    .debounce(0.5)
-                    .onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
+    public static final Trigger SwerveMoving = new Trigger(() -> swerve.isMoving()).debounce(0.5);
 
     // ELEVATOR
     private static final Elevator elevator = Robot.getElevator();
@@ -91,19 +93,21 @@ public class RobotStates {
 
     public static final Trigger ForbarHoldingCoral =
             new Trigger(() -> forbar.getState().isHoldingCoral());
+    public static final Trigger ForbarHoldingCoralDebounce = ForbarHoldingCoral.debounce(0.25);
     public static final Trigger ForbarReadyToDeploy = new Trigger(() -> forbar.getState().isOut());
     public static final Trigger ForbarCloseToValidScoringLocation =
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
-                    .debounce(0.25);
+                    .debounce(1.0);
 
     @Setter @Getter private static boolean alignedWithReefForDeployment;
 
     static Trigger isAutonLevel(int level) {
         return Auton.isLevel(level)
                 .latchWithReset(
-                        (ForbarReadyToDeploy.and(RobotStates::isAlignedWithReefForDeployment)
-                                        .or(ForbarCloseToValidScoringLocation))
-                                .or(Util.teleop));
+                        ForbarReadyToDeploy.and(
+                                        RobotStates::isAlignedWithReefForDeployment,
+                                        () -> Robot.getDoor().getState().isOut())
+                                .or(Util.teleop, ForbarHoldingCoral.not()));
     }
 
     public static final Trigger GoToL1Coral = codriver.GoToL1Coral_A;
@@ -134,26 +138,88 @@ public class RobotStates {
     public static final Trigger DrivingAutonomously =
             new Trigger(RobotStates::isDrivingAutonomously);
 
+    public static final Trigger CanDTM =
+            new Trigger(
+                    () ->
+                            FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose())
+                                    && !Robot.getElevator().getState().isClimbing());
+
+    public static final Trigger DTMReefLeft = driver.DTMToReefLeft_LT.and(CanDTM);
+    public static final Trigger DTMReefRight = driver.DTMToReefRight_RT.and(CanDTM);
+    public static final Trigger DTMReefCenter = driver.DTMToReefCenter_A.and(CanDTM);
+    public static final Trigger DTMHumanPlayerStation =
+            driver.DTMToHumanPlayerStation_B.and(CanDTM);
+
+    private static boolean isAlignedForPickup(Pose2d loadingStationPose) {
+        Pose2d relative = loadingStationPose.relativeTo(Robot.getSwerve().getPose());
+        boolean xAligned = relative.getMeasureX().isNear(Inches.zero(), Inches.of(2.0));
+        boolean yAligned = relative.getMeasureY().isNear(Inches.zero(), Inches.of(24.0));
+        boolean rotationAligned = Math.abs(relative.getRotation().getDegrees()) < 3.0;
+        return xAligned && yAligned && rotationAligned;
+    }
+
+    public static final Trigger AlignedForPickup =
+            new Trigger(
+                    () ->
+                            Robot.getDtm()
+                                    .finalGoalPoseInFrontOfClosestLoadingStation()
+                                    .map(RobotStates::isAlignedForPickup)
+                                    .orElse(false));
+    public static final Trigger NotCloseToReef =
+            new Trigger(
+                    () -> {
+                        var robot = Robot.getSwerve().getPose();
+                        var closestReef = Robot.getDtm().findGoalPoseInFrontOfClosestReefSide();
+
+                        if (closestReef.isEmpty()) return false;
+                        var distance =
+                                robot.getTranslation()
+                                        .getDistance(closestReef.get().getTranslation());
+
+                        return distance > 1;
+                    });
+
+    public static final Trigger CanRangeCloseToWall =
+            new Trigger(
+                            () ->
+                                    Robot.getForbar()
+                                                    .getState()
+                                                    .getCANrangeDistance()
+                                                    .lt(Inches.of(13))
+                                            && Robot.getForbar()
+                                                    .getState()
+                                                    .getCANrangeStdDev()
+                                                    .lt(Inches.of(0.45)))
+                    .and(ForbarHoldingCoral.not(), NotCloseToReef);
+    public static final Trigger CanRangeAwayFromWall =
+            new Trigger(
+                    () ->
+                            Robot.getForbar().getState().getCANrangeDistance().gt(Inches.of(20))
+                                    || Robot.getForbar()
+                                            .getState()
+                                            .getCANrangeStdDev()
+                                            .gt(Inches.of(0.75)));
+
     public static void setupStates() {
-        driver.DTMToReefLeft_LT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
+        setAlignedWithReefForDeployment(false);
+
+        DTMReefLeft.whileTrue(dtm.dtmToReef(ReefBranch.Side.Left))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
-        driver.DTMToReefRight_RT.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
+        DTMReefRight.whileTrue(dtm.dtmToReef(ReefBranch.Side.Right))
                 .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
                 .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
-        driver.DTMToHumanPlayerStation_B.and(
-                        () -> FieldUtil.isRobotOnOurSide(Robot.getSwerve().getPose()),
-                        () -> !Robot.getElevator().getState().isClimbing())
-                .whileTrue(dtm.dtmToHumanPlayerStation());
+        DTMReefCenter.whileTrue(
+                        dtm.dtmToReef(
+                                new Transform2d(Inches.of(-10), Inches.zero(), new Rotation2d())))
+                .onTrue(Commands.runOnce(() -> selectTab("DTM Reef")))
+                .onFalse(Commands.runOnce(() -> selectTab("Teleop")));
+        DTMHumanPlayerStation.whileTrue(dtm.dtmToHumanPlayerStation());
 
         Util.autoMode.onTrue(Commands.runOnce(() -> selectTab("Autonomous")));
         Util.teleop.onTrue(Commands.runOnce(() -> selectTab("Teleop")));
+
+        SwerveMoving.onTrue(Commands.runOnce(() -> setAlignedWithReefForDeployment(false)));
     }
 
     static void selectTab(String tabName) {

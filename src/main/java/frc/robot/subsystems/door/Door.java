@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.hocLib.Logging;
 import frc.hocLib.mechanism.TalonSRXMechanism;
+import frc.robot.Robot;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,7 +18,9 @@ public class Door extends TalonSRXMechanism {
     public static class DoorConfig extends Config {
         // TODO tune values for opening and closing door
         Voltage outVoltage = Volts.of(4);
-        Voltage holdInVoltage = Volts.of(-1);
+        Voltage holdInWithoutVoltage = Volts.of(-2);
+        Voltage holdInWithVoltage = Volts.of(-4);
+
         Voltage inVoltage = Volts.of(-4);
         Time timeInAndOut = Seconds.of(.5);
 
@@ -69,7 +72,12 @@ public class Door extends TalonSRXMechanism {
     }
 
     protected Command holdIn() {
-        return runOnce(() -> setVoltageOut(config.holdInVoltage));
+        return runOnce(
+                () ->
+                        setVoltageOut(
+                                Robot.getForbar().getState().isHoldingCoral()
+                                        ? config.holdInWithVoltage
+                                        : config.holdInWithoutVoltage));
     }
 
     public enum Position {

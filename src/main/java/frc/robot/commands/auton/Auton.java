@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Getter;
@@ -32,13 +33,19 @@ public class Auton {
     static final EventTrigger autonDeploy = new EventTrigger("Deploy");
     static final EventTrigger autonPickup = new EventTrigger("Pickup");
 
+    static final Trigger WAIT_TO_RAISE_TO_LEVEL = Trigger.kTrue;
+
     public static Trigger isLevel(int level) {
         return new Trigger(
                         () ->
                                 AutonStep.getCurrentStep()
                                         .map(step -> step.isLevel(level))
                                         .orElse(false))
-                .and(autonDeploy);
+                .and(
+                        RobotStates.ForbarHoldingCoral,
+                        WAIT_TO_RAISE_TO_LEVEL
+                                .and(RobotStates::isAlignedWithReefForDeployment)
+                                .or(WAIT_TO_RAISE_TO_LEVEL.not().and(autonDeploy)));
     }
 
     static {

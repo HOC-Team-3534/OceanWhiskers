@@ -24,7 +24,7 @@ import lombok.Setter;
 public class Jaws extends TalonSRXMechanism {
     @Getter
     public static class JawsConfig extends TalonSRXMechanism.Config {
-        @Getter private Power spikeThreshold = Watts.of(60.0);
+        @Getter private Power spikeThreshold = Watts.of(Double.POSITIVE_INFINITY);
         @Getter private Voltage inAndOutVoltage = Volts.of(8.3); // out is positive
 
         Pose3d fieldToRobotCAD = new Pose3d(0.0, 0.0, 0.0414, new Rotation3d());
@@ -36,7 +36,7 @@ public class Jaws extends TalonSRXMechanism {
         Pose3d robotToAlgaeArmOut =
                 robotToAlgaeArm.transformBy(GeomUtil.toTransform3d(0.0, Degrees.of(-90 - 15), 0.0));
 
-        Time timeFromInToOut = Seconds.of(0.5);
+        Time timeFromInToOut = Seconds.of(1.5);
 
         public JawsConfig() {
             super("Jaws", 17);
@@ -58,9 +58,6 @@ public class Jaws extends TalonSRXMechanism {
 
     @Override
     public void periodic() {
-        if (state.isOut()) {
-            setVoltageOut(config.inAndOutVoltage.times(0.25));
-        }
 
         Logging.log("Jaws", this);
     }
@@ -71,7 +68,10 @@ public class Jaws extends TalonSRXMechanism {
     }
 
     protected Command zero() {
-        return run(() -> setVoltageOut(Volts.zero()));
+        return run(
+                () ->
+                        setVoltageOut(
+                                state.isOut() ? config.inAndOutVoltage.times(0.25) : Volts.zero()));
     }
 
     protected Command in() {

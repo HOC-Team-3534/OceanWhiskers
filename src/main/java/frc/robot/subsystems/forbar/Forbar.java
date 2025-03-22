@@ -9,6 +9,7 @@ import static edu.wpi.first.units.Units.Volts;
 
 import com.ctre.phoenix6.configs.CANrangeConfiguration;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
+import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.CANrange;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.UpdateModeValue;
@@ -35,6 +36,7 @@ import frc.hocLib.util.CachedValue;
 import frc.hocLib.util.GeomUtil;
 import frc.reefscape.FieldAndTags2025.ReefLevel;
 import frc.robot.Robot;
+import frc.robot.RobotStates;
 import frc.robot.commands.auton.DTM;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -50,6 +52,7 @@ public class Forbar extends TalonFXMechanism {
     public static class ForbarConfig extends TalonFXMechanism.Config {
         Voltage outVoltage = Volts.of(1.75); // out is positive
         Voltage holdOutVoltage = Volts.of(0.25); // out is positive
+        // Voltage holdInVoltage = Volts.of(-0.2); // in is negative
         Voltage inWithoutVoltage = Volts.of(-1.5); // in is negative
         Voltage inWithVoltage = Volts.of(-1.75); // in is negative
 
@@ -112,14 +115,14 @@ public class Forbar extends TalonFXMechanism {
 
             var canRangeConfig = new CANrangeConfiguration();
 
-            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(4.0).in(Meters);
-            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(2.0).in(Meters);
+            canRangeConfig.ProximityParams.ProximityThreshold = Inches.of(6.5).in(Meters);
+            canRangeConfig.ProximityParams.ProximityHysteresis = Inches.of(3.0).in(Meters);
 
             canRangeConfig.ToFParams.UpdateMode = UpdateModeValue.ShortRange100Hz;
 
-            canRangeConfig.FovParams.FOVCenterX = 0.0;
+            canRangeConfig.FovParams.FOVCenterX = 11.8;
             canRangeConfig.FovParams.FOVCenterY = 0.0;
-            canRangeConfig.FovParams.FOVRangeX = 27.0;
+            canRangeConfig.FovParams.FOVRangeX = 6.75;
             canRangeConfig.FovParams.FOVRangeY = 27.0;
 
             canRange.getConfigurator().apply(canRangeConfig);
@@ -164,22 +167,7 @@ public class Forbar extends TalonFXMechanism {
 
     @Override
     public void simulationPeriodic() {
-        Robot.getDtm()
-                .finalGoalPoseInFrontOfClosestLoadingStation()
-                .ifPresentOrElse(
-                        loadingStationPose -> {
-                            var relative =
-                                    loadingStationPose.relativeTo(Robot.getSwerve().getPose());
-
-                            if (relative.getMeasureX().isNear(Inches.zero(), Inches.of(2.0))
-                                    && relative.getMeasureY().isNear(Inches.zero(), Inches.of(24.0))
-                                    && Math.abs(relative.getRotation().getDegrees()) < 3.0) {
-
-                            } else {
-                                simTimeAlignedWithPickup.restart();
-                            }
-                        },
-                        simTimeAlignedWithPickup::restart);
+        if (!RobotStates.AlignedForPickup.getAsBoolean()) simTimeAlignedWithPickup.restart();
 
         if (simTimeAlignedWithPickup.hasElapsed(0.5) && !state.isHoldingCoral())
             intakeSim.addGamePieceToIntake();
@@ -197,7 +185,7 @@ public class Forbar extends TalonFXMechanism {
         if (intakeSimCount != prevIntakeSimCount) {
             if (isAttached()) {
                 canRangeSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-                canRangeSim.setDistance(intakeSimCount > 0 ? Inches.of(1.5) : Inches.of(12.0));
+                canRangeSim.setDistance(intakeSimCount > 0 ? Inches.of(1.5) : Inches.of(24.0));
             } else {
                 state.setHoldingCoral(intakeSimCount > 0);
             }
@@ -211,11 +199,10 @@ public class Forbar extends TalonFXMechanism {
 
     protected Command zeroOrHold() {
         return run(
-                () ->
-                        setVoltageOut(
-                                state.getPosition().equals(Position.Out)
-                                        ? config.getHoldOutVoltage()
-                                        : Volts.zero()));
+                () -> {
+                    if (isAttached() && state.isIn()) motor.setControl(new StaticBrake());
+                    else setVoltageOut(state.isOut() ? config.getHoldOutVoltage() : Volts.zero());
+                });
     }
 
     // TODO: validate open and close happen when theya re supposed to and not when elevator is not
@@ -295,6 +282,12 @@ public class Forbar extends TalonFXMechanism {
                     : Meters.of(Double.POSITIVE_INFINITY);
         }
 
+        public Distance getCANrangeStdDev() {
+            return isAttached()
+                    ? canRange.getDistanceStdDev().getValue()
+                    : Meters.of(Double.POSITIVE_INFINITY);
+        }
+
         public boolean isCANrangeIsDetected() {
             return isAttached() ? canRange.getIsDetected().getValue().booleanValue() : false;
         }
@@ -343,7 +336,7 @@ public class Forbar extends TalonFXMechanism {
                                                 (location) ->
                                                         xyDistanceFromCoral
                                                                         .apply(location.getValue())
-                                                                        .lt(Inches.of(2.0))
+                                                                        .lt(Inches.of(1.5))
                                                                 && location.getValue()
                                                                         .getMeasureZ()
                                                                         .minus(

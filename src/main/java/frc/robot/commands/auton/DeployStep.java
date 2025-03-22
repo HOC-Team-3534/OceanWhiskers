@@ -39,11 +39,16 @@ public class DeployStep extends AutonStep {
 
     @Override
     public Command followPath() {
+        var driveToBranchPose = Robot.getDtm().driveToReefBranch(branch);
         return new FollowPathThenDriveToPose<Swerve>(
                         (FollowPathCommand) super.followPath(),
-                        Robot.getDtm().driveToReefBranch(branch))
-                .asProxy()
-                .andThen(Commands.runOnce(() -> RobotStates.setAlignedWithReefForDeployment(true)));
+                        driveToBranchPose.WithAdditionalFinishedLogic(
+                                () -> {
+                                    RobotStates.setAlignedWithReefForDeployment(true);
+
+                                    return false;
+                                }))
+                .asProxy();
     }
 
     @Override
