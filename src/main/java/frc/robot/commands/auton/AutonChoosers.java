@@ -117,10 +117,7 @@ public class AutonChoosers {
             var secondBranchLevel = secondBranchLevelChooser.getSelected();
             var thirdBranchLevel = thirdBranchLevelChooser.getSelected();
 
-            if (sideOfField == null
-                    || firstBranch == null
-                    || secondBranch == null
-                    || thirdBranch == null) return null;
+            if (sideOfField == null) return null;
 
             return new Choices(
                     sideOfField,
