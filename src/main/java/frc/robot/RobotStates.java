@@ -189,7 +189,7 @@ public class RobotStates {
                                             && Robot.getForbar()
                                                     .getState()
                                                     .getCANrangeStdDev()
-                                                    .lt(Inches.of(0.15)))
+                                                    .lt(Inches.of(0.45)))
                     .and(ForbarHoldingCoral.not(), NotCloseToReef);
     public static final Trigger CanRangeAwayFromWall =
             new Trigger(

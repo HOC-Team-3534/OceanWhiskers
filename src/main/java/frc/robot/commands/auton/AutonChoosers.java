@@ -117,10 +117,7 @@ public class AutonChoosers {
             var secondBranchLevel = secondBranchLevelChooser.getSelected();
             var thirdBranchLevel = thirdBranchLevelChooser.getSelected();
 
-            if (sideOfField == null
-                    || firstBranch == null
-                    || secondBranch == null
-                    || thirdBranch == null) return null;
+            if (sideOfField == null) return null;
 
             return new Choices(
                     sideOfField,
@@ -140,12 +137,13 @@ public class AutonChoosers {
         public boolean equals(Object obj) {
             if (obj instanceof Choices) {
                 var typedObj = (Choices) obj;
-                return this.sideOfField.equals(typedObj.sideOfField)
-                        && this.firstBranch.equals(typedObj.firstBranch)
+
+                return this.sideOfField == typedObj.sideOfField
+                        && this.firstBranch == typedObj.firstBranch
                         && this.firstBranchLevel == typedObj.firstBranchLevel
-                        && this.secondBranch.equals(typedObj.secondBranch)
+                        && this.secondBranch == typedObj.secondBranch
                         && this.secondBranchLevel == typedObj.secondBranchLevel
-                        && this.thirdBranch.equals(typedObj.thirdBranch)
+                        && this.thirdBranch == typedObj.thirdBranch
                         && this.thirdBranchLevel == typedObj.thirdBranchLevel;
             }
             return false;

@@ -64,7 +64,7 @@ public class PickupStep extends AutonStep {
                                                                     0.0,
                                                                     Rotation2d.kZero));
                                         }))
-                .until(RobotStates.CanRangeCloseToWall);
+                .until(RobotStates.CanRangeCloseToWall.debounce(1.0));
     }
 
     @Override
