@@ -302,7 +302,13 @@ public class Elevator extends TalonFXMechanism {
                                                                 level.getHeight(config))));
                                 }),
                         run(() -> setVoltageOut(Volts.zero())),
-                        () -> !state.isClimbing())
+                        () -> {
+                            if (levelSupplier.get().equals(Level.PreClimb)) {
+                                state.setClimbing(false);
+                            }
+
+                            return !state.isClimbing();
+                        })
                 .alongWith(
                         Commands.run(
                                 () ->
