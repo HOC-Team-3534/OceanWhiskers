@@ -18,6 +18,7 @@ public class DoorStates {
 
     static Trigger AttemptingToPickup =
             CanRangeCloseToWall.and(Util.autoMode)
+                    .debounce(0.35)
                     .latchWithReset(
                             CanRangeAwayFromWall.or(RobotStates.ForbarHoldingCoral, Util.teleop));
     static Trigger ScoringCoral =
