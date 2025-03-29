@@ -15,6 +15,7 @@ import frc.robot.commands.auton.AutonStep;
 import frc.robot.commands.auton.DTM;
 import frc.robot.controllers.Codriver;
 import frc.robot.controllers.Driver;
+import frc.robot.subsystems.door.Door;
 import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.forbar.Forbar;
 import frc.robot.subsystems.jaws.Jaws;
@@ -99,6 +100,9 @@ public class RobotStates {
             new Trigger(() -> forbar.getState().getValidScoringLocation().isPresent())
                     .debounce(1.0);
 
+    public static final Door door = Robot.getDoor();
+    public static final Trigger DoorIn = new Trigger(() -> door.getState().isIn());
+
     @Setter @Getter private static boolean alignedWithReefForDeployment;
 
     static Trigger isAutonLevel(int level) {
@@ -106,7 +110,7 @@ public class RobotStates {
                 .latchWithReset(
                         ForbarReadyToDeploy.and(
                                         RobotStates::isAlignedWithReefForDeployment,
-                                        () -> Robot.getDoor().getState().isOut())
+                                        DoorIn.not().debounce(0.15))
                                 .or(Util.teleop, ForbarHoldingCoral.not()));
     }
 

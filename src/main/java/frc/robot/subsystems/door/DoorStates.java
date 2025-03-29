@@ -25,7 +25,9 @@ public class DoorStates {
             ForbarOut.debounce(0.15)
                     .and(
                             Util.teleop.or(
-                                    Util.autoMode.and(RobotStates::isAlignedWithReefForDeployment)))
+                                    Util.autoMode
+                                            .and(RobotStates::isAlignedWithReefForDeployment)
+                                            .debounce(0.15)))
                     .or(GoToL1Coral);
 
     public static void setupDefaultCommand() {
