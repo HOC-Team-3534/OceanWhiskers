@@ -9,7 +9,7 @@ public class CBOT_2025 extends Config {
         swerve =
                 swerve.configDriveGains(0.077614, 2.3152, 0.30834)
                         .configEncoderOffsets(
-                                0.376708984375, -0.3603515625, 0.325927734375, 0.1435546875);
+                                0.43115, -0.35571, 0.49902, 0.13305);
 
         elevator.enableMotionMagic();
 
